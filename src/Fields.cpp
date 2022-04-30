@@ -14,13 +14,13 @@ Fields::Fields(double nu, double dt, double tau, int imax, int jmax, double UI, 
     _RS = Matrix<double>(imax + 2, jmax + 2, 0.0);
 }
 
-void Fields::calculate_fluxes(Grid &grid) {}
+void Fields::calculate_fluxes(Grid &grid) {std::cout << "Fluxes Calculated" << std::endl;}
 
-void Fields::calculate_rs(Grid &grid) {}
+void Fields::calculate_rs(Grid &grid) {std::cout << "Right hand side Calculated" << std::endl;}
 
-void Fields::calculate_velocities(Grid &grid) {}
+void Fields::calculate_velocities(Grid &grid) {std::cout << "Calculate Velocities called" << std::endl;}
 
-double Fields::calculate_dt(Grid &grid) { return _dt; }
+double Fields::calculate_dt(Grid &grid) { std::cout << "time step calculated" << std::endl; return _dt; }
 
 double &Fields::p(int i, int j) { return _P(i, j); }
 double &Fields::u(int i, int j) { return _U(i, j); }

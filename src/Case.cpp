@@ -164,7 +164,7 @@ void Case::set_file_names(std::string file_name) {
  * - Iterate the pressure poisson equation until the residual becomes smaller than the desired tolerance
  *   or the maximum number of the iterations are performed using solve() member function of PressureSolver class
  * - Calculate the velocities u and v using calculate_velocities() member function of Fields class
- * - Calculat the maximal timestep size for the next iteration using calculate_dt() member function of Fields class
+ * - Calculate the maximal timestep size for the next iteration using calculate_dt() member function of Fields class
  * - Write vtk files using output_vtk() function
  *
  * Please note that some classes such as PressureSolver, Boundary are abstract classes which means they only provide the
@@ -180,6 +180,8 @@ void Case::simulate() {
     int timestep = 0;
     double output_counter = 0.0;
     double t_end = _t_end;
+    double err = 100;
+    int iter_count = 0;
     //starting simulation
     while (t < t_end)
     {
@@ -187,8 +189,18 @@ void Case::simulate() {
         {
             _boundaries[i]->apply(_field);
         }
+        _field.calculate_fluxes(_grid);
+        _field.calculate_rs(_grid);
+        while(err > _tolerance && iter_count < _max_iter)
+        {
+            err = _pressure_solver->solve(_field, _grid, _boundaries);
+            iter_count += 1;
+        }
+        _field.calculate_velocities(_grid);
         t += dt;
+        dt = _field.calculate_dt(_grid);
         timestep+=1;
+        Case::output_vtk(timestep, 1);
         break;
     }
 }
