@@ -7,6 +7,7 @@
 #include <iostream>
 #include <map>
 #include <vector>
+#include <typeinfo>
 
 namespace filesystem = std::filesystem;
 
@@ -182,11 +183,14 @@ void Case::simulate() {
     //starting simulation
     while (t < t_end)
     {
-        
+        for (int i=0; i < _boundaries.size(); i++)
+        {
+            _boundaries[i]->apply(_field);
+        }
         t += dt;
         timestep+=1;
+        break;
     }
-
 }
 
 void Case::output_vtk(int timestep, int my_rank) {
