@@ -178,6 +178,15 @@ void Case::simulate() {
     double dt = _field.dt();
     int timestep = 0;
     double output_counter = 0.0;
+    double t_end = _t_end;
+    //starting simulation
+    while (t < t_end)
+    {
+        
+        t += dt;
+        timestep+=1;
+    }
+
 }
 
 void Case::output_vtk(int timestep, int my_rank) {
