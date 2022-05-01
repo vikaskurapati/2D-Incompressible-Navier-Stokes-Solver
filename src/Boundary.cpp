@@ -18,12 +18,15 @@ void FixedWallBoundary::apply(Fields &field) {
         field.u(imax-2,j) = 0.0;
         field.v(0,j) = -field.v(1,j);
         field.v(imax-1, j) = -field.v(imax-2,j);
+        field.p(0, j) = field.p(1, j);
+        field.p(imax-1, j) = field.p(imax-2, j);
     }
 
     for (int i = 0; i < imax; i++)
     {
         field.v(i,0) = 0.0;
         field.u(i, 0) = -field.u(i,1);
+        field.p(i,0) = field.p(i,1);
     }
 }
 
@@ -42,7 +45,8 @@ void MovingWallBoundary::apply(Fields &field) {
     for (int i = 0; i < imax; i++)
     {
         field.u(i, jmax-1) = 2.0*_wall_velocity[LidDrivenCavity::moving_wall_id] -field.u(i, jmax-2);
+        field.v(i, jmax-1) = 0.0;
         field.v(i, jmax-2) = 0.0;
-        field.v(i, jmax-3) = 0.0;
+        field.p(i, jmax-1) = field.p(i, jmax-2);
     }
 }
