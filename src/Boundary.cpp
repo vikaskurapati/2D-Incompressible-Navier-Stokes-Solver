@@ -41,7 +41,7 @@ void MovingWallBoundary::apply(Fields &field) {
     int jmax = field.p_matrix().jmax();
     for (int i = 0; i < imax; i++)
     {
-        field.u(i, jmax-1) = -field.u(i, jmax-2);
+        field.u(i, jmax-1) = 2.0*_wall_velocity[LidDrivenCavity::moving_wall_id] -field.u(i, jmax-2);
         field.v(i, jmax-2) = 0.0;
         field.v(i, jmax-3) = 0.0;
     }
