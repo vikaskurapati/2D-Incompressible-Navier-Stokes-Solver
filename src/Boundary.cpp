@@ -20,6 +20,8 @@ void FixedWallBoundary::apply(Fields &field) {
         field.v(imax-1, j) = -field.v(imax-2,j);
         field.p(0, j) = field.p(1, j);
         field.p(imax-1, j) = field.p(imax-2, j);
+        field.f(0,j) = 0.0;
+        field.f(imax-1, j) = field.u(imax-1, j);
     }
 
     for (int i = 0; i < imax; i++)
@@ -27,6 +29,7 @@ void FixedWallBoundary::apply(Fields &field) {
         field.v(i,0) = 0.0;
         field.u(i, 0) = -field.u(i,1);
         field.p(i,0) = field.p(i,1);
+        field.g(i, 0) = field.v(i, 0);
     }
 }
 
@@ -48,5 +51,6 @@ void MovingWallBoundary::apply(Fields &field) {
         field.v(i, jmax-1) = 0.0;
         field.v(i, jmax-2) = 0.0;
         field.p(i, jmax-1) = field.p(i, jmax-2);
+        field.g(i, jmax-1) = field.v(i, jmax-1);
     }
 }

@@ -189,7 +189,19 @@ void Case::simulate() {
         {
             _boundaries[i]->apply(_field);
         }
+
+
         _field.calculate_fluxes(_grid);
+
+        // for (auto currentCell : _grid.fluid_cells())
+        // {
+        //     int i = currentCell->i();
+        //     int j = currentCell->j();
+
+        //     std::cout << _field.f(i,j) << std::endl;
+        //     std::cout << _field.g(i,j) << std::endl;
+        // }
+        
         _field.calculate_rs(_grid);
         while(err > _tolerance && iter_count < _max_iter)
         {
@@ -197,12 +209,16 @@ void Case::simulate() {
             iter_count += 1;
         }
         _field.calculate_velocities(_grid);
+
+        // std::cout << _field.p(25,25) << std::endl;
+
         t += dt;
         dt = _field.calculate_dt(_grid);
         timestep+=1;
         Case::output_vtk(timestep, 1);
     }
 }
+
 
 void Case::output_vtk(int timestep, int my_rank) {
     // Create a new structured grid

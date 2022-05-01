@@ -2,6 +2,7 @@
 
 #include <algorithm>
 #include <iostream>
+#include <cmath>
 
 Fields::Fields(double nu, double dt, double tau, int imax, int jmax, double UI, double VI, double PI)
     : _nu(nu), _dt(dt), _tau(tau) {
@@ -29,22 +30,24 @@ void Fields::calculate_fluxes(Grid &grid)
 
     double dx = grid.dx();
     double dy = grid.dy();
-    for (int i = 1; i < grid.imax(); i++)
-    {
-        for (int j = 1; j < grid.jmax(); j++)
-        {
-            d2ux = (_U(i+1,j)-2*_U(i,j)+_U(i-1,j))/(dx*dx);
-            d2uy = (_U(i,j+1)-2*_U(i,j)+_U(i,j-1))/(dy*dy);
-            du2x = (((_U(i,j)+_U(i+1,j))/2.0)*((_U(i,j)+_U(i+1,j))/2.0) -((_U(i-1,j)+_U(i,j))/2.0)*((_U(i-1,j)+_U(i,j))/2.0))/dx;
-            duvy = (((((_U(i,j)+_U(i,j+1))/2.0))*((_V(i,j)+_V(i+1,j))/2.0)) - ((((_U(i,j-1)+_U(i,j))/2.0))*((_V(i,j-1)+_V(i+1,j-1))/2.0)))/dy;
-            d2vx = (_V(i+1,j)-2*_V(i,j)+_V(i-1,j))/(dx*dx);
-            d2vy = (_V(i,j+1)-2*_V(i,j)+_V(i,j-1))/(dy*dy);
-            dv2y = (((_V(i,j)+_V(i,j+1))/2.0)*((_V(i,j)+_V(i,j+1))/2.0) -((_V(i,j-1)+_V(i,j))/2.0)*((_V(i,j-1)+_V(i,j))/2.0))/dy;
-            duvx = (((((_U(i,j)+_U(i+1,j))/2.0))*((_V(i,j)+_V(i,j+1))/2.0)) - ((((_U(i-1,j)+_U(i,j))/2.0))*((_V(i-1,j)+_V(i-1,j+1))/2.0)))/dx;
 
-            _F(i, j) = _U(i,j) + _dt*(_nu*(d2ux+d2uy) - du2x - duvy + gx);
-            _G(i, j) = _V(i,j) + _dt*(_nu*(d2vx+d2vy) - duvx - dv2y + gy);
-        }
+    int i, j;
+
+    for (auto currentCell : grid.fluid_cells()) 
+    {
+        i = currentCell->i();
+        j = currentCell->j();
+        d2ux = (_U(i+1,j)-2*_U(i,j)+_U(i-1,j))/(dx*dx);
+        d2uy = (_U(i,j+1)-2*_U(i,j)+_U(i,j-1))/(dy*dy);
+        du2x = (((_U(i,j)+_U(i+1,j))/2.0)*((_U(i,j)+_U(i+1,j))/2.0) -((_U(i-1,j)+_U(i,j))/2.0)*((_U(i-1,j)+_U(i,j))/2.0))/dx;
+        duvy = (((((_U(i,j)+_U(i,j+1))/2.0))*((_V(i,j)+_V(i+1,j))/2.0)) - ((((_U(i,j-1)+_U(i,j))/2.0))*((_V(i,j-1)+_V(i+1,j-1))/2.0)))/dy;
+        d2vx = (_V(i+1,j)-2*_V(i,j)+_V(i-1,j))/(dx*dx);
+        d2vy = (_V(i,j+1)-2*_V(i,j)+_V(i,j-1))/(dy*dy);
+        dv2y = (((_V(i,j)+_V(i,j+1))/2.0)*((_V(i,j)+_V(i,j+1))/2.0) -((_V(i,j-1)+_V(i,j))/2.0)*((_V(i,j-1)+_V(i,j))/2.0))/dy;
+        duvx = (((((_U(i,j)+_U(i+1,j))/2.0))*((_V(i,j)+_V(i,j+1))/2.0)) - ((((_U(i-1,j)+_U(i,j))/2.0))*((_V(i-1,j)+_V(i-1,j+1))/2.0)))/dx;
+
+        _F(i, j) = _U(i,j) + _dt*(_nu*(d2ux+d2uy) - du2x - duvy + gx);
+        _G(i, j) = _V(i,j) + _dt*(_nu*(d2vx+d2vy) - duvx - dv2y + gy);
     }
     
 }
@@ -53,18 +56,57 @@ void Fields::calculate_rs(Grid &grid)
 {
     double dx = grid.dx();
     double dy = grid.dy();
-    for (int i = 1; i < grid.imax()+1; i++)
+    int i, j;
+    for (auto currentCell : grid.fluid_cells()) 
     {
-        for (int j = 1; j < grid.jmax()+1; j++)
-        {
-            _RS(i,j) = (((_F(i,j)-_F(i-1,j))/dx)+((_G(i,j)-_G(i,j-1))/dy))/_dt;
-        }
+        i = currentCell->i();
+        j = currentCell->j();
+        _RS(i,j) = (((_F(i,j)-_F(i-1,j))/dx)+((_G(i,j)-_G(i,j-1))/dy))/_dt;
     }
 }
 
-void Fields::calculate_velocities(Grid &grid) {std::cout << "Calculate Velocities called" << std::endl;}
+void Fields::calculate_velocities(Grid &grid) 
+{
+    double dx = grid.dx();
+    double dy = grid.dy();
+    int i, j;
+    for (auto currentCell : grid.fluid_cells()) 
+    {
+        i = currentCell->i();
+        j = currentCell->j();
+        _U(i,j) = _F(i,j) - (_dt/dx)*(_P(i+1,j)-_P(i,j));
+        _V(i,j) = _G(i,j) - (_dt/dy)*(_P(i,j+1)-_P(i,j));
+    }
 
-double Fields::calculate_dt(Grid &grid) { std::cout << "time step calculated" << std::endl; return _dt; }
+}
+
+double Fields::calculate_dt(Grid &grid) { 
+    double dt1, dt2, dt3;
+    double dx = grid.dx();
+    double dy = grid.dy();
+    double umax = 0.001;
+    double vmax = 0.001;
+    int i, j;
+
+    for (auto currentCell: grid.fluid_cells())
+    {
+        i = currentCell->i();
+        j = currentCell->j();
+        if (umax < std::abs(_U(i,j)))
+        {
+            umax = std::abs(_U(i,j));
+        }
+        if (vmax < std::abs(_V(i,j)))
+        {
+            vmax = std::abs(_V(i,j));
+        }
+    }
+
+    dt1 = 0.5*(dx*dx*dx*dx)/((dx*dx + dy*dy)*_nu);
+    dt2 = dx/umax;
+    dt3 = dy/vmax;
+    return std::min({dt1, dt2, dt3}); 
+}
 
 double &Fields::p(int i, int j) { return _P(i, j); }
 double &Fields::u(int i, int j) { return _U(i, j); }
