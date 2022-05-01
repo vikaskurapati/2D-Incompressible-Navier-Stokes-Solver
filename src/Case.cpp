@@ -157,10 +157,10 @@ void Case::set_file_names(std::string file_name) {
 /**
  * This function is the main simulation loop. In the simulation loop, following steps are required
  * - Calculate and apply boundary conditions for all the boundaries in _boundaries container
- *   using apply() member function of Boundary class
- * - Calculate fluxes (F and G) using calculate_fluxes() member function of Fields class.
+ *   using apply() member function of Boundary class -> done
+ * - Calculate fluxes (F and G) using calculate_fluxes() member function of Fields class. -> Hope Surya done it correctly
  *   Flux consists of diffusion and convection part, which are located in Discretization class
- * - Calculate right-hand-side of PPE using calculate_rs() member function of Fields class
+ * - Calculate right-hand-side of PPE using calculate_rs() member function of Fields class  -> Hope Surya done it correctly
  * - Iterate the pressure poisson equation until the residual becomes smaller than the desired tolerance
  *   or the maximum number of the iterations are performed using solve() member function of PressureSolver class
  * - Calculate the velocities u and v using calculate_velocities() member function of Fields class
@@ -201,7 +201,6 @@ void Case::simulate() {
         dt = _field.calculate_dt(_grid);
         timestep+=1;
         Case::output_vtk(timestep, 1);
-        break;
     }
 }
 
