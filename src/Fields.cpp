@@ -102,10 +102,11 @@ double Fields::calculate_dt(Grid &grid) {
         }
     }
 
-    dt1 = 0.5*(dx*dx*dx*dx)/((dx*dx + dy*dy)*_nu);
+    dt1 = 0.5*(dx*dx*dy*dy)/((dx*dx + dy*dy)*_nu);
     dt2 = dx/umax;
     dt3 = dy/vmax;
-    return std::min({dt1, dt2, dt3}); 
+    _dt = _tau*std::min({dt1, dt2, dt3});
+    return _dt; 
 }
 
 double &Fields::p(int i, int j) { return _P(i, j); }
