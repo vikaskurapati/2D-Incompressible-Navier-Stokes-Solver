@@ -7,6 +7,7 @@
 #include <iostream>
 #include <map>
 #include <vector>
+#include <typeinfo>
 
 namespace filesystem = std::filesystem;
 
@@ -156,14 +157,14 @@ void Case::set_file_names(std::string file_name) {
 /**
  * This function is the main simulation loop. In the simulation loop, following steps are required
  * - Calculate and apply boundary conditions for all the boundaries in _boundaries container
- *   using apply() member function of Boundary class
- * - Calculate fluxes (F and G) using calculate_fluxes() member function of Fields class.
+ *   using apply() member function of Boundary class -> done
+ * - Calculate fluxes (F and G) using calculate_fluxes() member function of Fields class. -> Hope Surya done it correctly
  *   Flux consists of diffusion and convection part, which are located in Discretization class
- * - Calculate right-hand-side of PPE using calculate_rs() member function of Fields class
+ * - Calculate right-hand-side of PPE using calculate_rs() member function of Fields class  -> Hope Surya done it correctly
  * - Iterate the pressure poisson equation until the residual becomes smaller than the desired tolerance
  *   or the maximum number of the iterations are performed using solve() member function of PressureSolver class
  * - Calculate the velocities u and v using calculate_velocities() member function of Fields class
- * - Calculat the maximal timestep size for the next iteration using calculate_dt() member function of Fields class
+ * - Calculate the maximal timestep size for the next iteration using calculate_dt() member function of Fields class
  * - Write vtk files using output_vtk() function
  *
  * Please note that some classes such as PressureSolver, Boundary are abstract classes which means they only provide the
@@ -178,7 +179,45 @@ void Case::simulate() {
     double dt = _field.dt();
     int timestep = 0;
     double output_counter = 0.0;
+    double t_end = _t_end;
+    double err = 100;
+    int iter_count = 0;
+    //starting simulation
+    while (t < t_end)
+    {
+        dt = _field.calculate_dt(_grid);
+        for (int i=0; i < _boundaries.size(); i++)
+        {
+            _boundaries[i]->apply(_field);
+        }
+
+        _field.calculate_fluxes(_grid);
+
+        // for (auto currentCell : _grid.fluid_cells())
+        // {
+        //     int i = currentCell->i();
+        //     int j = currentCell->j();
+
+        //     std::cout << _field.f(i,j) << std::endl;
+        //     std::cout << _field.g(i,j) << std::endl;
+        // }
+        
+        _field.calculate_rs(_grid);
+        while(err > _tolerance && iter_count < _max_iter)
+        {
+            err = _pressure_solver->solve(_field, _grid, _boundaries);
+            iter_count += 1;
+        }
+        _field.calculate_velocities(_grid);
+
+        // std::cout << _field.p(25,25) << std::endl;
+
+        t += dt;
+        timestep+=1;
+        Case::output_vtk(timestep, 1);
+    }
 }
+
 
 void Case::output_vtk(int timestep, int my_rank) {
     // Create a new structured grid
