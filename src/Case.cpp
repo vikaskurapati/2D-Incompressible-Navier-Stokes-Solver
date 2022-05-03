@@ -185,11 +185,11 @@ void Case::simulate() {
     //starting simulation
     while (t < t_end)
     {
+        dt = _field.calculate_dt(_grid);
         for (int i=0; i < _boundaries.size(); i++)
         {
             _boundaries[i]->apply(_field);
         }
-
 
         _field.calculate_fluxes(_grid);
 
@@ -213,7 +213,6 @@ void Case::simulate() {
         // std::cout << _field.p(25,25) << std::endl;
 
         t += dt;
-        dt = _field.calculate_dt(_grid);
         timestep+=1;
         Case::output_vtk(timestep, 1);
     }
