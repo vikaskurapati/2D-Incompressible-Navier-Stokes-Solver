@@ -189,8 +189,8 @@ void Case::simulate() {
     double output_counter = 0.0;
     double t_end = _t_end;
     double err = 100;
-    int iter_count = 0;
     //starting simulation
+    int iter_count = 0;
     while (t < t_end)
     {
         dt = _field.calculate_dt(_grid);
@@ -200,26 +200,15 @@ void Case::simulate() {
         }
 
         _field.calculate_fluxes(_grid);
-
-        // for (auto currentCell : _grid.fluid_cells())
-        // {
-        //     int i = currentCell->i();
-        //     int j = currentCell->j();
-
-        //     std::cout << _field.f(i,j) << std::endl;
-        //     std::cout << _field.g(i,j) << std::endl;
-        // }
-        
         _field.calculate_rs(_grid);
         while(err > _tolerance && iter_count < _max_iter)
         {
             err = _pressure_solver->solve(_field, _grid, _boundaries);
             iter_count += 1;
         }
+        err = 100;
+        iter_count = 0;
         _field.calculate_velocities(_grid);
-
-        // std::cout << _field.p(25,25) << std::endl;
-
         t += dt;
         timestep+=1;
         Case::output_vtk(timestep, 1);
