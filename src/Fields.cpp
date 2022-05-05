@@ -17,19 +17,8 @@ Fields::Fields(double nu, double dt, double tau, int imax, int jmax, double UI, 
 
 void Fields::calculate_fluxes(Grid &grid)
 {
-    double d2ux = 0.0;
-    double d2uy = 0.0;
-    double du2x = 0.0;
-    double duvy = 0.0;
     double gx = 0.0;
     double gy = 0.0;
-    double d2vx = 0.0;
-    double d2vy = 0.0;
-    double duvx = 0.0;
-    double dv2y = 0.0;
-
-    double dx = grid.dx();
-    double dy = grid.dy();
 
     int i, j;
 
@@ -37,17 +26,9 @@ void Fields::calculate_fluxes(Grid &grid)
     {
         i = currentCell->i();
         j = currentCell->j();
-        d2ux = (_U(i+1,j)-2*_U(i,j)+_U(i-1,j))/(dx*dx);
-        d2uy = (_U(i,j+1)-2*_U(i,j)+_U(i,j-1))/(dy*dy);
-        du2x = (((_U(i,j)+_U(i+1,j))/2.0)*((_U(i,j)+_U(i+1,j))/2.0) -((_U(i-1,j)+_U(i,j))/2.0)*((_U(i-1,j)+_U(i,j))/2.0))/dx;
-        duvy = (((((_U(i,j)+_U(i,j+1))/2.0))*((_V(i,j)+_V(i+1,j))/2.0)) - ((((_U(i,j-1)+_U(i,j))/2.0))*((_V(i,j-1)+_V(i+1,j-1))/2.0)))/dy;
-        d2vx = (_V(i+1,j)-2*_V(i,j)+_V(i-1,j))/(dx*dx);
-        d2vy = (_V(i,j+1)-2*_V(i,j)+_V(i,j-1))/(dy*dy);
-        dv2y = (((_V(i,j)+_V(i,j+1))/2.0)*((_V(i,j)+_V(i,j+1))/2.0) -((_V(i,j-1)+_V(i,j))/2.0)*((_V(i,j-1)+_V(i,j))/2.0))/dy;
-        duvx = (((((_U(i,j)+_U(i+1,j))/2.0))*((_V(i,j)+_V(i,j+1))/2.0)) - ((((_U(i-1,j)+_U(i,j))/2.0))*((_V(i-1,j)+_V(i-1,j+1))/2.0)))/dx;
-
-        _F(i, j) = _U(i,j) + _dt*(_nu*(d2ux+d2uy) - du2x - duvy + gx);
-        _G(i, j) = _V(i,j) + _dt*(_nu*(d2vx+d2vy) - duvx - dv2y + gy);
+        
+        _F(i, j) = _U(i,j) + _dt*(_nu*(Discretization::laplacian(_U,i,j)) - Discretization::convection_u(_U,_V,i,j) + gx);
+        _G(i, j) = _V(i,j) + _dt*(_nu*(Discretization::laplacian(_V,i,j)) - Discretization::convection_v(_U,_V,i,j) + gy);
     }
     
 }
