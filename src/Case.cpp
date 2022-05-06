@@ -182,7 +182,7 @@ void Case::set_file_names(std::string file_name) {
  *
  * For information about the classes and functions, you can check the header files.
  */
-void Case::simulate() {
+void Case::simulate(int my_rank) {
 
     double t = 0.0;
     double dt = _field.dt();
@@ -216,7 +216,7 @@ void Case::simulate() {
         std::cout<<std::setprecision(4)<<std::fixed;
         if(t-output_counter*_output_freq>=0)
         {
-            Case::output_vtk(timestep, 1);
+            Case::output_vtk(timestep, my_rank);
             std::cout<<"Time Step: "<<timestep<<" Residue: "<<err<<" PPE Iterations: "<<iter_count<<std::endl;
             output_counter+=1;
         }

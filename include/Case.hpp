@@ -36,7 +36,7 @@ class Case {
      * Calculates velocities
      * Outputs the solution files
      */
-    void simulate();
+    void simulate(int my_rank=1);
 
   private:
     /// Plain case name without paths
