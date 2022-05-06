@@ -218,7 +218,8 @@ void Case::simulate() {
         timestep+=1;
         Case::output_vtk(timestep, 1);
         std::cout<<std::setprecision(4)<<std::fixed;
-        std::cout<<"Time Step: "<<t<<" Residue: "<<err<<" PPE Iterations: "<<iter_count<<std::endl;
+        if(timestep%10==0)
+            std::cout<<"Time Step: "<<timestep<<" Residue: "<<err<<" PPE Iterations: "<<iter_count<<std::endl;
     }
 }
 
