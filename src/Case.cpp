@@ -2,14 +2,26 @@
 #include "Enums.hpp"
 
 #include <algorithm>
+#ifdef GCC_VERSION_9_OR_HIGHER
 #include <filesystem>
+#else
+#include <experimental/filesystem>
+#endif
 #include <fstream>
 #include <iostream>
 #include <map>
 #include <vector>
 #include <typeinfo>
+<<<<<<< HEAD
 #include <iomanip>
+=======
+
+#ifdef GCC_VERSION_9_OR_HIGHER
+>>>>>>> 86cc2e8f0464f538db98f36d9ce334a3ce9b29f0
 namespace filesystem = std::filesystem;
+#else
+namespace filesystem = std::experimental::filesystem;
+#endif
 
 #include <vtkCellData.h>
 #include <vtkDoubleArray.h>
@@ -82,8 +94,8 @@ Case::Case(std::string file_name, int argn, char **args) {
 
     // Build up the domain
     Domain domain;
-    domain.dx = xlength / (double)imax;
-    domain.dy = ylength / (double)jmax;
+    domain.dx = xlength / static_cast<double>(imax);
+    domain.dy = ylength / static_cast<double>(jmax);
     domain.domain_size_x = imax;
     domain.domain_size_y = jmax;
 
@@ -181,9 +193,8 @@ void Case::simulate() {
     double output_counter = 0.0;
     double t_end = _t_end;
     double err = 100;
-    int iter_count = 0;
     //starting simulation
-    std::cout<<"Starting Simulation!!\n";
+    int iter_count = 0;
     while (t < t_end)
     {
         err=100.0;
@@ -195,16 +206,6 @@ void Case::simulate() {
         }
 
         _field.calculate_fluxes(_grid);
-
-        // for (auto currentCell : _grid.fluid_cells())
-        // {
-        //     int i = currentCell->i();
-        //     int j = currentCell->j();
-
-        //     std::cout << _field.f(i,j) << std::endl;
-        //     std::cout << _field.g(i,j) << std::endl;
-        // }
-        
         _field.calculate_rs(_grid);
         while(err > _tolerance && iter_count < _max_iter)
         {
@@ -212,8 +213,6 @@ void Case::simulate() {
             iter_count += 1;
         }
         _field.calculate_velocities(_grid);
-
-        // std::cout << _field.p(25,25) << std::endl;
         t += dt;
         timestep+=1;
         Case::output_vtk(timestep, 1);

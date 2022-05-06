@@ -30,7 +30,20 @@ void Fields::calculate_fluxes(Grid &grid)
         _F(i, j) = _U(i,j) + _dt*(_nu*(Discretization::laplacian(_U,i,j)) - Discretization::convection_u(_U,_V,i,j) + gx);
         _G(i, j) = _V(i,j) + _dt*(_nu*(Discretization::laplacian(_V,i,j)) - Discretization::convection_v(_U,_V,i,j) + gy);
     }
-    
+
+    int imax = grid.imax();
+    int jmax = grid.jmax();
+
+    for (j=1; j<jmax+1; j++)
+    {
+        _F(0,j) = _U(0,j);
+        _F(imax, j) = _U(imax, j);
+    }
+    for (i=1; i<imax+1; i++)
+    {
+        _G(i,0) = _V(i,0);
+        _G(i, jmax) = _V(i, jmax);
+    }
 }
 
 void Fields::calculate_rs(Grid &grid) 
