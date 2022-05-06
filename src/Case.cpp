@@ -187,11 +187,12 @@ void Case::simulate() {
     double t = 0.0;
     double dt = _field.dt();
     int timestep = 0;
-    double output_counter = 0.0;
+    int output_counter = 1;
     double t_end = _t_end;
     double err = 100;
     //starting simulation
     int iter_count = 0;
+
     while (t < t_end)
     {
         err=100.0;
@@ -212,10 +213,13 @@ void Case::simulate() {
         _field.calculate_velocities(_grid);
         t += dt;
         timestep+=1;
-        Case::output_vtk(timestep, 1);
         std::cout<<std::setprecision(4)<<std::fixed;
-        if(timestep%100==0)
+        if(t-output_counter*_output_freq>=0)
+        {
+            Case::output_vtk(timestep, 1);
             std::cout<<"Time Step: "<<timestep<<" Residue: "<<err<<" PPE Iterations: "<<iter_count<<std::endl;
+            output_counter+=1;
+        }
     }
 }
 
