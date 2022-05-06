@@ -33,20 +33,20 @@ class Fields {
      *
      * @param[in] grid in which the fluxes are calculated
      * 
-     * $F(i, j) = U(i,j) + dt*(nu*(laplacian(U,i,j)) - convection_u(U,V,i,j) + gx)$
-     * $G(i, j) = V(i,j) + dt*(nu*(laplacian(V,i,j)) - convection_v(U,V,i,j) + gy)$
+     * $F_(i, j) = U_(i,j) + dt*(\nu*(\nabla(U,i,j)) - convection_u + g_x)$
+     * $G_(i, j) = V_(i,j) + dt*(\nu*(\nabla(V,i,j)) - convection_v + g_y)$
      * 
      * Where convection_u and convection_v are defined in Discretization
      * 
-     * $convection_u = du2/dx + duv/dy$
-     * $convection_v = duv/dx + dv2/dy$
+     * $convection_u = \fraction{\partial u^2}{\partial x} + \fraction{\partial uv}{\partial y}$
+     * $convection_v = \fraction{\partial uv}{\partial x} + \fraction{\partial v^2}{\partial y}$
      * 
      * Also, boundary conditions for fluxes were also updated
      * 
-     * $F(0,j) = U(0,j)$
-     * $F(imax, j) = U(imax, j)$
-     * $G(i,0) = V(i,0)$
-     * $G(i, jmax) = V(i, jmax)$
+     * $F_(0,j) = U_(0,j) for j = 1...j_max$
+     * $F_(imax, j) = U_(imax, j) for j = 1...j_max$
+     * $G_(i,0) = V_(i,0) for i = 1...i_max$
+     * $G_(i, jmax) = V_(i, jmax) for i = 1...i_max$
      * 
      * Refer Equations 9, 10 and 17 in Worksheet
      *
@@ -59,7 +59,7 @@ class Fields {
      *
      * @param[in] grid in which the calculations are done
      * 
-     * $_RS(i,j) = (((_F(i,j)-_F(i-1,j))/dx)+((_G(i,j)-_G(i,j-1))/dy))/_dt$
+     * $RS_(i,j) = (((F_(i,j)-F_(i-1,j))/dx)+((G_(i,j)-G_(i,j-1))/dy))/dt$
      *
      */
     void calculate_rs(Grid &grid);
@@ -68,6 +68,9 @@ class Fields {
      * @brief Velocity calculation using pressure values
      *
      * @param[in] grid in which the calculations are done
+     * 
+     * $U_(i,j) = F_(i,j) - (dt/dx)*(P_(i+1,j)-P_(i,j))$
+     * $V_(i,j) = G_(i,j) - (dt/dy)*(P_(i,j+1)-P_(i,j))$
      *
      */
     void calculate_velocities(Grid &grid);
