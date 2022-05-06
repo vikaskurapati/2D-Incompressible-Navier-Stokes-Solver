@@ -24,8 +24,6 @@ void FixedWallBoundary::apply(Fields &field) {
             field.p(i,j) = field.p(i-1,j);
         }
         else if(cell->is_border(border_position::TOP)){
-            //std::cout<<"Bottom ghost Cell Found!\n";
-            //std::cout<<"Bottom ghost Cell Indices: "<<i<<"&"<<j<<"\n";
             field.u(i,j) = -field.u(i,j+1);
             field.v(i,j) = 0;
             field.p(i,j) = field.p(i,j+1);

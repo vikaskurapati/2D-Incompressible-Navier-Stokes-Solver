@@ -12,12 +12,9 @@
 #include <map>
 #include <vector>
 #include <typeinfo>
-<<<<<<< HEAD
 #include <iomanip>
-=======
 
 #ifdef GCC_VERSION_9_OR_HIGHER
->>>>>>> 86cc2e8f0464f538db98f36d9ce334a3ce9b29f0
 namespace filesystem = std::filesystem;
 #else
 namespace filesystem = std::experimental::filesystem;
@@ -217,7 +214,7 @@ void Case::simulate() {
         timestep+=1;
         Case::output_vtk(timestep, 1);
         std::cout<<std::setprecision(4)<<std::fixed;
-        if(timestep%10==0)
+        if(timestep%100==0)
             std::cout<<"Time Step: "<<timestep<<" Residue: "<<err<<" PPE Iterations: "<<iter_count<<std::endl;
     }
 }
