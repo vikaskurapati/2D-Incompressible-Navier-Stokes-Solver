@@ -12,23 +12,33 @@ Discretization::Discretization(double dx, double dy, double gamma) {
     _gamma = gamma;
 }
 
+
 double Discretization::convection_u(const Matrix<double> &U, const Matrix<double> &V, int i, int j) 
 {
-    double du2x = 0.0;
-    double duvy = 0.0;
-    du2x = (((U(i,j)+U(i+1,j))/2.0)*((U(i,j)+U(i+1,j))/2.0) -((U(i-1,j)+U(i,j))/2.0)*((U(i-1,j)+U(i,j))/2.0))/_dx;
-    duvy = (((((U(i,j)+U(i,j+1))/2.0))*((V(i,j)+V(i+1,j))/2.0)) - ((((U(i,j-1)+U(i,j))/2.0))*((V(i,j-1)+V(i+1,j-1))/2.0)))/_dy;
-    return du2x+duvy;
+    double du2dx = 0.0;
+    double duvdy = 0.0;
+
+    du2dx = (0.25/_dx)*((U(i,j)+U(i+1,j))*(U(i,j)+U(i+1,j)) - (U(i-1,j)+U(i,j))*(U(i-1,j)+U(i,j)));
+    du2dx = du2dx + (0.25*_gamma/_dx)*(abs(U(i,j)+U(i+1,j))*(U(i,j)+U(i+1,j)) - abs(U(i-1,j)+U(i,j))*(U(i-1,j)+U(i,j)));
+
+    duvdy = (0.25/_dy)*((V(i,j)+V(i+1,j))*(U(i,j)+U(i,j+1)) - (V(i,j-1)+V(i+1,j-1))*(U(i,j-1)+U(i,j)));
+    duvdy = duvdy + (0.25*_gamma/_dy)*(abs(V(i,j)+V(i+1,j))*(U(i,j)-U(i,j+1)) - abs(V(i,j-1)+V(i+1,j-1))*(U(i,j-1)-U(i,j)));
+
+    return du2dx + duvdy;
 }
 
 double Discretization::convection_v(const Matrix<double> &U, const Matrix<double> &V, int i, int j) 
 {
-    double duvx = 0.0;
-    double dv2y = 0.0;
+    double duvdx = 0.0;
+    double dv2dy = 0.0;
 
-    dv2y = (((V(i,j)+V(i,j+1))/2.0)*((V(i,j)+V(i,j+1))/2.0) -((V(i,j-1)+V(i,j))/2.0)*((V(i,j-1)+V(i,j))/2.0))/_dy;
-    duvx = (((((U(i,j)+U(i+1,j))/2.0))*((V(i,j)+V(i,j+1))/2.0)) - ((((U(i-1,j)+U(i,j))/2.0))*((V(i-1,j)+V(i-1,j+1))/2.0)))/_dx;
-    return dv2y+duvx;
+    duvdx = (0.25/_dx)*((U(i,j)+U(i,j+1))*(V(i,j)+V(i+1,j)) - ((U(i-1,j)+U(i-1,j+1))*(V(i-1,j)+V(i,j))));
+    duvdx = duvdx + (0.25*_gamma/_dx)*(abs(U(i,j)+U(i,j+1))*(V(i,j)-V(i+1,j)) - (abs(U(i-1,j)+U(i-1,j+1))*(V(i-1,j)-V(i,j))));
+
+    dv2dy = (0.25/_dy)*((V(i,j)+V(i,j+1))*(V(i,j)+V(i,j+1)) - (V(i,j-1)+V(i,j))*(V(i,j-1)+V(i,j)));
+    dv2dy = dv2dy + (0.25*_gamma/_dy)*(abs(V(i,j)+V(i,j+1))*(V(i,j)-V(i,j+1)) - abs(V(i,j-1)+V(i,j))*(V(i,j-1)-V(i,j)));
+
+    return duvdx + dv2dy;
 }
 
 //double Discretization::diffusion(const Matrix<double> &A, int i, int j) {}
