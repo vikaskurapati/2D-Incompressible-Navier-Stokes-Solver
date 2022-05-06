@@ -8,7 +8,7 @@
 #include <map>
 #include <vector>
 #include <typeinfo>
-
+#include <iomanip>
 namespace filesystem = std::filesystem;
 
 #include <vtkCellData.h>
@@ -183,8 +183,11 @@ void Case::simulate() {
     double err = 100;
     int iter_count = 0;
     //starting simulation
+    std::cout<<"Starting Simulation!!\n";
     while (t < t_end)
     {
+        err=100.0;
+        iter_count = 0;
         dt = _field.calculate_dt(_grid);
         for (int i=0; i < _boundaries.size(); i++)
         {
@@ -211,10 +214,11 @@ void Case::simulate() {
         _field.calculate_velocities(_grid);
 
         // std::cout << _field.p(25,25) << std::endl;
-
         t += dt;
         timestep+=1;
         Case::output_vtk(timestep, 1);
+        std::cout<<std::setprecision(4)<<std::fixed;
+        std::cout<<"Time Step: "<<t<<" Residue: "<<err<<" PPE Iterations: "<<iter_count<<std::endl;
     }
 }
 
