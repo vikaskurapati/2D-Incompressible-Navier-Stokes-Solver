@@ -17,9 +17,6 @@ Fields::Fields(double nu, double dt, double tau, int imax, int jmax, double UI, 
 
 void Fields::calculate_fluxes(Grid &grid)
 {
-    double gx = 0.0;
-    double gy = 0.0;
-
     int i, j;
 
     for (auto currentCell : grid.fluid_cells()) 
@@ -27,8 +24,8 @@ void Fields::calculate_fluxes(Grid &grid)
         i = currentCell->i();
         j = currentCell->j();
         
-        _F(i, j) = _U(i,j) + _dt*(_nu*(Discretization::laplacian(_U,i,j)) - Discretization::convection_u(_U,_V,i,j) + gx);
-        _G(i, j) = _V(i,j) + _dt*(_nu*(Discretization::laplacian(_V,i,j)) - Discretization::convection_v(_U,_V,i,j) + gy);
+        _F(i, j) = _U(i,j) + _dt*(_nu*(Discretization::laplacian(_U,i,j)) - Discretization::convection_u(_U,_V,i,j) + _gx);
+        _G(i, j) = _V(i,j) + _dt*(_nu*(Discretization::laplacian(_V,i,j)) - Discretization::convection_v(_U,_V,i,j) + _gy);
     }
 
     int imax = grid.imax();
