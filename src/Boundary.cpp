@@ -10,24 +10,33 @@ FixedWallBoundary::FixedWallBoundary(std::vector<Cell *> cells, std::map<int, do
 void FixedWallBoundary::apply(Fields &field) {
 
     unsigned int i,j;
-
+    int imax = field.p_matrix().imax();
+    int jmax = field.p_matrix().jmax();
+    //std::cout<<"Fixed Boundary Wall Conditions\n";
     for(auto& cell : _cells){
         i = cell->i();
         j = cell->j();
+        
 
         if(cell->is_border(border_position::RIGHT)){
+            //std::cout<<"Left ghost Cell Indices: "<<i<<"&"<<j<<"\n";
+            
             field.u(i,j) = 0.0;
-            field.v(i,j) = - field.v(i+1,j);
+            field.v(i,j) = -field.v(i+1,j);
             field.p(i,j) = field.p(i+1,j);
             field.f(i,j) = field.u(i,j);
         }
-        if(cell->is_border(border_position::LEFT)){
+        else if(cell->is_border(border_position::LEFT)){
+            //std::cout<<"Right ghost Cell Found!\n";
+            //std::cout<<"Right ghost Cell Indices: "<<i<<"&"<<j<<"\n";
             field.u(i-1,j) = 0.0;
-            field.v(i,j) = - field.v(i-1,j);
+            field.v(i,j) = -field.v(i-1,j);
             field.p(i,j) = field.p(i-1,j);
-            field.f(i-1,j) = 0.0;
+            field.f(i-1,j) = field.u(i-1,j);
         }
-        if(cell->is_border(border_position::TOP)){
+        else if(cell->is_border(border_position::TOP)){
+            //std::cout<<"Bottom ghost Cell Found!\n";
+            //std::cout<<"Bottom ghost Cell Indices: "<<i<<"&"<<j<<"\n";
             field.u(i,j) = -field.u(i,j+1);
             field.v(i,j) = 0.0;
             field.p(i,j) = field.p(i,j+1);
@@ -36,6 +45,13 @@ void FixedWallBoundary::apply(Fields &field) {
 
         //std:: cout << cell->is_border(border_position::BOTTOM) << " ";
     }
+    field.u(0,0) = -field.u(0,1);
+    field.v(0,0) = 0.0;
+    field.f(0,0) = field.u(0,0);
+    field.g(0,0) = field.v(0,0);
+
+    field.v(imax-1,0) = 0.0;
+    field.g(imax-1,0) = field.v(imax-1,0);
     // for (int j = 0; j < jmax; j++)
     // {
         
@@ -70,18 +86,22 @@ MovingWallBoundary::MovingWallBoundary(std::vector<Cell *> cells, std::map<int, 
 
 void MovingWallBoundary::apply(Fields &field) {
     unsigned int i,j;
-    //int jmax = field.p_matrix().jmax();
+    int jmax = field.p_matrix().jmax();
+    //std::cout<<"jmax:"<<jmax<<"\n";
     for(auto& cell : _cells){
         
+        i = cell->i();
+        j = cell->j();
         if(cell->is_border(border_position::BOTTOM)){
-            i = cell->i();
-            j = cell->j();
+            //std::cout<<"Top ghost Cell Found!\n";
+            //std::cout<<"Top ghost Cell Indices: "<<i<<"&"<<j<<"\n";
             field.u(i,j) = 2.0 - field.u(i,j-1);
-            field.v(i,j) = 0.0;
+            field.v(i,j-1) = 0.0;
             field.p(i,j) = field.p(i,j-1);
-            field.g(i,j) = field.v(i,j);
+            field.g(i,j) = field.v(i,j-1);
         }
-            
+        //field.u(0,jmax-1) = 2.0 - field.u(0,jmax-2);
     }
+    field.u(0,jmax-1) = 2.0 - field.u(0,jmax-2);
     //std:: cout << std::endl;
 }
