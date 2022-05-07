@@ -4,13 +4,6 @@
 
 Fluidchen is a CFD Solver developed for the CFD Lab taught at TUM Informatics, Chair of Scientific Computing in Computer Science.
 
-After forking, use this `README.md` however you want: feel free to remove anything you don't need,
-or add any additional details we should know to run the code.
-
-## Working with fluidchen
-
-You will extend this code step-by-step starting from a pure framework to a parallel CFD solver. Please follow these [instructions for work with git and submitting the assignments](docs/first-steps.md).
-
 ## Software Requirements
 
 This code is known to work on all currently supported Ubuntu LTS versions (22.04, 20.04, 18.04).
@@ -32,8 +25,8 @@ sudo apt-get install build-essential cmake libvtk7-qt-dev openmpi-bin libopenmpi
 ## Building the code
 
 ```shell
-git clone https://gitlab.lrz.de/oguzziya/GroupX_CFDLab.git
-cd GroupX_CFDLab
+git clone https://gitlab.lrz.de/oguzziya/GroupE_CFDLab.git
+cd GroupE_CFDLab
 mkdir build && cd build
 cmake ..
 make
@@ -156,3 +149,26 @@ You might run into a problem where the VTK library is not found. To fix this, yo
 ### No rule to make target '/usr/lib/x86_64-linux-gnu/libdl.so'
 
 We are investigating an [issue](https://gitlab.lrz.de/tum-i05/public/fluidchen-skeleton/-/issues/3) that appears on specific systems and combinations of dependencies.
+
+## Sample Results
+
+<div align="center">
+  <img src="streamline1.png">
+  <figcaption>Streamlines originating from bottom left corner to top right corner for t=100 for conditions in worksheet</figcaption>
+</div>
+<div align="center">
+  <img src="tube1.png">
+  <figcaption>Tube visualisation of streamlines shown above</figcaption>
+</div>
+<div align="center">
+  <img src="streamline2.png">
+  <figcaption>Streamlines originating from bottom right corner to top left corner for t=100 for conditions in worksheet</figcaption>
+</div>
+<div align="center">
+  <img src="glyph.png">
+  <figcaption>Vector glyphs of velocities for t=100 for conditions in worksheet</figcaption>
+</div>
+
+The streamlines originate from the right regions and don't go out from the fixed surfaces as expected. The vector glyphs show some issues of interpolation
+with paraview for vector glyphs
+
