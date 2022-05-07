@@ -4,13 +4,6 @@
 
 Fluidchen is a CFD Solver developed for the CFD Lab taught at TUM Informatics, Chair of Scientific Computing in Computer Science.
 
-After forking, use this `README.md` however you want: feel free to remove anything you don't need,
-or add any additional details we should know to run the code.
-
-## Working with fluidchen
-
-You will extend this code step-by-step starting from a pure framework to a parallel CFD solver. Please follow these [instructions for work with git and submitting the assignments](docs/first-steps.md).
-
 ## Software Requirements
 
 This code is known to work on all currently supported Ubuntu LTS versions (22.04, 20.04, 18.04).
@@ -32,8 +25,8 @@ sudo apt-get install build-essential cmake libvtk7-qt-dev openmpi-bin libopenmpi
 ## Building the code
 
 ```shell
-git clone https://gitlab.lrz.de/oguzziya/GroupX_CFDLab.git
-cd GroupX_CFDLab
+git clone https://gitlab.lrz.de/oguzziya/GroupE_CFDLab.git
+cd GroupE_CFDLab
 mkdir build && cd build
 cmake ..
 make
