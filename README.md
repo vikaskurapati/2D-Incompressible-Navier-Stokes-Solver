@@ -149,3 +149,22 @@ You might run into a problem where the VTK library is not found. To fix this, yo
 ### No rule to make target '/usr/lib/x86_64-linux-gnu/libdl.so'
 
 We are investigating an [issue](https://gitlab.lrz.de/tum-i05/public/fluidchen-skeleton/-/issues/3) that appears on specific systems and combinations of dependencies.
+
+## Sample Results
+
+<div align="center">
+  <img width="466" height="492" src="streamline1.png">
+  <em>Streamlines originating from bottom left corner to top right corner for t=100 for conditions in worksheet</em>
+</div>
+<div align="center">
+  <img width="466" height="492" src="tube1.png">
+  <em>Tube visualisation of streamlines shown above</em>
+</div>
+<div align="center">
+  <img width="466" height="492" src="streamline2.png">
+  <em>Streamlines originating from bottom right corner to top left corner for t=100 for conditions in worksheet</em>
+</div>
+<div align="center">
+  <img width="466" height="492" src="glyph.png">
+  <em>vector glyphs of velocities for t=100 for conditions in worksheet</em>
+</div>
