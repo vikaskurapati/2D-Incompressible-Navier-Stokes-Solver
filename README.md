@@ -168,3 +168,7 @@ We are investigating an [issue](https://gitlab.lrz.de/tum-i05/public/fluidchen-s
   <img src="glyph.png">
   <figcaption>Vector glyphs of velocities for t=100 for conditions in worksheet</figcaption>
 </div>
+
+The streamlines originate from the right regions and don't go out from the fixed surfaces as expected. The vector glyphs show some issues of interpolation
+with paraview for vector glyphs
+
