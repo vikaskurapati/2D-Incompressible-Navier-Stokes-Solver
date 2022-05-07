@@ -49,7 +49,6 @@ Case::Case(std::string file_name, int argn, char **args) {
     double tau;     /* safety factor for time step*/
     int itermax;    /* max. number of iterations for pressure per time step */
     double eps;     /* accuracy bound for pressure*/
-
     if (file.is_open()) {
 
         std::string var;
@@ -81,6 +80,7 @@ Case::Case(std::string file_name, int argn, char **args) {
     }
     file.close();
 
+    _datfile_name = file_name;
     std::map<int, double> wall_vel;
     if (_geom_name.compare("NONE") == 0) {
         wall_vel.insert(std::pair<int, double>(LidDrivenCavity::moving_wall_id, LidDrivenCavity::wall_velocity));
@@ -105,7 +105,6 @@ Case::Case(std::string file_name, int argn, char **args) {
     _pressure_solver = std::make_unique<SOR>(omg);
     _max_iter = itermax;
     _tolerance = eps;
-
     // Construct boundaries
     if (not _grid.moving_wall_cells().empty()) {
         _boundaries.push_back(
@@ -193,6 +192,9 @@ void Case::simulate(int my_rank) {
     //starting simulation
     int iter_count = 0;
 
+    std::ofstream output = output_log(_datfile_name,my_rank);
+    output<<"\n\nIteration Log:\n";
+    std::cout<<"Simulation is Running!\nPlease Refer to \"Run Log "<<my_rank<<"\" in the build folder for Results!\n";
     while (t < t_end)
     {
         err=100.0;
@@ -213,14 +215,15 @@ void Case::simulate(int my_rank) {
         _field.calculate_velocities(_grid);
         t += dt;
         timestep+=1;
-        std::cout<<std::setprecision(4)<<std::fixed;
+        output<<std::setprecision(4)<<std::fixed;
         if(t-output_counter*_output_freq>=0)
         {
             Case::output_vtk(timestep, my_rank);
-            std::cout<<"Time Step: "<<timestep<<" Residue: "<<err<<" PPE Iterations: "<<iter_count<<std::endl;
+            output<<"Time Step: "<<timestep<<" Residue: "<<err<<" PPE Iterations: "<<iter_count<<std::endl;
             output_counter+=1;
         }
     }
+    output.close();
 }
 
 
@@ -311,4 +314,86 @@ void Case::build_domain(Domain &domain, int imax_domain, int jmax_domain) {
     domain.jmax = jmax_domain + 2;
     domain.size_x = imax_domain;
     domain.size_y = jmax_domain;
+}
+
+std::ofstream Case::output_log(std::string dat_file_name,int myrank){
+
+    const int MAX_LINE_LENGTH = 1024;
+    //Writing Simulation data to log file
+    double nu;      /* viscosity   */
+    double UI;      /* velocity x-direction */
+    double VI;      /* velocity y-direction */
+    double PI;      /* pressure */
+    double GX;      /* gravitation x-direction */
+    double GY;      /* gravitation y-direction */
+    double xlength; /* length of the domain x-dir.*/
+    double ylength; /* length of the domain y-dir.*/
+    //double dt;      /* time step */
+    int imax;       /* number of cells x-direction*/
+    int jmax;       /* number of cells y-direction*/
+    double gamma;   /* uppwind differencing factor*/
+    double omg;     /* relaxation factor */
+    double tau;     /* safety factor for time step*/
+    int itermax;    /* max. number of iterations for pressure per time step */
+    double eps;     /* accuracy bound for pressure*/
+    int dt;
+    std::ifstream file(dat_file_name);
+    
+    if (file.is_open()) {
+
+        std::string var;
+        while (!file.eof() && file.good()) {
+            file >> var;
+            if (var[0] == '#') { /* ignore comment line*/
+                file.ignore(MAX_LINE_LENGTH, '\n');
+            } else {
+                if (var == "xlength") file >> xlength;
+                if (var == "ylength") file >> ylength;
+                if (var == "nu") file >> nu;
+                if (var == "t_end") file >> _t_end;
+                if (var == "dt") file >> dt;
+                if (var == "omg") file >> omg;
+                if (var == "eps") file >> eps;
+                if (var == "tau") file >> tau;
+                if (var == "gamma") file >> gamma;
+                if (var == "dt_value") file >> _output_freq;
+                if (var == "UI") file >> UI;
+                if (var == "VI") file >> VI;
+                if (var == "GX") file >> GX;
+                if (var == "GY") file >> GY;
+                if (var == "PI") file >> PI;
+                if (var == "itermax") file >> itermax;
+                if (var == "imax") file >> imax;
+                if (var == "jmax") file >> jmax;
+            }
+        }
+    }
+    file.close();
+    
+    std::string str = "Run Log " + std::to_string(myrank);
+    std::stringstream stream;
+    //stream<<std::fixed<<std::setprecision(2)<<_pressure_solver->return_omega();
+    //str += stream.str();
+    std::ofstream output(str);
+    output<<"Dat File for : "<<dat_file_name<<"\n";
+    output<<"Simulation Parameters:\n";
+    output << "xlength : "<<xlength<<"\n";
+    output << "ylength : "<<ylength<<"\n";
+    output << "nu : "<<nu<<"\n";
+    output << "t_end : "<<_t_end<<"\n";
+    output << "dt : "<<dt<<"\n";
+    output << "omg : "<<omg<<"\n";
+    output << "eps : "<<eps<<"\n";
+    output << "tau : "<<tau<<"\n";
+    output << "gamma : "<<gamma<<"\n";
+    output << "dt_value : "<<_output_freq<<"\n";
+    output << "UI : "<<UI<<"\n";
+    output << "VI : "<<VI<<"\n";
+    output << "GX : "<<GX<<"\n";
+    output << "GY : "<<GY<<"\n";
+    output << "PI : "<<PI<<"\n";
+    output << "itermax : "<<itermax<<"\n";
+    output << "imax : "<<imax<<"\n";
+    output << "jmax : "<<jmax<<"\n";
+    return output;
 }
