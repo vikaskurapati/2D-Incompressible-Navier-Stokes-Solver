@@ -328,7 +328,7 @@ std::ofstream Case::output_log(std::string dat_file_name,int myrank){
     double GY;      /* gravitation y-direction */
     double xlength; /* length of the domain x-dir.*/
     double ylength; /* length of the domain y-dir.*/
-    //double dt;      /* time step */
+    double dt;      /* time step */
     int imax;       /* number of cells x-direction*/
     int jmax;       /* number of cells y-direction*/
     double gamma;   /* uppwind differencing factor*/
@@ -336,7 +336,6 @@ std::ofstream Case::output_log(std::string dat_file_name,int myrank){
     double tau;     /* safety factor for time step*/
     int itermax;    /* max. number of iterations for pressure per time step */
     double eps;     /* accuracy bound for pressure*/
-    int dt;
     std::ifstream file(dat_file_name);
     
     if (file.is_open()) {
