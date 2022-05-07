@@ -153,18 +153,18 @@ We are investigating an [issue](https://gitlab.lrz.de/tum-i05/public/fluidchen-s
 ## Sample Results
 
 <div align="center">
-  <img width="466" height="492" src="streamline1.png">
+  <img src="streamline1.png">
   <figcaption>{{ Streamlines originating from bottom left corner to top right corner for t=100 for conditions in worksheet }}</figcaption>
 </div>
 <div align="center">
-  <img width="466" height="492" src="tube1.png">
+  <img src="tube1.png">
   <figcaption>{{Tube visualisation of streamlines shown above}}</figcaption>
 </div>
 <div align="center">
-  <img width="466" height="492" src="streamline2.png">
+  <img src="streamline2.png">
   <figcaption>{{Streamlines originating from bottom right corner to top left corner for t=100 for conditions in worksheet}}</figcaption>
 </div>
 <div align="center">
-  <img width="466" height="492" src="glyph.png">
+  <img src="glyph.png">
   <figcaption>{{Vector glyphs of velocities for t=100 for conditions in worksheet}}</figcaption>
 </div>
