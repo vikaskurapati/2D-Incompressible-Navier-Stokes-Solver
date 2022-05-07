@@ -24,7 +24,7 @@ class Boundary {
 
 /**
  * @brief Fixed wall boundary condition for the outer boundaries of the domain.
- * Dirichlet for velocities, which is zero, Neumann for pressure
+ * Dirichlet for velocities, which is zero, Neumann for pressure with zero gradient
  */
 class FixedWallBoundary : public Boundary {
   public:
@@ -41,7 +41,7 @@ class FixedWallBoundary : public Boundary {
 /**
  * @brief Moving wall boundary condition for the outer boundaries of the domain.
  * Dirichlet for velocities for the given velocity parallel to the fluid,
- * Neumann for pressure
+ * Neumann for pressure with zero gradient
  */
 class MovingWallBoundary : public Boundary {
   public:

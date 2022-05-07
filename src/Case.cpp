@@ -186,7 +186,7 @@ void Case::simulate(int my_rank) {
     double t = 0.0;
     double dt = _field.dt();
     int timestep = 0;
-    int output_counter = 1;
+    int output_counter = 0;
     double t_end = _t_end;
     double err = 100;
     //starting simulation

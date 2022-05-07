@@ -37,6 +37,15 @@ class Discretization {
      * @param[in] x index
      * @param[in] y index
      * @param[out] result
+     * 
+     * $\fraction{\partial u^2}{\partial x} = 
+     * (0.25/dx)*((U_(i,j)+U_(i+1,j))*(U_(i,j)+U_(i+1,j)) - 
+     * (U_(i-1,j)+U_(i,j))*(U_(i-1,j)+U_(i,j)))+ (0.25*\gamma/dx)*(|U(i,j)+U(i+1,j)|*(U(i,j)+U(i+1,j)) - 
+     * |U(i-1,j)+U(i,j)|*(U(i-1,j)+U(i,j)))$
+
+     * $\fraction{\partial uv}{\partial y} = 
+     * (0.25/dy)*((V_(i,j)+V_(i+1,j))*(U_(i,j)+U_(i,j+1))-(V_(i,j-1)+V_(i+1,j-1))*(U_(i,j-1)+U_(i,j))) 
+     * + 0.25*\gamma/dy)*(|V(i,j)+V(i+1,j)|*(U(i,j)-U(i,j+1))-|V(i,j-1)+V(i+1,j-1)|*(U(i,j-1)-U(i,j)))$
      *
      */
     static double convection_u(const Matrix<double> &U, const Matrix<double> &V, int i, int j);
@@ -50,6 +59,13 @@ class Discretization {
      * @param[in] y index
      * @param[out] result
      *
+     * $\fraction{\partial uv}{\partial x} = 
+     * (0.25/dx)*((U_(i,j)+U_(i,j+1))*(V_(i,j)+V_(i+1,j))-((U_(i-1,j)+U_(i-1,j+1))*(V_(i-1,j)+V_(i,j))))
+     * + (0.25*\gamma/dx)*(|U(i,j)+U(i,j+1)|*(V(i,j)-V(i+1,j))-(|U(i-1,j)+U(i-1,j+1)|*(V(i-1,j)-V(i,j))))$
+
+     * $\fraction{\partial v^2}{\partial y} = 
+     * (0.25/dy)*((V_(i,j)+V_(i,j+1))*(V_(i,j)+V_(i,j+1)) - (V_(i,j-1)+V_(i,j))*(V_(i,j-1)+V_(i,j)))
+     * + (0.25*\gamma/dy)*(|V(i,j)+V(i,j+1)|*(V(i,j)-V(i,j+1))-|V(i,j-1)+V(i,j)|*(V(i,j-1)-V(i,j)))$
      */
     static double convection_v(const Matrix<double> &U, const Matrix<double> &V, int i, int j);
 
