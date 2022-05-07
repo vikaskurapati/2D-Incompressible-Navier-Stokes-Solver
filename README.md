@@ -63,7 +63,8 @@ A good idea would be that you setup your computers as runners for [GitLab CI](ht
 
 ## Running
 
-In order to run **Fluidchen**, the case file should be given as input parameter. Some default case files are located in the `example_cases` directory. Navigate to the `build/` directory and run:
+In order to run **Fluidchen**, the case file should be given as input parameter.
+Some default case files are located in the `example_cases` directory. Navigate to the `build/` directory and run:
 
 ```shell
 ./fluidchen ../example_cases/LidDrivenCavity/LidDrivenCavity.dat
@@ -72,6 +73,15 @@ In order to run **Fluidchen**, the case file should be given as input parameter.
 This will run the case file and create the output folder `../example_cases/LidDrivenCavity/LidDrivenCavity_Output`, which holds the `.vtk` files of the solution.
 
 If the input file does not contain a geometry file (added later in the course), fluidchen will run the lid-driven cavity case with the given parameters.
+
+Additionally, by specifying an integer parameter after the file path, one can create a seperate group of VTK files.
+This way multiple simulations can be stored in the output folder for multiple such integer parameters.
+These multiple simulations are stored as multiple groups that can be later opened in paraview.
+eg. The following creates a 2nd group of VTK files with changed parameters in the dat file (if the user has changed any). 
+```shell
+./fluidchen ../example_cases/LidDrivenCavity/LidDrivenCavity.dat 2
+```
+All the input parameters of the simulations and convergence results are stored in a log file in the build directory with the name "Run Log" followed by the integer parameter. For instance after running the above shell command, a log file with the name "Run Log 2" is created in the build directory.
 
 ## Special systems
 
