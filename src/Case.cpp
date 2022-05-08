@@ -194,7 +194,7 @@ void Case::simulate(int my_rank) {
 
     std::ofstream output = output_log(_datfile_name,my_rank);
     output<<"\n\nIteration Log:\n";
-    std::cout<<"Simulation is Running!\nPlease Refer to \"Run Log "<<my_rank<<"\" in the build folder for Results!\n";
+    std::cout<<"Simulation is Running!\nPlease Refer to \"Lid_Driven_Cavity_Run_Log_"<<my_rank<<"\" in"<<" ../example_cases/LidDrivenCavity/"<<" for Simulation Results!\n";
     while (t < t_end)
     {
         err=100.0;
@@ -223,6 +223,7 @@ void Case::simulate(int my_rank) {
             output_counter+=1;
         }
     }
+    std::cout<<"Simulation has ended\n";
     output.close();
 }
 
@@ -368,8 +369,8 @@ std::ofstream Case::output_log(std::string dat_file_name,int myrank){
         }
     }
     file.close();
-    
-    std::string str = "Run Log " + std::to_string(myrank)+".log";
+    std::string folder_path = "../example_cases/LidDrivenCavity/";
+    std::string str = folder_path + "Lid_Driven_Cavity_Run_Log_ " + std::to_string(myrank)+".log";
     std::stringstream stream;
     //stream<<std::fixed<<std::setprecision(2)<<_pressure_solver->return_omega();
     //str += stream.str();
