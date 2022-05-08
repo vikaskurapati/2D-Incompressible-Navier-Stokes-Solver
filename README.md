@@ -74,7 +74,7 @@ eg. The following creates a 2nd group of VTK files with changed parameters in th
 ```shell
 ./fluidchen ../example_cases/LidDrivenCavity/LidDrivenCavity.dat 2
 ```
-All the input parameters of the simulations and convergence results are stored in a log file in the build directory with the name "Run Log" followed by the integer parameter. For instance after running the above shell command, a log file with the name "Run Log 2" is created in the build directory.
+All the input parameters of the simulations and convergence results are stored in a log file in ../example_cases/LidDrivenCavity with the name "Lid_Driven_Cavity_Run_Log_" followed by the integer parameter. For instance after running the above shell command, a log file with the name "Lid_Driven_Cavity_Run_Log_2" is created in the LidDrivenCavity directory present inside example_cases directory.
 
 ## Special systems
 
