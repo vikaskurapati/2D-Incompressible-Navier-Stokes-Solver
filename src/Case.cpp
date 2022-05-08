@@ -194,7 +194,7 @@ void Case::simulate(int my_rank) {
 
     std::ofstream output = output_log(_datfile_name,my_rank);
     output<<"\n\nIteration Log:\n";
-    std::cout<<"Simulation is Running!\nPlease Refer to \"Lid_Driven_Cavity_Run_Log_"<<my_rank<<"\" in"<<_dict_name<<" for Simulation Results!\n";
+    std::cout<<"Simulation is Running!\nPlease Refer to " << _dict_name << "_run_log_"<<my_rank<< ".log for Simulation log!\n";
     while (t < t_end)
     {
         err=100.0;
@@ -369,7 +369,7 @@ std::ofstream Case::output_log(std::string dat_file_name,int myrank){
         }
     }
     file.close();
-    std::string str = _dict_name + "/" + "Lid_Driven_Cavity_Run_Log_ " + std::to_string(myrank)+".log";
+    std::string str = _dict_name + "/" + "_run_log_" + std::to_string(myrank)+".log";
     std::stringstream stream;
     //stream<<std::fixed<<std::setprecision(2)<<_pressure_solver->return_omega();
     //str += stream.str();
