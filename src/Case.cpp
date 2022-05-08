@@ -223,6 +223,14 @@ void Case::simulate(int my_rank) {
             output_counter+=1;
         }
     }
+    //extra line of writing to ensure the last time step is written
+    if (t - output_counter*_output_freq < 0)
+    {
+        Case::output_vtk(timestep, my_rank);
+        output<<"Time Step: "<<timestep<<" Residue: "<<err<<" PPE Iterations: "<<iter_count<<std::endl;
+        output_counter+=1;
+    }
+
     std::cout<<"Simulation has ended\n";
     output.close();
 }
