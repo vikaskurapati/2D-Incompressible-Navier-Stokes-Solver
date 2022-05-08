@@ -223,6 +223,12 @@ void Case::simulate(int my_rank) {
             output_counter+=1;
         }
     }
+    if(t_end!=(output_counter-1)*_output_freq) // Recording at t_end if the output frequency is not a multiple of t_end
+    {
+        Case::output_vtk(timestep, my_rank);
+        output<<"Time Step: "<<timestep<<" Residue: "<<err<<" PPE Iterations: "<<iter_count<<std::endl;
+        output_counter+=1;
+    }
 
     std::cout<<"Simulation has ended\n";
     output.close();
