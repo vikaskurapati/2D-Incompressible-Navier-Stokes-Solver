@@ -191,6 +191,8 @@ void Case::simulate(int my_rank) {
     double err = 100;
     //starting simulation
     int iter_count = 0;
+    
+    Case::output_vtk(timestep, my_rank);
 
     std::ofstream output = output_log(_datfile_name,my_rank);
     output<<"\n\nIteration Log:\n";
@@ -219,7 +221,11 @@ void Case::simulate(int my_rank) {
         if(t-output_counter*_output_freq>=0)
         {
             Case::output_vtk(timestep, my_rank);
-            output<<"Time Step: "<<timestep<<" Residue: "<<err<<" PPE Iterations: "<<iter_count<<std::endl;
+            output<<"Time: "<<t<<" Residual: "<<err<<" PPE Iterations: "<<iter_count<<std::endl;
+            if (iter_count == _max_iter)
+            {
+                output << "The PPE Solver didn't converge for Time = " << t << " Please consider increasing Maximum iteration"<< "\n";
+            }
             output_counter+=1;
         }
     }
@@ -229,7 +235,9 @@ void Case::simulate(int my_rank) {
         output<<"Time Step: "<<timestep<<" Residue: "<<err<<" PPE Iterations: "<<iter_count<<std::endl;
         output_counter+=1;
     }
-
+    int imax = _grid.imax();
+    int jmax = _grid.jmax();
+    std::cout << "U[imax/2][7*jmax/8] is: " << _field.u(imax/2, 7*jmax/8) << "\n";
     std::cout<<"Simulation has ended\n";
     output.close();
 }
