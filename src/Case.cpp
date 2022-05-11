@@ -222,9 +222,9 @@ void Case::simulate(int my_rank) {
         {
             Case::output_vtk(timestep, my_rank);
             output<<"Time: "<<t<<" Residual: "<<err<<" PPE Iterations: "<<iter_count<<std::endl;
-            if (iter_count == _max_iter)
+            if (iter_count == _max_iter || std::isnan(err))
             {
-                output << "The PPE Solver didn't converge for Time = " << t << " Please consider increasing Maximum iteration"<< "\n";
+                output << "The PPE Solver didn't converge for Time = " << t << " Please check the log file and increase max iterations or other parameters for convergence"<< "\n";
             }
             output_counter+=1;
         }
