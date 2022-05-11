@@ -9,7 +9,7 @@ FixedWallBoundary::FixedWallBoundary(std::vector<Cell *> cells, std::map<int, do
 
 void FixedWallBoundary::apply(Fields &field) {
 
-    unsigned int i,j;
+    int i,j;
     for(auto& cell : _cells){
         i = cell->i();
         j = cell->j();
@@ -23,10 +23,15 @@ void FixedWallBoundary::apply(Fields &field) {
             field.v(i,j) = -field.v(i-1,j);
             field.p(i,j) = field.p(i-1,j);
         }
-        else if(cell->is_border(border_position::TOP)){
+        if(cell->is_border(border_position::TOP)){
             field.u(i,j) = -field.u(i,j+1);
             field.v(i,j) = 0;
             field.p(i,j) = field.p(i,j+1);
+        }
+        if(cell->is_border(border_position::BOTTOM)){
+            field.u(i,j) = -field.u(i,j-1);
+            field.v(i, j-1) = 0;
+            field.p(i,j) = field.p(i,j-1);
         }
     }
 }
