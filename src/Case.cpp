@@ -197,6 +197,8 @@ void Case::simulate(int my_rank) {
     std::ofstream output = output_log(_datfile_name,my_rank);
     output<<"\n\nIteration Log:\n";
     std::cout<<"Simulation is Running!\nPlease Refer to " << _dict_name << "_run_log_"<<my_rank<< ".log for Simulation log!\n";
+    //Simulation Progress
+    int progress, last_progress;
     while (t < t_end)
     {
         err=100.0;
@@ -228,6 +230,20 @@ void Case::simulate(int my_rank) {
             }
             output_counter+=1;
         }
+        //Printing Simulation Progress 
+        progress = t/t_end * 100;
+        if(progress % 10 == 0 && progress != last_progress){
+            std::cout<<"[";
+            for(int i=0;i<progress/10;i++){
+                std::cout<<"===";
+            }
+            if(progress==100)
+                std::cout<<"]";
+            else 
+                std::cout<<">";
+            std::cout<<" %"<<progress<<std::endl;
+            last_progress = progress;
+        }
     }
     if(t_end!=(output_counter-1)*_output_freq) // Recording at t_end if the output frequency is not a multiple of t_end
     {
@@ -235,9 +251,6 @@ void Case::simulate(int my_rank) {
         output<<"Time Step: "<<timestep<<" Residue: "<<err<<" PPE Iterations: "<<iter_count<<std::endl;
         output_counter+=1;
     }
-    int imax = _grid.imax();
-    int jmax = _grid.jmax();
-    std::cout << "U[imax/2][7*jmax/8] is: " << _field.u(imax/2, 7*jmax/8) << "\n";
     std::cout<<"Simulation has ended\n";
     output.close();
 }
