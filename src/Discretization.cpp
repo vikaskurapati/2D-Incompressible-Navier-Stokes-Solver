@@ -18,11 +18,11 @@ double Discretization::convection_u(const Matrix<double> &U, const Matrix<double
     double du2dx = 0.0;
     double duvdy = 0.0;
 
-    du2dx = (0.25/_dx)*((U(i,j)+U(i+1,j))*(U(i,j)+U(i+1,j)) - (U(i-1,j)+U(i,j))*(U(i-1,j)+U(i,j)));
-    du2dx = du2dx + (0.25*_gamma/_dx)*(abs(U(i,j)+U(i+1,j))*(U(i,j)+U(i+1,j)) - abs(U(i-1,j)+U(i,j))*(U(i-1,j)+U(i,j)));
+    du2dx = (1/_dx)*(interpolate(U,i,j,i+1,j)*interpolate(U,i,j,i+1,j) - interpolate(U,i-1,j,i,j)*interpolate(U,i-1,j,i,j));
+    du2dx = du2dx + (_gamma/_dx)*(std::abs(interpolate(U,i,j,i+1,j))*(U(i,j)+U(i+1,j)*0.5) - std::abs(interpolate(U,i-1,j,i,j))*(U(i-1,j)+U(i,j))*0.5);
 
-    duvdy = (0.25/_dy)*((V(i,j)+V(i+1,j))*(U(i,j)+U(i,j+1)) - (V(i,j-1)+V(i+1,j-1))*(U(i,j-1)+U(i,j)));
-    duvdy = duvdy + (0.25*_gamma/_dy)*(abs(V(i,j)+V(i+1,j))*(U(i,j)-U(i,j+1)) - abs(V(i,j-1)+V(i+1,j-1))*(U(i,j-1)-U(i,j)));
+    duvdy = (1/_dy)*(interpolate(V,i,j,i+1,j)*interpolate(U,i,j,i,j+1) - interpolate(V,i,j-1,i+1,j-1)*interpolate(U,i,j-1,i,j));
+    duvdy = duvdy + (_gamma/_dy)*(std::abs(interpolate(V,i,j,i+1,j))*(U(i,j)-U(i,j+1)*0.5) - std::abs(interpolate(V,i,j-1,i+1,j-1))*(U(i,j-1)-U(i,j))*0.5);
 
     return du2dx + duvdy;
 }
@@ -32,11 +32,11 @@ double Discretization::convection_v(const Matrix<double> &U, const Matrix<double
     double duvdx = 0.0;
     double dv2dy = 0.0;
 
-    duvdx = (0.25/_dx)*((U(i,j)+U(i,j+1))*(V(i,j)+V(i+1,j)) - ((U(i-1,j)+U(i-1,j+1))*(V(i-1,j)+V(i,j))));
-    duvdx = duvdx + (0.25*_gamma/_dx)*(abs(U(i,j)+U(i,j+1))*(V(i,j)-V(i+1,j)) - (abs(U(i-1,j)+U(i-1,j+1))*(V(i-1,j)-V(i,j))));
+    duvdx = (1/_dx)*(interpolate(U,i,j,i,j+1)*interpolate(V,i,j,i+1,j) - interpolate(U,i-1,j,i-1,j+1)*interpolate(V,i-1,j,i,j));
+    duvdx = duvdx + (_gamma/_dx)*(std::abs(interpolate(U,i,j,i,j+1))*(V(i,j)-V(i+1,j))*0.5 - std::abs(interpolate(U,i-1,j,i-1,j+1))*(V(i-1,j)-V(i,j))*0.5);
 
-    dv2dy = (0.25/_dy)*((V(i,j)+V(i,j+1))*(V(i,j)+V(i,j+1)) - (V(i,j-1)+V(i,j))*(V(i,j-1)+V(i,j)));
-    dv2dy = dv2dy + (0.25*_gamma/_dy)*(abs(V(i,j)+V(i,j+1))*(V(i,j)-V(i,j+1)) - abs(V(i,j-1)+V(i,j))*(V(i,j-1)-V(i,j)));
+    dv2dy = (1/_dy)*(interpolate(V,i,j,i,j+1)*interpolate(V,i,j,i,j+1) - interpolate(V,i,j-1,i,j)*interpolate(V,i,j-1,i,j));
+    dv2dy = dv2dy + (_gamma/_dy)*(std::abs(interpolate(V,i,j,i,j+1))*(V(i,j)-V(i,j+1))*0.5 - std::abs(interpolate(V,i,j-1,i,j))*(V(i,j-1)-V(i,j))*0.5);
 
     return duvdx + dv2dy;
 }
@@ -54,4 +54,7 @@ double Discretization::sor_helper(const Matrix<double> &P, int i, int j) {
     return result;
 }
 
-// double Discretization::interpolate(const Matrix<double> &A, int i, int j, int i_offset, int j_offset) {}
+double Discretization::interpolate(const Matrix<double> &A, int i, int j, int i_offset, int j_offset) 
+{
+    return 0.5*(A(i,j) + A(i_offset,j_offset));
+}
