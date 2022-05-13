@@ -41,7 +41,25 @@ double Discretization::convection_v(const Matrix<double> &U, const Matrix<double
     return duvdx + dv2dy;
 }
 
-//double Discretization::diffusion(const Matrix<double> &A, int i, int j) {}
+double Discretization::convection_t(const Matrix<double> &T, const Matrix<double> &U, const Matrix<double> &V, int i, int j) 
+{
+    double dutdx = 0.0;
+    double dvtdy = 0.0;
+
+    dutdx = (1/_dx)*(interpolate(T,i,j,i+1,j)*U(i,j) - U(i-1,j)*interpolate(T,i-1,j,i,j));
+    dutdx = dutdx + (_gamma/_dx)*(std::abs(U(i,j))*(T(i,j)-T(i+1,j))*0.5 - std::abs(U(i-1,j))*(T(i-1,j)-T(i,j))*0.5);
+
+    dvtdy = (1/_dy)*(interpolate(T,i,j,i,j-1)*V(i,j) - V(i,j-1)*interpolate(T,i,j-1,i,j));
+    dvtdy = dvtdy + (_gamma/_dy)*(std::abs(V(i,j))*(T(i,j)-T(i,j+1))*0.5 - std::abs(V(i,j-1))*(T(i,j-1)-T(i,j))*0.5);
+
+    return dutdx + dvtdy;
+}
+
+double Discretization::diffusion(const Matrix<double> &A, int i, int j) 
+{
+    return (A(i + 1, j) - 2.0 * A(i, j) + A(i - 1, j)) / (_dx * _dx) +
+                    (A(i, j + 1) - 2.0 * A(i, j) + A(i, j - 1)) / (_dy * _dy);
+}
 
 double Discretization::laplacian(const Matrix<double> &P, int i, int j) {
     double result = (P(i + 1, j) - 2.0 * P(i, j) + P(i - 1, j)) / (_dx * _dx) +

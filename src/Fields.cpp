@@ -4,11 +4,12 @@
 #include <iostream>
 #include <cmath>
 
-Fields::Fields(double nu, double dt, double tau, int imax, int jmax, double UI, double VI, double PI)
+Fields::Fields(double nu, double dt, double tau, int imax, int jmax, double UI, double VI, double PI, double TI)
     : _nu(nu), _dt(dt), _tau(tau) {
     _U = Matrix<double>(imax + 2, jmax + 2, UI);
     _V = Matrix<double>(imax + 2, jmax + 2, VI);
     _P = Matrix<double>(imax + 2, jmax + 2, PI);
+    _T = Matrix<double>(imax + 2, jmax + 2, TI);
 
     _F = Matrix<double>(imax + 2, jmax + 2, 0.0);
     _G = Matrix<double>(imax + 2, jmax + 2, 0.0);
@@ -71,6 +72,21 @@ void Fields::calculate_velocities(Grid &grid)
 
 }
 
+void Fields::calculate_temperatures(Grid &grid) 
+{
+    double dx = grid.dx();
+    double dy = grid.dy();
+    int i, j;
+    for (auto currentCell : grid.fluid_cells()) 
+    {
+        i = currentCell->i();
+        j = currentCell->j();
+        _U(i,j) = _F(i,j) - (_dt/dx)*(_P(i+1,j)-_P(i,j));
+        _V(i,j) = _G(i,j) - (_dt/dy)*(_P(i,j+1)-_P(i,j));
+    }
+
+}
+
 double Fields::calculate_dt(Grid &grid) { 
     double dt1, dt2, dt3;
     double dx = grid.dx();
@@ -100,6 +116,7 @@ double Fields::calculate_dt(Grid &grid) {
     return _dt; 
 }
 
+double &Fields::t(int i, int j) { return _T(i, j); }
 double &Fields::p(int i, int j) { return _P(i, j); }
 double &Fields::u(int i, int j) { return _U(i, j); }
 double &Fields::v(int i, int j) { return _V(i, j); }

@@ -49,6 +49,14 @@ Case::Case(std::string file_name, int argn, char **args) {
     double tau;     /* safety factor for time step*/
     int itermax;    /* max. number of iterations for pressure per time step */
     double eps;     /* accuracy bound for pressure*/
+    // Worksheet 2 Additions
+    double TI;      /* initial Temperature */
+    double alpha;   /* thermal diffusivity */
+    double beta;    /* coefficient of thermal expansion */
+    int energy_eq = 0;  /* energy equation should be consider or not */
+    int num_walls;  /* number of walls */
+
+
     if (file.is_open()) {
 
         std::string var;
@@ -75,6 +83,12 @@ Case::Case(std::string file_name, int argn, char **args) {
                 if (var == "itermax") file >> itermax;
                 if (var == "imax") file >> imax;
                 if (var == "jmax") file >> jmax;
+                // Worksheet 2 Additions
+                if (var == "TI") file >> TI;
+                if (var == "alpha") file >> alpha;
+                if (var == "beta") file >> beta;
+                if (var == "energy_eq") file >> energy_eq;
+                if (var == "num_walls") file >> num_walls;
             }
         }
     }
@@ -99,7 +113,7 @@ Case::Case(std::string file_name, int argn, char **args) {
     build_domain(domain, imax, jmax);
 
     _grid = Grid(_geom_name, domain);
-    _field = Fields(nu, dt, tau, _grid.domain().size_x, _grid.domain().size_y, UI, VI, PI);
+    _field = Fields(nu, dt, tau, _grid.domain().size_x, _grid.domain().size_y, UI, VI, PI, TI);
 
     _discretization = Discretization(domain.dx, domain.dy, gamma);
     _pressure_solver = std::make_unique<SOR>(omg);

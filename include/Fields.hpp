@@ -25,7 +25,7 @@ class Fields {
      * @param[in] initial pressure
      *
      */
-    Fields(double _nu, double _dt, double _tau, int imax, int jmax, double UI, double VI, double PI);
+    Fields(double _nu, double _dt, double _tau, int imax, int jmax, double UI, double VI, double PI, double TI);
 
     /**
      * @brief Calculates the convective and diffusive fluxes in x and y
@@ -76,6 +76,16 @@ class Fields {
     void calculate_velocities(Grid &grid);
 
     /**
+     * @brief Temperature calculation using previous and velocities values
+     *
+     * @param[in] grid in which the calculations are done
+     * 
+     * Need to Write
+     *
+     */
+    void calculate_temperatures(Grid &grid);
+
+    /**
      * @brief Adaptive step size calculation using x-velocity condition,
      * y-velocity condition and CFL condition
      *
@@ -92,6 +102,9 @@ class Fields {
 
     /// pressure index based access and modify
     double &p(int i, int j);
+
+    /// Temperature index based access and modify
+    double &t(int i, int j);
 
     /// RHS index based access and modify
     double &rs(int i, int j);
@@ -121,6 +134,8 @@ class Fields {
     Matrix<double> _G;
     /// right hand side matrix
     Matrix<double> _RS;
+    /// Temperature matrix
+    Matrix<double> _T;
 
     /// kinematic viscosity
     double _nu;
