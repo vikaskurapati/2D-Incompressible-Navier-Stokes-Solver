@@ -19,10 +19,10 @@ double Discretization::convection_u(const Matrix<double> &U, const Matrix<double
     double duvdy = 0.0;
 
     du2dx = (1/_dx)*(interpolate(U,i,j,i+1,j)*interpolate(U,i,j,i+1,j) - interpolate(U,i-1,j,i,j)*interpolate(U,i-1,j,i,j));
-    du2dx = du2dx + (0.25*_gamma/_dx)*(std::abs(interpolate(U,i,j,i+1,j)*2)*(U(i,j)+U(i+1,j)) - std::abs(interpolate(U,i-1,j,i,j)*2)*(U(i-1,j)+U(i,j)));
+    du2dx = du2dx + (_gamma/_dx)*(std::abs(interpolate(U,i,j,i+1,j))*(U(i,j)+U(i+1,j)*0.5) - std::abs(interpolate(U,i-1,j,i,j))*(U(i-1,j)+U(i,j))*0.5);
 
     duvdy = (1/_dy)*(interpolate(V,i,j,i+1,j)*interpolate(U,i,j,i,j+1) - interpolate(V,i,j-1,i+1,j-1)*interpolate(U,i,j-1,i,j));
-    duvdy = duvdy + (0.25*_gamma/_dy)*(std::abs(interpolate(V,i,j,i+1,j)*2)*(U(i,j)-U(i,j+1)) - std::abs(interpolate(V,i,j-1,i+1,j-1)*2)*(U(i,j-1)-U(i,j)));
+    duvdy = duvdy + (_gamma/_dy)*(std::abs(interpolate(V,i,j,i+1,j))*(U(i,j)-U(i,j+1)*0.5) - std::abs(interpolate(V,i,j-1,i+1,j-1))*(U(i,j-1)-U(i,j))*0.5);
 
     return du2dx + duvdy;
 }
@@ -33,10 +33,10 @@ double Discretization::convection_v(const Matrix<double> &U, const Matrix<double
     double dv2dy = 0.0;
 
     duvdx = (1/_dx)*(interpolate(U,i,j,i,j+1)*interpolate(V,i,j,i+1,j) - interpolate(U,i-1,j,i-1,j+1)*interpolate(V,i-1,j,i,j));
-    duvdx = duvdx + (0.25*_gamma/_dx)*(std::abs(interpolate(U,i,j,i,j+1)*2)*(V(i,j)-V(i+1,j)) - std::abs(interpolate(U,i-1,j,i-1,j+1)*2)*(V(i-1,j)-V(i,j)));
+    duvdx = duvdx + (_gamma/_dx)*(std::abs(interpolate(U,i,j,i,j+1))*(V(i,j)-V(i+1,j))*0.5 - std::abs(interpolate(U,i-1,j,i-1,j+1))*(V(i-1,j)-V(i,j))*0.5);
 
     dv2dy = (1/_dy)*(interpolate(V,i,j,i,j+1)*interpolate(V,i,j,i,j+1) - interpolate(V,i,j-1,i,j)*interpolate(V,i,j-1,i,j));
-    dv2dy = dv2dy + (0.25*_gamma/_dy)*(std::abs(interpolate(V,i,j,i,j+1)*2)*(V(i,j)-V(i,j+1)) - std::abs(interpolate(V,i,j-1,i,j)*2)*(V(i,j-1)-V(i,j)));
+    dv2dy = dv2dy + (_gamma/_dy)*(std::abs(interpolate(V,i,j,i,j+1))*(V(i,j)-V(i,j+1))*0.5 - std::abs(interpolate(V,i,j-1,i,j))*(V(i,j-1)-V(i,j))*0.5);
 
     return duvdx + dv2dy;
 }
