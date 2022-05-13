@@ -88,7 +88,7 @@ void Fields::calculate_temperatures(Grid &grid)
 }
 
 double Fields::calculate_dt(Grid &grid) { 
-    double dt1, dt2, dt3;
+    double dt1, dt2, dt3, dt4;
     double dx = grid.dx();
     double dy = grid.dy();
     double umax = 0.001;
@@ -112,7 +112,9 @@ double Fields::calculate_dt(Grid &grid) {
     dt1 = 0.5*(dx*dx*dy*dy)/((dx*dx + dy*dy)*_nu);
     dt2 = dx/umax;
     dt3 = dy/vmax;
+    // dt4 = 0.5*(dx*dx*dy*dy)/((dx*dx + dy*dy)*_alpha);
     _dt = _tau*std::min({dt1, dt2, dt3});
+    // _dt = _tau*std::min({dt1, dt2, dt3, dt4});
     return _dt; 
 }
 

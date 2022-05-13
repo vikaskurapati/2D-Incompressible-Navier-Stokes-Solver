@@ -147,4 +147,6 @@ class Fields {
     double _dt;
     /// adaptive timestep coefficient
     double _tau;
+    /// thermal diffusivity
+    double _alpha;
 };
