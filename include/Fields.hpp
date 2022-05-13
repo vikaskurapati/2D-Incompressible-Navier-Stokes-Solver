@@ -149,4 +149,6 @@ class Fields {
     double _tau;
     /// thermal diffusivity
     double _alpha;
+    /// coefficient of thermal expansion
+    double _beta;
 };

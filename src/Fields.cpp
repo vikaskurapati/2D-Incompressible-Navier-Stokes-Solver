@@ -25,8 +25,10 @@ void Fields::calculate_fluxes(Grid &grid)
         i = currentCell->i();
         j = currentCell->j();
         
-        _F(i, j) = _U(i,j) + _dt*(_nu*(Discretization::laplacian(_U,i,j)) - Discretization::convection_u(_U,_V,i,j) + _gx);
-        _G(i, j) = _V(i,j) + _dt*(_nu*(Discretization::laplacian(_V,i,j)) - Discretization::convection_v(_U,_V,i,j) + _gy);
+        _F(i, j) = _U(i,j) + _dt*(_nu*(Discretization::laplacian(_U,i,j)) - Discretization::convection_u(_U,_V,i,j));
+        _F(i, j) = _F(i, j) - _beta*_dt*Discretization::interpolate(_T,i,j,i+1,j)*_gx;
+        _G(i, j) = _V(i,j) + _dt*(_nu*(Discretization::laplacian(_V,i,j)) - Discretization::convection_v(_U,_V,i,j));
+        _G(i, j) = _G(i, j) - _beta*_dt*Discretization::interpolate(_T,i,j,i,j+1)*_gy;
     }
 
     int imax = grid.imax();
@@ -72,21 +74,6 @@ void Fields::calculate_velocities(Grid &grid)
 
 }
 
-void Fields::calculate_temperatures(Grid &grid) 
-{
-    double dx = grid.dx();
-    double dy = grid.dy();
-    int i, j;
-    for (auto currentCell : grid.fluid_cells()) 
-    {
-        i = currentCell->i();
-        j = currentCell->j();
-        _U(i,j) = _F(i,j) - (_dt/dx)*(_P(i+1,j)-_P(i,j));
-        _V(i,j) = _G(i,j) - (_dt/dy)*(_P(i,j+1)-_P(i,j));
-    }
-
-}
-
 double Fields::calculate_dt(Grid &grid) { 
     double dt1, dt2, dt3, dt4;
     double dx = grid.dx();
@@ -116,6 +103,20 @@ double Fields::calculate_dt(Grid &grid) {
     _dt = _tau*std::min({dt1, dt2, dt3});
     // _dt = _tau*std::min({dt1, dt2, dt3, dt4});
     return _dt; 
+}
+
+void Fields::calculate_temperatures(Grid &grid) 
+{
+    double dx = grid.dx();
+    double dy = grid.dy();
+    int i, j;
+    for (auto currentCell : grid.fluid_cells()) 
+    {
+        i = currentCell->i();
+        j = currentCell->j();
+        _T(i,j) = _T(i,j) + _dt*(_alpha*Discretization::diffusion(_T,i,j) - Discretization::convection_t(_T,_U,_V,i,j));
+    }
+
 }
 
 double &Fields::t(int i, int j) { return _T(i, j); }
