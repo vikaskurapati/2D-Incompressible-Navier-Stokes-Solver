@@ -4,8 +4,9 @@
 #include <iostream>
 #include <cmath>
 
-Fields::Fields(double nu, double dt, double tau, int imax, int jmax, double UI, double VI, double PI, double TI)
-    : _nu(nu), _dt(dt), _tau(tau) {
+Fields::Fields(double nu, double dt, double tau, double alpha, double beta,std::string energy_eq, int imax, int jmax, double UI, double VI, double PI, double TI)
+    : _nu(nu), _dt(dt), _tau(tau), _alpha(alpha), _beta(beta), _energy_eq(energy_eq)
+{
     _U = Matrix<double>(imax + 2, jmax + 2, UI);
     _V = Matrix<double>(imax + 2, jmax + 2, VI);
     _P = Matrix<double>(imax + 2, jmax + 2, PI);
@@ -99,9 +100,8 @@ double Fields::calculate_dt(Grid &grid) {
     dt1 = 0.5*(dx*dx*dy*dy)/((dx*dx + dy*dy)*_nu);
     dt2 = dx/umax;
     dt3 = dy/vmax;
-    // dt4 = 0.5*(dx*dx*dy*dy)/((dx*dx + dy*dy)*_alpha);
-    _dt = _tau*std::min({dt1, dt2, dt3});
-    // _dt = _tau*std::min({dt1, dt2, dt3, dt4});
+    dt4 = 0.5*(dx*dx*dy*dy)/((dx*dx + dy*dy)*_alpha);
+    _dt = _tau*std::min({dt1, dt2, dt3, dt4});
     return _dt; 
 }
 

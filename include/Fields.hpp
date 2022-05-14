@@ -25,7 +25,7 @@ class Fields {
      * @param[in] initial pressure
      *
      */
-    Fields(double _nu, double _dt, double _tau, int imax, int jmax, double UI, double VI, double PI, double TI);
+    Fields(double _nu, double _dt, double _tau, double _alpha, double _beta, std::string energy_eq, int imax, int jmax, double UI, double VI, double PI, double TI);
 
     /**
      * @brief Calculates the convective and diffusive fluxes in x and y
@@ -151,4 +151,6 @@ class Fields {
     double _alpha;
     /// coefficient of thermal expansion
     double _beta;
+    // status if the energy_equations should be turned on or not
+    std::string _energy_eq;
 };
