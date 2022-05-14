@@ -11,3 +11,9 @@ Makefile
 doxygen_doc
 compile_commands.json
 .clangd
+*.srctrlbm
+*.srctrldb
+*.srctrlprj
+.idea
+cmake-build-*
+*.sw*

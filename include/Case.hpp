@@ -36,13 +36,15 @@ class Case {
      * Calculates velocities
      * Outputs the solution files
      */
-    void simulate();
+    void simulate(int my_rank=1);
 
   private:
     /// Plain case name without paths
     std::string _case_name;
     /// Output directiory name
     std::string _dict_name;
+    // Dat File name
+    std::string _datfile_name;
     /// Geometry file name
     std::string _geom_name{"NONE"};
     /// Relative input file path
@@ -85,6 +87,7 @@ class Case {
      * @param[in] Timestep of the solution
      */
     void output_vtk(int t, int my_rank = 0);
-
+    std::ofstream output_log(std::string dat_file_name,int myrank);
+    std::ofstream simulation_log_file(int my_rank=0);
     void build_domain(Domain &domain, int imax_domain, int jmax_domain);
 };
