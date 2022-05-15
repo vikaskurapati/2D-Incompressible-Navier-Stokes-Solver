@@ -26,24 +26,44 @@ void Fields::calculate_fluxes(Grid &grid)
         i = currentCell->i();
         j = currentCell->j();
         
-        _F(i, j) = _U(i,j) + _dt*(_nu*(Discretization::laplacian(_U,i,j)) - Discretization::convection_u(_U,_V,i,j));
-        _F(i, j) = _F(i, j) - _beta*_dt*Discretization::interpolate(_T,i,j,i+1,j)*_gx;
-        _G(i, j) = _V(i,j) + _dt*(_nu*(Discretization::laplacian(_V,i,j)) - Discretization::convection_v(_U,_V,i,j));
-        _G(i, j) = _G(i, j) - _beta*_dt*Discretization::interpolate(_T,i,j,i,j+1)*_gy;
+        _F(i, j) = _U(i,j) + _dt*(_nu*(Discretization::laplacian(_U,i,j)) - Discretization::convection_u(_U,_V,i,j) + _gx);
+        _G(i, j) = _V(i,j) + _dt*(_nu*(Discretization::laplacian(_V,i,j)) - Discretization::convection_v(_U,_V,i,j) + _gy);
     }
 
-    int imax = grid.imax();
-    int jmax = grid.jmax();
-
-    for (j=1; j<jmax+1; j++)
+    for (auto currentCell : grid.fixed_wall_cells())
     {
-        _F(0,j) = _U(0,j);
-        _F(imax, j) = _U(imax, j);
+        i = currentCell->i();
+        j = currentCell->j();
+        if(currentCell->is_border(border_position::RIGHT)){
+            _F(i, j) = _U(i,j);
+        }
+        if(currentCell->is_border(border_position::LEFT)){
+            _F(i-1, j) = _U(i-1,j);
+        }
+        if(currentCell->is_border(border_position::TOP)){
+            _G(i,j) = _V(i,j);
+        }
+        if(currentCell->is_border(border_position::BOTTOM)){
+            _G(i, j-1) = _V(i, j-1);
+        }
     }
-    for (i=1; i<imax+1; i++)
+
+    for (auto currentCell: grid.moving_wall_cells())
     {
-        _G(i,0) = _V(i,0);
-        _G(i, jmax) = _V(i, jmax);
+        i = currentCell->i();
+        j = currentCell->j();
+        if(currentCell->is_border(border_position::RIGHT)){
+            _F(i, j) = _U(i,j);
+        }
+        if(currentCell->is_border(border_position::LEFT)){
+            _F(i-1, j) = _U(i-1.,j);
+        }
+        if(currentCell->is_border(border_position::TOP)){
+            _G(i,j) = _V(i,j);
+        }
+        if(currentCell->is_border(border_position::BOTTOM)){
+            _G(i, j-1) = _V(i, j-1);
+        }
     }
 }
 
