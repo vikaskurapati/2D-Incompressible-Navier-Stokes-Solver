@@ -1,3 +1,4 @@
+
 #include "Case.hpp"
 #include "Enums.hpp"
 
@@ -57,7 +58,7 @@ Case::Case(std::string file_name, int argn, char **args) {
     int num_walls;  /* number of walls */
     double Tc; /*Cold wall temperature */
     double Th; /*Hot wall temperature */
-
+    double dP; /*Pressure difference in inflow and outflow for plane Shear Flow*/
 
     if (file.is_open()) {
 
@@ -91,6 +92,7 @@ Case::Case(std::string file_name, int argn, char **args) {
                 if (var == "beta") file >> beta;
                 if (var == "energy_eq") file >> energy_eq;
                 if (var == "num_walls") file >> num_walls;
+                if (var == "dP") file >> dP;
                 }
         }
     }
@@ -98,6 +100,10 @@ Case::Case(std::string file_name, int argn, char **args) {
 
     _datfile_name = file_name;
     std::map<int, double> wall_vel;
+    if (_datfile_name.find("PlaneShearFlow") != std::string::npos)
+    {
+        _geom_name = "PlaneShearFlow";
+    }
     if (_geom_name.compare("NONE") == 0) {
         wall_vel.insert(std::pair<int, double>(LidDrivenCavity::moving_wall_id, LidDrivenCavity::wall_velocity));
     }
@@ -113,7 +119,6 @@ Case::Case(std::string file_name, int argn, char **args) {
     domain.domain_size_y = jmax;
 
     build_domain(domain, imax, jmax);
-
     _grid = Grid(_geom_name, domain);
     _field = Fields(nu, dt, tau, alpha, beta, energy_eq, _grid.domain().size_x, _grid.domain().size_y, UI, VI, PI, TI);
 
@@ -259,7 +264,7 @@ void Case::simulate(int my_rank) {
                 std::cout<<">";
             std::cout<<" %"<<progress<<std::endl;
             last_progress = progress;
-        }
+        } 
     }
     if(t_end!=(output_counter-1)*_output_freq) // Recording at t_end if the output frequency is not a multiple of t_end
     {

@@ -13,17 +13,52 @@ Grid::Grid(std::string geom_name, Domain &domain) {
 
     _cells = Matrix<Cell>(_domain.size_x + 2, _domain.size_y + 2);
 
-    if (geom_name.compare("NONE")) {
+    if (geom_name.compare("PlaneShearFlow"))
+    {
+        build_planeshearflow(geom_name);
+    }
+
+    else if (geom_name.compare("NONE")) {
         std::vector<std::vector<int>> geometry_data(_domain.domain_size_x + 2,
                                                     std::vector<int>(_domain.domain_size_y + 2, 0));
         parse_geometry_file(geom_name, geometry_data);
-        assign_cell_types(geometry_data);
-    } else {
-        build_lid_driven_cavity();
+        assign_cell_types(geometry_data, geom_name);
+    }
+    
+    else {
+        build_lid_driven_cavity(geom_name);
     }
 }
 
-void Grid::build_lid_driven_cavity() {
+void Grid::build_planeshearflow(std::string geom_name)
+{
+    std::vector<std::vector<int>> geometry_data(_domain.domain_size_x + 2,
+                                                std::vector<int>(_domain.domain_size_y + 2, 0));
+
+    for (int i = 0; i < _domain.domain_size_x + 2; ++i) {
+        for (int j = 0; j < _domain.domain_size_y + 2; ++j) {
+            // Bottom, left and right walls: no-slip
+            
+            if (i == 0)
+            {
+                geometry_data.at(i).at(j) = PlaneShearFlow::inflow_wall_id;
+            }
+
+            if (i == _domain.domain_size_x + 1)
+            {
+                geometry_data.at(i).at(j) = PlaneShearFlow::outflow_wall_id;
+            }
+
+            if (j==0 || j == _domain.domain_size_y+1)
+            {
+                geometry_data.at(i).at(j) = PlaneShearFlow::fixed_wall_id;
+            }
+        }
+    }
+    assign_cell_types(geometry_data, geom_name);
+}
+
+void Grid::build_lid_driven_cavity(std::string geom_name) {
     std::vector<std::vector<int>> geometry_data(_domain.domain_size_x + 2,
                                                 std::vector<int>(_domain.domain_size_y + 2, 0));
 
@@ -39,36 +74,73 @@ void Grid::build_lid_driven_cavity() {
             }
         }
     }
-    assign_cell_types(geometry_data);
+    assign_cell_types(geometry_data, geom_name);
 }
 
-void Grid::assign_cell_types(std::vector<std::vector<int>> &geometry_data) {
+
+void Grid::assign_cell_types(std::vector<std::vector<int>> &geometry_data, std::string geom_name) {
 
     int i = 0;
     int j = 0;
 
-    for (int j_geom = _domain.jmin; j_geom < _domain.jmax; ++j_geom) {
-        { i = 0; }
-        for (int i_geom = _domain.imin; i_geom < _domain.imax; ++i_geom) {
-            if (geometry_data.at(i_geom).at(j_geom) == 0) {
-                _cells(i, j) = Cell(i, j, cell_type::FLUID);
-                _fluid_cells.push_back(&_cells(i, j));
-            } else if (geometry_data.at(i_geom).at(j_geom) == LidDrivenCavity::moving_wall_id) {
-                _cells(i, j) = Cell(i, j, cell_type::MOVING_WALL, geometry_data.at(i_geom).at(j_geom));
-                _moving_wall_cells.push_back(&_cells(i, j));
-            } else {
-                if (i == 0 or j == 0 or i == _domain.size_x + 1 or j == _domain.size_y + 1) {
-                    // Outer walls
-                    _cells(i, j) = Cell(i, j, cell_type::FIXED_WALL, geometry_data.at(i_geom).at(j_geom));
-                    _fixed_wall_cells.push_back(&_cells(i, j));
+    if(geom_name.compare("PlaneShearFlow"))
+    {
+        for (int j_geom = _domain.imin; j_geom < _domain.jmax; ++j_geom)
+        {
+            { i = 0;}
+            for (int i_geom = _domain.imin; i_geom < _domain.imax; ++i_geom)
+            {
+                if(geometry_data.at(i_geom).at(j_geom) == 0)
+                {
+                    _cells(i,j) = Cell(i,j, cell_type::FLUID);
+                    _fluid_cells.push_back(&_cells(i,j));
                 }
+                else if (geometry_data.at(i_geom).at(j_geom) == PlaneShearFlow::inflow_wall_id)
+                {
+                    _cells(i,j) = Cell(i,j, cell_type::INFLOW, geometry_data.at(i_geom).at(j_geom));
+                    _inflow_cells.push_back(&_cells(i,j));
+                }
+                else if (geometry_data.at(i_geom).at(j_geom) == PlaneShearFlow::outflow_wall_id)
+                {
+                    _cells(i,j) = Cell(i,j, cell_type::OUTFLOW, geometry_data.at(i_geom).at(j_geom));
+                    _outflow_cells.push_back(&_cells(i,j));
+                }
+                else
+                { 
+                    if(j==0 or j == _domain.size_y + 1)
+                    {
+                        _cells(i,j) = Cell(i,j, cell_type::FIXED_WALL, geometry_data.at(i_geom).at(j_geom));
+                        _fixed_wall_cells.push_back(&_cells(i,j));
+                    }
+                }
+                ++i;
             }
-
-            ++i;
+            ++j;
         }
-        ++j;
     }
-
+    else
+    {
+        for (int j_geom = _domain.jmin; j_geom < _domain.jmax; ++j_geom) {
+            { i = 0; }
+            for (int i_geom = _domain.imin; i_geom < _domain.imax; ++i_geom) {
+                if (geometry_data.at(i_geom).at(j_geom) == 0) {
+                    _cells(i, j) = Cell(i, j, cell_type::FLUID);
+                    _fluid_cells.push_back(&_cells(i, j));
+                } else if (geometry_data.at(i_geom).at(j_geom) == LidDrivenCavity::moving_wall_id) {
+                    _cells(i, j) = Cell(i, j, cell_type::MOVING_WALL, geometry_data.at(i_geom).at(j_geom));
+                    _moving_wall_cells.push_back(&_cells(i, j));
+                } else {
+                    if (i == 0 or j == 0 or i == _domain.size_x + 1 or j == _domain.size_y + 1) {
+                        // Outer walls
+                        _cells(i, j) = Cell(i, j, cell_type::FIXED_WALL, geometry_data.at(i_geom).at(j_geom));
+                        _fixed_wall_cells.push_back(&_cells(i, j));
+                    }
+                }
+                ++i;
+            }
+            ++j;
+        }
+    }
     // Corner cell neighbour assigment
     // Bottom-Left Corner
     i = 0;

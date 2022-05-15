@@ -57,3 +57,31 @@ void MovingWallBoundary::apply(Fields &field) {
         }
     }
 }
+
+InFlow::InFlow(std::vector<Cell *> cells, std::map<int, double> inlet_velocity) : _cells(cells), 
+                                                                            _inlet_velocity(inlet_velocity){};
+
+InFlow::InFlow(std::vector<Cell *> cells, std::map<int, double> inlet_velocity, 
+            std::map<int, double> wall_temperature): _cells(cells), _inlet_velocity(inlet_velocity), 
+                                                    _wall_temperature(wall_temperature){};
+
+void InFlow::apply(Fields &field)
+{
+    unsigned int i, j;
+    for(auto& cell: _cells)
+    {
+        i = cell->i();
+        j = cell->j();
+        if(cell->is_border(border_position::RIGHT))
+        {
+            //assuming inlet velocity is only in u
+            field.u(i, j) = _inlet_velocity[PlaneShearFlow::inflow_wall_id];
+            field.v(i,j) = -field.v(i+1, j);
+        }
+        if (cell->is_border(border_position::LEFT))
+        {
+            field.u(i-1, j) = _inlet_velocity[PlaneShearFlow::inflow_wall_id];
+            field.v(i,j) = -field.v(i-1,j);
+        }
+    }
+}

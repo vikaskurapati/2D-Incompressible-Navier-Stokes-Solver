@@ -78,10 +78,21 @@ class Grid {
      * This function creates default lid driven cavity
      * case without need for a pgm file
      */
-    void build_lid_driven_cavity();
+    void build_lid_driven_cavity(std::string geom_name);
+
+    /**@brief PlaneShear Flow case generator
+     * 
+     * This function creates plane shear flow case
+     * when the .dat file has PlaneShear Flow name in it
+     * without need for a pgm file
+     */
+
+    void build_planeshearflow(std::string geom_name);
 
     /// Build cell data structures with given geometrical data
-    void assign_cell_types(std::vector<std::vector<int>> &geometry_data);
+    void assign_cell_types(std::vector<std::vector<int>> &geometry_data, std::string geom_name);
+    // Build cell data structures with given geometrical data for PlaneShearFlow
+    void assign_cell_types_planeshearflow(std::vector<std::vector<int>> &geometry_data);
     /// Extract geometry from pgm file and create geometrical data
     void parse_geometry_file(std::string filedoc, std::vector<std::vector<int>> &geometry_data);
 
@@ -89,6 +100,8 @@ class Grid {
     std::vector<Cell *> _fluid_cells;
     std::vector<Cell *> _fixed_wall_cells;
     std::vector<Cell *> _moving_wall_cells;
+    std::vector<Cell *> _inflow_cells;
+    std::vector<Cell *> _outflow_cells;
 
     Domain _domain;
 
