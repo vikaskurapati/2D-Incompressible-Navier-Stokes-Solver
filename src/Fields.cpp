@@ -21,7 +21,7 @@ void Fields::calculate_fluxes(Grid &grid)
 {
     int i, j;
 
-    for (auto currentCell : grid.fluid_cells()) 
+    for (const auto& currentCell : grid.fluid_cells()) 
     {
         i = currentCell->i();
         j = currentCell->j();
@@ -30,7 +30,7 @@ void Fields::calculate_fluxes(Grid &grid)
         _G(i, j) = _V(i,j) + _dt*(_nu*(Discretization::laplacian(_V,i,j)) - Discretization::convection_v(_U,_V,i,j) + _gy);
     }
 
-    for (auto currentCell : grid.fixed_wall_cells())
+    for (const auto& currentCell : grid.fixed_wall_cells())
     {
         i = currentCell->i();
         j = currentCell->j();
@@ -48,7 +48,7 @@ void Fields::calculate_fluxes(Grid &grid)
         }
     }
 
-    for (auto currentCell: grid.moving_wall_cells())
+    for (const auto& currentCell: grid.moving_wall_cells())
     {
         i = currentCell->i();
         j = currentCell->j();
@@ -72,7 +72,7 @@ void Fields::calculate_rs(Grid &grid)
     double dx = grid.dx();
     double dy = grid.dy();
     int i, j;
-    for (auto currentCell : grid.fluid_cells()) 
+    for (const auto& currentCell : grid.fluid_cells()) 
     {
         i = currentCell->i();
         j = currentCell->j();
@@ -85,7 +85,7 @@ void Fields::calculate_velocities(Grid &grid)
     double dx = grid.dx();
     double dy = grid.dy();
     int i, j;
-    for (auto currentCell : grid.fluid_cells()) 
+    for (const auto& currentCell : grid.fluid_cells()) 
     {
         i = currentCell->i();
         j = currentCell->j();
@@ -103,7 +103,7 @@ double Fields::calculate_dt(Grid &grid) {
     double vmax = 0.001;
     int i, j;
 
-    for (auto currentCell: grid.fluid_cells())
+    for (const auto& currentCell: grid.fluid_cells())
     {
         i = currentCell->i();
         j = currentCell->j();
@@ -130,7 +130,7 @@ void Fields::calculate_temperatures(Grid &grid)
     double dx = grid.dx();
     double dy = grid.dy();
     int i, j;
-    for (auto currentCell : grid.fluid_cells()) 
+    for (const auto& currentCell : grid.fluid_cells()) 
     {
         i = currentCell->i();
         j = currentCell->j();

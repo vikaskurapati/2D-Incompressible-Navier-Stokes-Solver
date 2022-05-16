@@ -68,7 +68,7 @@ InFlow::InFlow(std::vector<Cell *> cells, std::map<int, double> inlet_velocity,
 void InFlow::apply(Fields &field)
 {
     unsigned int i, j;
-    for(auto& cell: _cells)
+    for(const auto& cell: _cells)
     {
         i = cell->i();
         j = cell->j();
@@ -77,11 +77,51 @@ void InFlow::apply(Fields &field)
             //assuming inlet velocity is only in u
             field.u(i, j) = _inlet_velocity[PlaneShearFlow::inflow_wall_id];
             field.v(i,j) = -field.v(i+1, j);
+            // field.p(i,j) = field.p(i+1,j);
+            field.p(i,j) = 0.0; //setting this for dP condition
         }
         if (cell->is_border(border_position::LEFT))
         {
             field.u(i-1, j) = _inlet_velocity[PlaneShearFlow::inflow_wall_id];
             field.v(i,j) = -field.v(i-1,j);
+            // field.p(i,j) = field.p(i-1,j);
+            field.p(i,j) = 0.0; //setting this for dP condition
+        }
+    }
+}
+
+OutFlow::OutFlow(std::vector<Cell *>cells, double outlet_pressure):_cells(cells), _outlet_pressure(outlet_pressure) {};
+OutFlow::OutFlow(std::vector<Cell *>cells, std::map<int, double> wall_temperature, double outlet_pressure):_cells(cells), 
+                                                                        _wall_temperature(wall_temperature),
+                                                                        _outlet_pressure(outlet_pressure){};
+
+void OutFlow::apply(Fields &field)
+{
+    //this deals with boundary sharing on only one border of the cell. 
+    unsigned int i, j;
+    for (const auto& cell: _cells)
+    {
+        i = cell->i();
+        j = cell->j();
+        if(cell -> is_border(border_position::LEFT))
+        {
+            field.v(i,j) = field.v(i-1,j);
+            field.p(i,j) = _outlet_pressure;
+        }
+        if(cell -> is_border(border_position::RIGHT))
+        {
+            field.v(i,j) = field.v(i+1,j);
+            field.p(i,j) = _outlet_pressure;
+        }
+        if(cell -> is_border(border_position::TOP))
+        {
+            field.u(i,j) = field.u(i,j+1);
+            field.p(i,j) = _outlet_pressure;
+        }
+        if(cell ->is_border(border_position::BOTTOM))
+        {
+            field.u(i,j) = field.u(i,j-1);
+            field.p(i,j) = _outlet_pressure;
         }
     }
 }

@@ -120,13 +120,30 @@ Case::Case(std::string file_name, int argn, char **args) {
 
     build_domain(domain, imax, jmax);
     _grid = Grid(_geom_name, domain);
+    if(_geom_name == "PlaneShearFlow")
+    {
+        _field = Fields(nu, dt, tau, alpha, beta, energy_eq, _grid.domain().size_x, _grid.domain().size_y, 0.0, 0.0, PI, TI);
+    }
+    else{
     _field = Fields(nu, dt, tau, alpha, beta, energy_eq, _grid.domain().size_x, _grid.domain().size_y, UI, VI, PI, TI);
-
+    }
     _discretization = Discretization(domain.dx, domain.dy, gamma);
     _pressure_solver = std::make_unique<SOR>(omg);
     _max_iter = itermax;
     _tolerance = eps;
     // Construct boundaries
+    if(not _grid.inflow_cells().empty())
+    {
+        _boundaries.push_back(
+            std::make_unique<InFlow>(_grid.inflow_cells(), std::map<int, double> {{PlaneShearFlow::inflow_wall_id, UI}}));
+    }
+
+    if(not _grid.outflow_cells().empty())
+    {
+        _boundaries.push_back(
+            std::make_unique<OutFlow>(_grid.outflow_cells(), -dP));
+    }
+
     if (not _grid.moving_wall_cells().empty()) {
         _boundaries.push_back(
             std::make_unique<MovingWallBoundary>(_grid.moving_wall_cells(), LidDrivenCavity::wall_velocity));
