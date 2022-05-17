@@ -16,6 +16,14 @@ namespace PlaneShearFlow {
     const int fixed_wall_id = 4;
 }
 
+namespace PGMGeneral{
+    int inflow_wall_id = 1;
+    int outflow_wall_id = 2;
+    int fixed_wall_id = 3;
+    int hot_fixed_wall_id = 4;
+    int cold_fixed_wall_id = 5;
+}
+
 enum class border_position {
     TOP,
     BOTTOM,

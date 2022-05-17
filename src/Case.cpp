@@ -87,6 +87,7 @@ Case::Case(std::string file_name, int argn, char **args) {
                 if (var == "imax") file >> imax;
                 if (var == "jmax") file >> jmax;
                 // Worksheet 2 Additions
+                if (var == "geo_file") file >> _geom_name;
                 if (var == "TI") file >> TI;
                 if (var == "alpha") file >> alpha;
                 if (var == "beta") file >> beta;

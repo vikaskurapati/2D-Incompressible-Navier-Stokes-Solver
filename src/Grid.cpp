@@ -117,7 +117,7 @@ void Grid::assign_cell_types(std::vector<std::vector<int>> &geometry_data, std::
             ++j;
         }
     }
-    else
+    else if (geom_name.compare("NONE") == 0)
     {
         for (int j_geom = _domain.jmin; j_geom < _domain.jmax; ++j_geom) {
             { i = 0; }
@@ -139,6 +139,10 @@ void Grid::assign_cell_types(std::vector<std::vector<int>> &geometry_data, std::
             }
             ++j;
         }
+    }
+    else
+    {
+
     }
     // Corner cell neighbour assigment
     // Bottom-Left Corner
@@ -311,6 +315,9 @@ void Grid::parse_geometry_file(std::string filedoc, std::vector<std::vector<int>
             ss >> geometry_data[row][col];
         }
     }
+
+    getline(infile, inputLine);
+    std::cout<< inputLine<< std::endl;
 
     infile.close();
 }
