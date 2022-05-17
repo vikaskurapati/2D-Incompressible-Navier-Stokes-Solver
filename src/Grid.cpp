@@ -288,8 +288,10 @@ void Grid::assign_cell_types(std::vector<std::vector<int>> &geometry_data, std::
 void Grid::parse_geometry_file(std::string filedoc, std::vector<std::vector<int>> &geometry_data) {
 
     int numcols, numrows, depth;
+    char wall_id;
 
     std::ifstream infile(filedoc);
+    std::ifstream legend_lines(filedoc);
     std::stringstream ss;
     std::string inputLine = "";
 
@@ -315,9 +317,36 @@ void Grid::parse_geometry_file(std::string filedoc, std::vector<std::vector<int>
             ss >> geometry_data[row][col];
         }
     }
+    size_t found;
+    while( getline(legend_lines, inputLine))
+    {
+        found = inputLine.find("Inflow");
+        if (found != std::string::npos){
+            inflow_wall_id = inputLine[2] - '0';
+        }
+        found = inputLine.find("Outflow");
+        if (found != std::string::npos){
+            outflow_wall_id = inputLine[2] - '0';
+        }
+        found = inputLine.find("Wall/Obstacle");
+        if (found != std::string::npos){
+            fixed_wall_id = inputLine[2] - '0';
+        }
+        found = inputLine.find("Wall/Obstacle (hot)");
+        if (found != std::string::npos){
+            hot_fixed_wall_id = inputLine[2] - '0';
+        }
+        found = inputLine.find("Wall/Obstacle (cold)");
+        if (found != std::string::npos){
+            cold_fixed_wall_id = inputLine[2] - '0';
+        }
+        found = inputLine.find("Wall/Obstacle (adiabatic)");
+        if (found != std::string::npos){
+            adiabatic_fixed_wall_id = inputLine[2] - '0';
+        }
 
-    getline(infile, inputLine);
-    std::cout<< inputLine<< std::endl;
+    }
+    std::cout<< "Yes "<< fixed_wall_id << std::endl;
 
     infile.close();
 }

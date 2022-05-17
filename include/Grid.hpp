@@ -112,6 +112,7 @@ class Grid {
     int fixed_wall_id;
     int hot_fixed_wall_id;
     int cold_fixed_wall_id;
+    int adiabatic_fixed_wall_id;
 
     Domain _domain;
 
