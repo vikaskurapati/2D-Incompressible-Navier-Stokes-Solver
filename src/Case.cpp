@@ -120,6 +120,7 @@ Case::Case(std::string file_name, int argn, char **args) {
 
     build_domain(domain, imax, jmax);
     _grid = Grid(_geom_name, domain);
+
     if(_geom_name == "PlaneShearFlow")
     {
         _field = Fields(nu, dt, tau, alpha, beta, energy_eq, _grid.domain().size_x, _grid.domain().size_y, 0.0, 0.0, PI, TI);
