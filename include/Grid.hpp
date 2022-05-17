@@ -107,6 +107,12 @@ class Grid {
     std::vector<Cell *> _inflow_cells;
     std::vector<Cell *> _outflow_cells;
 
+    int inflow_wall_id;
+    int outflow_wall_id;
+    int fixed_wall_id;
+    int hot_fixed_wall_id;
+    int cold_fixed_wall_id;
+
     Domain _domain;
 
     double _dx;
