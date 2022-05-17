@@ -58,12 +58,12 @@ void MovingWallBoundary::apply(Fields &field) {
     }
 }
 
-InFlow::InFlow(std::vector<Cell *> cells, std::map<int, double> inlet_velocity) : _cells(cells), 
-                                                                            _inlet_velocity(inlet_velocity){};
+InFlow::InFlow(std::vector<Cell *> cells, std::map<int, double> inlet_velocity, double inlet_pressure) : _cells(cells), 
+                                                                            _inlet_velocity(inlet_velocity), _inlet_pressure(inlet_pressure){};
 
 InFlow::InFlow(std::vector<Cell *> cells, std::map<int, double> inlet_velocity, 
-            std::map<int, double> wall_temperature): _cells(cells), _inlet_velocity(inlet_velocity), 
-                                                    _wall_temperature(wall_temperature){};
+            std::map<int, double> wall_temperature, double inlet_pressure): _cells(cells), _inlet_velocity(inlet_velocity), 
+                                                    _wall_temperature(wall_temperature), _inlet_pressure(inlet_pressure){};
 
 void InFlow::apply(Fields &field)
 {
@@ -78,14 +78,14 @@ void InFlow::apply(Fields &field)
             field.u(i, j) = _inlet_velocity[PlaneShearFlow::inflow_wall_id];
             field.v(i,j) = -field.v(i+1, j);
             // field.p(i,j) = field.p(i+1,j);
-            field.p(i,j) = 0.0; //setting this for dP condition
+            field.p(i,j) = _inlet_pressure; //setting this for dP condition
         }
         if (cell->is_border(border_position::LEFT))
         {
             field.u(i-1, j) = _inlet_velocity[PlaneShearFlow::inflow_wall_id];
             field.v(i,j) = -field.v(i-1,j);
             // field.p(i,j) = field.p(i-1,j);
-            field.p(i,j) = 0.0; //setting this for dP condition
+            field.p(i,j) = _inlet_pressure; //setting this for dP condition
         }
     }
 }

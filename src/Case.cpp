@@ -135,13 +135,13 @@ Case::Case(std::string file_name, int argn, char **args) {
     if(not _grid.inflow_cells().empty())
     {
         _boundaries.push_back(
-            std::make_unique<InFlow>(_grid.inflow_cells(), std::map<int, double> {{PlaneShearFlow::inflow_wall_id, UI}}));
+            std::make_unique<InFlow>(_grid.inflow_cells(), std::map<int, double> {{PlaneShearFlow::inflow_wall_id, UI}}, PI));
     }
 
     if(not _grid.outflow_cells().empty())
     {
         _boundaries.push_back(
-            std::make_unique<OutFlow>(_grid.outflow_cells(), -dP));
+            std::make_unique<OutFlow>(_grid.outflow_cells(), PI-dP));
     }
 
     if (not _grid.moving_wall_cells().empty()) {
