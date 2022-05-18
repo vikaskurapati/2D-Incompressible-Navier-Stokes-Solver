@@ -74,7 +74,7 @@ void Fields::calculate_fluxes(Grid &grid)
             _F(i, j) = _U(i,j);
         }
         if(currentCell->is_border(border_position::LEFT)){
-            _F(i-1, j) = _U(i-1.,j);
+            _F(i-1, j) = _U(i-1,j);
         }
         if(currentCell->is_border(border_position::TOP)){
             _G(i,j) = _V(i,j);
@@ -156,8 +156,9 @@ double Fields::calculate_dt(Grid &grid) {
     dt1 = 0.5*(dx*dx*dy*dy)/((dx*dx + dy*dy)*_nu);
     dt2 = dx/umax;
     dt3 = dy/vmax;
-    dt4 = 0.5*(dx*dx*dy*dy)/((dx*dx + dy*dy)*_alpha);
-    _dt = _tau*std::min({dt1, dt2, dt3, dt4});
+    // dt4 = 0.5*(dx*dx*dy*dy)/((dx*dx + dy*dy)*_alpha);
+    // _dt = _tau*std::min({dt1, dt2, dt3, dt4});
+    _dt = _tau*std::min({dt1,dt2,dt3});
     return _dt; 
 }
 

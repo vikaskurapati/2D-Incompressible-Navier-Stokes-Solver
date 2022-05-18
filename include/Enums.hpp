@@ -38,5 +38,8 @@ enum class cell_type {
     OUTFLOW,
     FIXED_WALL,
     MOVING_WALL,
-    DEFAULT
+    DEFAULT,
+    HOT_FIXED_WALL,
+    COLD_FIXED_WALL,
+    ADIABATIC_FIXED_WALL
 };

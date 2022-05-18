@@ -101,10 +101,6 @@ Case::Case(std::string file_name, int argn, char **args) {
 
     _datfile_name = file_name;
     std::map<int, double> wall_vel;
-    if (_datfile_name.find("PlaneShearFlow") != std::string::npos)
-    {
-        _geom_name = "PlaneShearFlow";
-    }
     if (_geom_name.compare("NONE") == 0) {
         wall_vel.insert(std::pair<int, double>(LidDrivenCavity::moving_wall_id, LidDrivenCavity::wall_velocity));
     }
@@ -129,15 +125,6 @@ Case::Case(std::string file_name, int argn, char **args) {
     _max_iter = itermax;
     _tolerance = eps;
     // Construct boundaries
-    if (not _grid.moving_wall_cells().empty()) {
-        _boundaries.push_back(
-            std::make_unique<MovingWallBoundary>(_grid.moving_wall_cells(), LidDrivenCavity::wall_velocity));
-    }
-
-    if (not _grid.fixed_wall_cells().empty()) {
-        _boundaries.push_back(std::make_unique<FixedWallBoundary>(_grid.fixed_wall_cells()));
-    }
-
     if(not _grid.inflow_cells().empty())
     {
         _boundaries.push_back(
@@ -149,6 +136,16 @@ Case::Case(std::string file_name, int argn, char **args) {
         _boundaries.push_back(
             std::make_unique<OutFlow>(_grid.outflow_cells(), PI));
     }
+
+    if (not _grid.moving_wall_cells().empty()) {
+        _boundaries.push_back(
+            std::make_unique<MovingWallBoundary>(_grid.moving_wall_cells(), LidDrivenCavity::wall_velocity));
+    }
+
+    if (not _grid.fixed_wall_cells().empty()) {
+        _boundaries.push_back(std::make_unique<FixedWallBoundary>(_grid.fixed_wall_cells()));
+    }
+
 }
 
 void Case::set_file_names(std::string file_name) {
@@ -245,6 +242,9 @@ void Case::simulate(int my_rank) {
             _boundaries[i]->apply(_field);
         }
 
+        int imax = _grid.imaxb();
+        int jmax = _grid.jmaxb();
+        
         _field.calculate_fluxes(_grid);
         _field.calculate_rs(_grid);
         while(err > _tolerance && iter_count < _max_iter)
@@ -252,6 +252,7 @@ void Case::simulate(int my_rank) {
             err = _pressure_solver->solve(_field, _grid, _boundaries);
             iter_count += 1;
         }
+
         _field.calculate_velocities(_grid);
         t += dt;
         timestep+=1;

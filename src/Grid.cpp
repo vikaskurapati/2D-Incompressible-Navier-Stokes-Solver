@@ -25,34 +25,6 @@ Grid::Grid(std::string geom_name, Domain &domain) {
     }
 }
 
-void Grid::build_planeshearflow(std::string geom_name)
-{
-    std::vector<std::vector<int>> geometry_data(_domain.domain_size_x + 2,
-                                                std::vector<int>(_domain.domain_size_y + 2, 0));
-
-    for (int i = 0; i < _domain.domain_size_x + 2; ++i) {
-        for (int j = 0; j < _domain.domain_size_y + 2; ++j) {
-            // Bottom, left and right walls: no-slip
-            
-            if (i == 0)
-            {
-                geometry_data.at(i).at(j) = PlaneShearFlow::inflow_wall_id;
-            }
-
-            if (i == _domain.domain_size_x + 1)
-            {
-                geometry_data.at(i).at(j) = PlaneShearFlow::outflow_wall_id;
-            }
-
-            if (j==0 || j == _domain.domain_size_y+1)
-            {
-                geometry_data.at(i).at(j) = PlaneShearFlow::fixed_wall_id;
-            }
-        }
-    }
-    assign_cell_types(geometry_data, geom_name);
-}
-
 void Grid::build_lid_driven_cavity(std::string geom_name) {
     std::vector<std::vector<int>> geometry_data(_domain.domain_size_x + 2,
                                                 std::vector<int>(_domain.domain_size_y + 2, 0));
@@ -78,42 +50,7 @@ void Grid::assign_cell_types(std::vector<std::vector<int>> &geometry_data, std::
     int i = 0;
     int j = 0;
 
-    if(geom_name.find("PlaneShearFlow") != std::string::npos)
-    {
-        for (int j_geom = _domain.imin; j_geom < _domain.jmax; ++j_geom)
-        {
-            { i = 0;}
-            for (int i_geom = _domain.imin; i_geom < _domain.imax; ++i_geom)
-            {
-                if(geometry_data.at(i_geom).at(j_geom) == 0)
-                {
-                    _cells(i,j) = Cell(i,j, cell_type::FLUID);
-                    _fluid_cells.push_back(&_cells(i,j));
-                }
-                else if (geometry_data.at(i_geom).at(j_geom) == PlaneShearFlow::inflow_wall_id)
-                {
-                    _cells(i,j) = Cell(i,j, cell_type::INFLOW, geometry_data.at(i_geom).at(j_geom));
-                    _inflow_cells.push_back(&_cells(i,j));
-                }
-                else if (geometry_data.at(i_geom).at(j_geom) == PlaneShearFlow::outflow_wall_id)
-                {
-                    _cells(i,j) = Cell(i,j, cell_type::OUTFLOW, geometry_data.at(i_geom).at(j_geom));
-                    _outflow_cells.push_back(&_cells(i,j));
-                }
-                else
-                { 
-                    if(j==0 or j == _domain.size_y + 1)
-                    {
-                        _cells(i,j) = Cell(i,j, cell_type::FIXED_WALL, geometry_data.at(i_geom).at(j_geom));
-                        _fixed_wall_cells.push_back(&_cells(i,j));
-                    }
-                }
-                ++i;
-            }
-            ++j;
-        }
-    }
-    else if (geom_name.compare("NONE") == 0)
+    if (geom_name.compare("NONE") == 0)
     {
         for (int j_geom = _domain.jmin; j_geom < _domain.jmax; ++j_geom) {
             { i = 0; }
@@ -138,7 +75,40 @@ void Grid::assign_cell_types(std::vector<std::vector<int>> &geometry_data, std::
     }
     else
     {
-
+        for (int j_geom = _domain.jmin; j_geom < _domain.jmax; ++j_geom) {
+            { i = 0; }
+            for (int i_geom = _domain.imin; i_geom < _domain.imax; ++i_geom) {
+                if (geometry_data.at(i_geom).at(j_geom) == 0) {
+                    _cells(i, j) = Cell(i, j, cell_type::FLUID);
+                    _fluid_cells.push_back(&_cells(i, j));
+                } else if (geometry_data.at(i_geom).at(j_geom) == inflow_wall_id) {
+                    _cells(i, j) = Cell(i, j, cell_type::INFLOW, geometry_data.at(i_geom).at(j_geom));
+                    _inflow_cells.push_back(&_cells(i, j));
+                }
+                else if (geometry_data.at(i_geom).at(j_geom) == outflow_wall_id) {
+                    _cells(i, j) = Cell(i, j, cell_type::OUTFLOW, geometry_data.at(i_geom).at(j_geom));
+                    _outflow_cells.push_back(&_cells(i, j));
+                }
+                else if (geometry_data.at(i_geom).at(j_geom) == fixed_wall_id) {
+                    _cells(i, j) = Cell(i, j, cell_type::FIXED_WALL, geometry_data.at(i_geom).at(j_geom));
+                    _fixed_wall_cells.push_back(&_cells(i, j));
+                }
+                else if (geometry_data.at(i_geom).at(j_geom) == hot_fixed_wall_id) {
+                    _cells(i, j) = Cell(i, j, cell_type::HOT_FIXED_WALL, geometry_data.at(i_geom).at(j_geom));
+                    _hot_fixed_wall_cells.push_back(&_cells(i, j));
+                }
+                else if (geometry_data.at(i_geom).at(j_geom) == cold_fixed_wall_id) {
+                    _cells(i, j) = Cell(i, j, cell_type::COLD_FIXED_WALL, geometry_data.at(i_geom).at(j_geom));
+                    _cold_fixed_wall_cells.push_back(&_cells(i, j));
+                }
+                else if (geometry_data.at(i_geom).at(j_geom) == adiabatic_fixed_wall_id) {
+                    _cells(i, j) = Cell(i, j, cell_type::ADIABATIC_FIXED_WALL, geometry_data.at(i_geom).at(j_geom));
+                    _adiabatic_fixed_wall_cells.push_back(&_cells(i, j));
+                }
+                ++i;
+            }
+            ++j;
+        }
     }
     // Corner cell neighbour assigment
     // Bottom-Left Corner
@@ -324,7 +294,7 @@ void Grid::parse_geometry_file(std::string filedoc, std::vector<std::vector<int>
         if (found != std::string::npos){
             outflow_wall_id = inputLine[2] - '0';
         }
-        found = inputLine.find("Wall/Obstacle");
+        found = inputLine.find("Wall/Obstacle") && !inputLine.find("Wall/Obstacle (hot)") && !inputLine.find("Wall/Obstacle (cold)") && !inputLine.find("Wall/Obstacle (adiabatic)");
         if (found != std::string::npos){
             fixed_wall_id = inputLine[2] - '0';
         }
@@ -342,7 +312,6 @@ void Grid::parse_geometry_file(std::string filedoc, std::vector<std::vector<int>
         }
 
     }
-    std::cout<< "Yes "<< fixed_wall_id << std::endl;
 
     infile.close();
 }
