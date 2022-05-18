@@ -12,7 +12,7 @@ Grid::Grid(std::string geom_name, Domain &domain) {
     _domain = domain;
 
     _cells = Matrix<Cell>(_domain.size_x + 2, _domain.size_y + 2);
-    if (geom_name.compare("PlaneShearFlow") == 0)
+    if (geom_name.find("PlaneShearFlow") != std::string::npos)
     {
         build_planeshearflow(geom_name);
     }
@@ -82,7 +82,7 @@ void Grid::assign_cell_types(std::vector<std::vector<int>> &geometry_data, std::
     int i = 0;
     int j = 0;
 
-    if(geom_name.compare("PlaneShearFlow") == 0)
+    if(geom_name.find("PlaneShearFlow") != std::string::npos)
     {
         for (int j_geom = _domain.imin; j_geom < _domain.jmax; ++j_geom)
         {
