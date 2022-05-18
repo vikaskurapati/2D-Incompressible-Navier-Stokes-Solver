@@ -105,22 +105,22 @@ void OutFlow::apply(Fields &field)
         j = cell->j();
         if(cell -> is_border(border_position::LEFT))
         {
-            field.v(i,j) = field.v(i-1,j);
+            field.u(i-1,j) = field.u(i,j);
             field.p(i,j) = _outlet_pressure;
         }
         if(cell -> is_border(border_position::RIGHT))
         {
-            field.v(i,j) = field.v(i+1,j);
+            field.u(i,j) = field.u(i+1,j);
             field.p(i,j) = _outlet_pressure;
         }
         if(cell -> is_border(border_position::TOP))
         {
-            field.u(i,j) = field.u(i,j+1);
+            field.v(i,j) = field.v(i,j+1);
             field.p(i,j) = _outlet_pressure;
         }
         if(cell ->is_border(border_position::BOTTOM))
         {
-            field.u(i,j) = field.u(i,j-1);
+            field.v(i,j-1) = field.v(i,j);
             field.p(i,j) = _outlet_pressure;
         }
     }

@@ -65,6 +65,42 @@ void Fields::calculate_fluxes(Grid &grid)
             _G(i, j-1) = _V(i, j-1);
         }
     }
+
+    for (const auto& currentCell : grid.inflow_cells())
+    {
+        i = currentCell->i();
+        j = currentCell->j();
+        if(currentCell->is_border(border_position::RIGHT)){
+            _F(i, j) = _U(i,j);
+        }
+        if(currentCell->is_border(border_position::LEFT)){
+            _F(i-1, j) = _U(i-1.,j);
+        }
+        if(currentCell->is_border(border_position::TOP)){
+            _G(i,j) = _V(i,j);
+        }
+        if(currentCell->is_border(border_position::BOTTOM)){
+            _G(i, j-1) = _V(i, j-1);
+        }
+    }
+
+    for (const auto& currentCell : grid.outflow_cells())
+    {
+        i = currentCell->i();
+        j = currentCell->j();
+        if(currentCell->is_border(border_position::RIGHT)){
+            _F(i, j) = _U(i,j);
+        }
+        if(currentCell->is_border(border_position::LEFT)){
+            _F(i-1, j) = _U(i-1,j);
+        }
+        if(currentCell->is_border(border_position::TOP)){
+            _G(i,j) = _V(i,j);
+        }
+        if(currentCell->is_border(border_position::BOTTOM)){
+            _G(i, j-1) = _V(i, j-1);
+        }
+    }
 }
 
 void Fields::calculate_rs(Grid &grid) 
