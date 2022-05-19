@@ -17,14 +17,32 @@ double Discretization::convection_u(const Matrix<double> &U, const Matrix<double
 {
     double du2dx = 0.0;
     double duvdy = 0.0;
+    double result;
 
-    du2dx = (0.25/_dx)*((U(i,j)+U(i+1,j))*(U(i,j)+U(i+1,j)) - (U(i-1,j)+U(i,j))*(U(i-1,j)+U(i,j)));
-    du2dx = du2dx + (0.25*_gamma/_dx)*(std::abs(U(i,j)+U(i+1,j))*(U(i,j)+U(i+1,j)) - std::abs(U(i-1,j)+U(i,j))*(U(i-1,j)+U(i,j)));
+    du2dx = (U(i,j)+U(i+1,j))*(U(i,j)+U(i+1,j));
+    du2dx -= (U(i-1,j)+U(i,j))*(U(i-1,j)+U(i,j));
 
-    duvdy = (0.25/_dy)*((V(i,j)+V(i+1,j))*(U(i,j)+U(i,j+1)) - (V(i,j-1)+V(i+1,j-1))*(U(i,j-1)+U(i,j)));
-    duvdy = duvdy + (0.25*_gamma/_dy)*(std::abs(V(i,j)+V(i+1,j))*(U(i,j)-U(i,j+1)) - std::abs(V(i,j-1)+V(i+1,j-1))*(U(i,j-1)-U(i,j)));
+    du2dx += _gamma*std::abs(U(i,j)+U(i+1,j))*(U(i,j) - U(i+1,j));
+    du2dx -= _gamma*std::abs(U(i-1,j)+U(i,j))*((U(i-1,j) - U(i,j)));
 
-    return du2dx + duvdy;
+    du2dx = (0.25/_dx)*du2dx;
+
+    duvdy = (V(i,j)+V(i+1,j))*(U(i,j)+U(i,j+1));
+    duvdy -= (V(i,j-1)+V(i+1,j-1))*(U(i,j-1)+U(i,j));
+    duvdy += _gamma*std::abs(V(i,j)+V(i+1,j))*(U(i,j)-U(i,j+1));
+    duvdy -= _gamma*std::abs(V(i,j-1)+V(i+1,j-1))*(U(i,j-1)-U(i,j));
+
+    duvdy = (0.25/_dy)*duvdy;
+
+    // du2dx = (0.25/_dx)*((U(i,j)+U(i+1,j))*(U(i,j)+U(i+1,j)) - (U(i-1,j)+U(i,j))*(U(i-1,j)+U(i,j)));
+    // du2dx = du2dx + (0.25*_gamma/_dx)*(std::abs(U(i,j)+U(i+1,j))*(U(i,j)+U(i+1,j)) - std::abs(U(i-1,j)+U(i,j))*(U(i-1,j)+U(i,j)));
+
+    // duvdy = (0.25/_dy)*((V(i,j)+V(i+1,j))*(U(i,j)+U(i,j+1)) - (V(i,j-1)+V(i+1,j-1))*(U(i,j-1)+U(i,j)));
+    // duvdy = duvdy + (0.25*_gamma/_dy)*(std::abs(V(i,j)+V(i+1,j))*(U(i,j)-U(i,j+1)) - std::abs(V(i,j-1)+V(i+1,j-1))*(U(i,j-1)-U(i,j)));
+
+    result = du2dx + duvdy;
+
+    return result;
 
 }
 
@@ -32,15 +50,33 @@ double Discretization::convection_v(const Matrix<double> &U, const Matrix<double
 {
     double duvdx = 0.0;
     double dv2dy = 0.0;
+    double result;
 
-    duvdx = (0.25/_dx)*((U(i,j)+U(i,j+1))*(V(i,j)+V(i+1,j)) - ((U(i-1,j)+U(i-1,j+1))*(V(i-1,j)+V(i,j))));
-    duvdx = duvdx + (0.25*_gamma/_dx)*(std::abs(U(i,j)+U(i,j+1))*(V(i,j)-V(i+1,j)) - (std::abs(U(i-1,j)+U(i-1,j+1))*(V(i-1,j)-V(i,j))));
+    duvdx = (U(i,j)+U(i,j+1))*(V(i,j)+V(i+1,j));
+    duvdx -= (U(i-1,j)+U(i-1,j+1))*(V(i-1,j)+V(i,j));
 
-    dv2dy = (0.25/_dy)*((V(i,j)+V(i,j+1))*(V(i,j)+V(i,j+1)) - (V(i,j-1)+V(i,j))*(V(i,j-1)+V(i,j)));
-    dv2dy = dv2dy + (0.25*_gamma/_dy)*(std::abs(V(i,j)+V(i,j+1))*(V(i,j)-V(i,j+1)) - std::abs(V(i,j-1)+V(i,j))*(V(i,j-1)-V(i,j)));
+    duvdx += _gamma*std::abs(U(i,j)+U(i,j+1))*(V(i,j)-V(i+1,j));
+    duvdx -= _gamma*std::abs(U(i-1,j)+U(i-1,j+1))*(V(i-1,j)-V(i,j));
+
+    duvdx = (0.25/_dx)*duvdx;
+
+    dv2dy = (V(i,j)+V(i,j+1))*(V(i,j)+V(i,j+1));
+    dv2dy -= (V(i,j-1)+V(i,j))*(V(i,j-1)+V(i,j));
+
+    dv2dy += _gamma*std::abs(V(i,j)+V(i,j+1))*(V(i,j)-V(i,j+1));
+    dv2dy -= _gamma*std::abs(V(i,j-1)+V(i,j))*(V(i,j-1)-V(i,j));
+
+    dv2dy = (0.25/_dy)*dv2dy;
+
+    // duvdx = (0.25/_dx)*((U(i,j)+U(i,j+1))*(V(i,j)+V(i+1,j)) - ((U(i-1,j)+U(i-1,j+1))*(V(i-1,j)+V(i,j))));
+    // duvdx = duvdx + (0.25*_gamma/_dx)*(std::abs(U(i,j)+U(i,j+1))*(V(i,j)-V(i+1,j)) - (std::abs(U(i-1,j)+U(i-1,j+1))*(V(i-1,j)-V(i,j))));
+
+    // dv2dy = (0.25/_dy)*((V(i,j)+V(i,j+1))*(V(i,j)+V(i,j+1)) - (V(i,j-1)+V(i,j))*(V(i,j-1)+V(i,j)));
+    // dv2dy = dv2dy + (0.25*_gamma/_dy)*(std::abs(V(i,j)+V(i,j+1))*(V(i,j)-V(i,j+1)) - std::abs(V(i,j-1)+V(i,j))*(V(i,j-1)-V(i,j)));
 
 
-    return duvdx + dv2dy;
+    result = duvdx + dv2dy;
+    return result;
 
 }
 
