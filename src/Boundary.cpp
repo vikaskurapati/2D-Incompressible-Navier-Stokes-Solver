@@ -78,7 +78,7 @@ void InFlow::apply(Fields &field)
             field.u(i, j) = _inlet_velocity[PlaneShearFlow::inflow_wall_id];
             field.v(i,j) = -field.v(i+1, j);
             field.p(i,j) = _inlet_pressure; //setting this for dP condition
-            field.p(i+1,j) = field.p(i,j);
+            // field.p(i+1,j) = field.p(i,j);
 
         }
         if (cell->is_border(border_position::LEFT))
@@ -86,7 +86,7 @@ void InFlow::apply(Fields &field)
             field.u(i-1, j) = _inlet_velocity[PlaneShearFlow::inflow_wall_id];
             field.v(i,j) = -field.v(i-1,j);
             field.p(i,j) = _inlet_pressure; //setting this for dP condition
-            field.p(i-1,j) = field.p(i,j);
+            // field.p(i-1,j) = field.p(i,j);
         }
     }
 }
@@ -109,14 +109,12 @@ void OutFlow::apply(Fields &field)
             field.u(i, j) = field.u(i-1,j);
             field.v(i, j) = field.v(i-1,j);
             field.p(i,j) = _outlet_pressure;
-            // field.p(i-1, j) = field.p(i,j);
         }
         if(cell -> is_border(border_position::RIGHT))
         {
             field.u(i,j) = field.u(i+1,j);
             field.v(i, j) = field.v(i+1, j);
             field.p(i,j) = _outlet_pressure;
-            // field.p(i+1,j) = field.p(i,j);
         }
         if(cell -> is_border(border_position::TOP))
         {
