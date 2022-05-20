@@ -241,9 +241,6 @@ void Case::simulate(int my_rank) {
         {
             _boundaries[i]->apply(_field);
         }
-
-        int imax = _grid.imaxb();
-        int jmax = _grid.jmaxb();
         
         _field.calculate_fluxes(_grid);
         _field.calculate_rs(_grid);
