@@ -301,6 +301,9 @@ void Case::output_vtk(int timestep, int my_rank) {
     // Create grid
     vtkSmartPointer<vtkPoints> points = vtkSmartPointer<vtkPoints>::New();
 
+    int inflow_id = _grid.get_inflow_wall_id();
+    int outflow_id = _grid.get_outflow_wall_id();
+
     double dx = _grid.dx();
     double dy = _grid.dy();
 
@@ -338,7 +341,7 @@ void Case::output_vtk(int timestep, int my_rank) {
     // Print pressure and temperature from bottom to top
     for (int j = 1; j < _grid.domain().size_y + 1; j++) {
         for (int i = 1; i < _grid.domain().size_x + 1; i++) {
-            if(_grid.cell(i,j).wall_id() == 0){
+            if(_grid.cell(i,j).wall_id() == 0 or _grid.cell(i,j).wall_id() == inflow_id or _grid.cell(i,j).wall_id() == outflow_id){
                 double pressure = _field.p(i, j);
                 Pressure->InsertNextTuple(&pressure);
             }
@@ -357,7 +360,7 @@ void Case::output_vtk(int timestep, int my_rank) {
     // Print Velocity from bottom to top
     for (int j = 0; j < _grid.domain().size_y + 1; j++) {
         for (int i = 0; i < _grid.domain().size_x + 1; i++) {
-            if(_grid.cell(i,j).wall_id() == 0){
+            if(_grid.cell(i,j).wall_id() == 0 or _grid.cell(i,j).wall_id() == inflow_id or _grid.cell(i,j).wall_id() == outflow_id){
                 vel[0] = (_field.u(i, j) + _field.u(i, j + 1)) * 0.5;
                 vel[1] = (_field.v(i, j) + _field.v(i + 1, j)) * 0.5;
                 Velocity->InsertNextTuple(vel);
