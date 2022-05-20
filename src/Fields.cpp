@@ -4,13 +4,25 @@
 #include <iostream>
 #include <cmath>
 
-Fields::Fields(double nu, double dt, double tau, double alpha, double beta,std::string energy_eq, int imax, int jmax, double UI, double VI, double PI, double TI)
+Fields::Fields(Grid& grid, double nu, double dt, double tau, double alpha, double beta,std::string energy_eq, int imax, int jmax, double UI, double VI, double PI, double TI)
     : _nu(nu), _dt(dt), _tau(tau), _alpha(alpha), _beta(beta), _energy_eq(energy_eq)
 {
-    _U = Matrix<double>(imax + 2, jmax + 2, UI);
-    _V = Matrix<double>(imax + 2, jmax + 2, VI);
-    _P = Matrix<double>(imax + 2, jmax + 2, PI);
-    _T = Matrix<double>(imax + 2, jmax + 2, TI);
+    _U = Matrix<double>(imax + 2, jmax + 2);
+    _V = Matrix<double>(imax + 2, jmax + 2);
+    _P = Matrix<double>(imax + 2, jmax + 2);
+    _T = Matrix<double>(imax + 2, jmax + 2);
+
+    int i,j;
+
+    for(const auto& cell: grid.fluid_cells())
+    {
+        i = cell->i();
+        j = cell->j();
+        _U(i,j) = UI;
+        _V(i,j) = VI;
+        _P(i,j) = PI;
+        _T(i,j) = TI;
+    }
 
     _F = Matrix<double>(imax + 2, jmax + 2, 0.0);
     _G = Matrix<double>(imax + 2, jmax + 2, 0.0);
@@ -34,17 +46,58 @@ void Fields::calculate_fluxes(Grid &grid)
     {
         i = currentCell->i();
         j = currentCell->j();
-        if(currentCell->is_border(border_position::RIGHT)){
-            _F(i, j) = _U(i,j);
+        if(currentCell->is_border(border_position::TOP))
+        {
+            if (currentCell->is_border(border_position::RIGHT))
+            {
+                _F(i,j) = 0.0;
+                _G(i,j) = 0.0;
+            }
+            else if(currentCell->is_border(border_position::LEFT))
+            {
+                _F(i-1,j) = 0.0;
+                _G(i,j) = 0.0;
+            }
+            else if(currentCell->is_border(border_position::BOTTOM))
+            {
+                _G(i,j) = 0.0;
+                _G(i,j-1) = 0.0;
+            }
+            else{
+                _G(i,j) = _V(i,j);
+            }
         }
-        if(currentCell->is_border(border_position::LEFT)){
-            _F(i-1, j) = _U(i-1,j);
+        else if (currentCell->is_border(border_position::BOTTOM))
+        {
+            if(currentCell->is_border(border_position::RIGHT))
+            {
+                _F(i,j) = 0.0;
+                _G(i,j-1) = 0.0;
+            }
+            else if(currentCell->is_border(border_position::LEFT))
+            {
+                _F(i-1,j) = 0.0;
+                _G(i,j-1) = 0.0;
+            }
+
+            else{
+                _G(i,j-1) = _V(i,j-1);
+            }
         }
-        if(currentCell->is_border(border_position::TOP)){
-            _G(i,j) = _V(i,j);
+        else if(currentCell->is_border(border_position::RIGHT))
+        {
+            if(currentCell->is_border(border_position::LEFT))
+            {
+                _F(i,j) = 0.0;
+                _F(i-1,j) = 0.0;
+            }
+            else{
+                _F(i,j) = _U(i,j);
+            }
         }
-        if(currentCell->is_border(border_position::BOTTOM)){
-            _G(i, j-1) = _V(i, j-1);
+        else if(currentCell->is_border(border_position::LEFT))
+        {
+            _F(i-1,j) = _U(i-1,j);
         }
     }
 

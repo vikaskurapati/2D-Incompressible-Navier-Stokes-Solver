@@ -118,7 +118,7 @@ Case::Case(std::string file_name, int argn, char **args) {
     build_domain(domain, imax, jmax);
     _grid = Grid(_geom_name, domain);
 
-    _field = Fields(nu, dt, tau, alpha, beta, energy_eq, _grid.domain().size_x, _grid.domain().size_y, UI, VI, PI, TI);
+    _field = Fields(_grid, nu, dt, tau, alpha, beta, energy_eq, _grid.domain().size_x, _grid.domain().size_y, UI, VI, PI, TI);
 
     _discretization = Discretization(domain.dx, domain.dy, gamma);
     _pressure_solver = std::make_unique<SOR>(omg);
@@ -249,6 +249,10 @@ void Case::simulate(int my_rank) {
         _field.calculate_rs(_grid);
         while(err > _tolerance && iter_count < _max_iter)
         {
+            for (const auto& boundary: _boundaries)
+            {
+                boundary->apply(_field);
+            }
             err = _pressure_solver->solve(_field, _grid, _boundaries);
             iter_count += 1;
         }
