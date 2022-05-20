@@ -284,30 +284,6 @@ void Grid::parse_geometry_file(std::string filedoc, std::vector<std::vector<int>
         }
     }
 
-    // Checking for boundary cells if they have more fluid cells and throw error to the user
-    int count;
-    for (int col = 1; col < numcols - 1; ++col) {
-        for (int row = 1; row < numrows - 1; ++row) {
-            if(geometry_data[row][col]!=0)
-            {
-                count = 0;
-                if(geometry_data[row-1][col] == 0){
-                    count++;
-                }if(geometry_data[row][col-1] == 0){
-                    count++;
-                }if(geometry_data[row+1][col] == 0){
-                    count++;
-                }if(geometry_data[row][col+1] == 0){
-                    count++;
-                }
-                if(count > 2){
-                    std::cerr << "Error: Given PGM file has a boundary with more fluid neighbors\nPlease check the file\n";
-                    exit(0);
-                }
-            }
-        }
-    }
-
     // To read the last few lines to get the id for the wall which are defined in the pgm file
     size_t found;
     while( getline(legend_lines, inputLine))
@@ -336,10 +312,49 @@ void Grid::parse_geometry_file(std::string filedoc, std::vector<std::vector<int>
         if (found != std::string::npos){
             adiabatic_fixed_wall_id = inputLine[2] - '0';
         }
-
     }
 
     infile.close();
+
+    // Checking for boundary cells if they have more fluid cells and throw error to the user
+    int count;
+    for (int col = 1; col < numcols - 1; ++col) {
+        for (int row = 1; row < numrows - 1; ++row) {
+            if(geometry_data[row][col]!=0)
+            {
+                count = 0;
+                if(geometry_data[row-1][col] == 0){
+                    count++;
+                }if(geometry_data[row][col-1] == 0){
+                    count++;
+                }if(geometry_data[row+1][col] == 0){
+                    count++;
+                }if(geometry_data[row][col+1] == 0){
+                    count++;
+                }
+                if(count > 2){
+                    std::cerr << "Error: Given PGM file has a boundary with more fluid neighbors\nPlease check the file\n";
+                    exit(0);
+                }
+            }
+        }
+    }
+
+    // Checking for outer boundary cells if they have fluid cells and throw error to the use
+    for (int col = 1; col < numcols - 1; ++col) {
+        if(geometry_data[0][col]==0 or geometry_data[numrows-1][col]==0)
+        {
+            std::cerr << "Error: Given PGM file has a outer boundary cell with fluid wall id\nPlease check the file\n";
+            exit(0);
+        }
+    }
+    for (int row = 1; row < numrows - 1; ++row) {
+        if(geometry_data[row][0]==0 or geometry_data[row][numcols-1]==0)
+        {
+            std::cerr << "Error: Given PGM file has a outer boundary cell with fluid wall id\nPlease check the file\n";
+            exit(0);
+        }    
+    }
 }
 
 int Grid::imax() const { return _domain.size_x; }
