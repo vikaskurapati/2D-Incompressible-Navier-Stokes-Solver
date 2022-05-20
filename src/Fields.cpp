@@ -11,6 +11,7 @@ Fields::Fields(Grid& grid, double nu, double dt, double tau, double alpha, doubl
     _V = Matrix<double>(imax + 2, jmax + 2);
     _P = Matrix<double>(imax + 2, jmax + 2);
     _T = Matrix<double>(imax + 2, jmax + 2);
+    _T_new = Matrix<double>(imax + 2, jmax + 2);
 
     int i,j;
 
@@ -22,6 +23,7 @@ Fields::Fields(Grid& grid, double nu, double dt, double tau, double alpha, doubl
         _V(i,j) = VI;
         _P(i,j) = PI;
         _T(i,j) = TI;
+        _T_new(i,j) = TI;
     }
 
     _F = Matrix<double>(imax + 2, jmax + 2, 0.0);
@@ -209,9 +211,13 @@ double Fields::calculate_dt(Grid &grid) {
     dt1 = 0.5*(dx*dx*dy*dy)/((dx*dx + dy*dy)*_nu);
     dt2 = dx/umax;
     dt3 = dy/vmax;
-    // dt4 = 0.5*(dx*dx*dy*dy)/((dx*dx + dy*dy)*_alpha);
-    // _dt = _tau*std::min({dt1, dt2, dt3, dt4});
-    _dt = _tau*std::min({dt1,dt2,dt3});
+    if (_energy_eq == "on"){
+        dt4 = 0.5*(dx*dx*dy*dy)/((dx*dx + dy*dy)*_alpha);
+        _dt = _tau*std::min({dt1, dt2, dt3, dt4});
+    }else{
+        _dt = _tau*std::min({dt1, dt2, dt3});
+    }
+    
     return _dt; 
 }
 
@@ -224,9 +230,9 @@ void Fields::calculate_temperatures(Grid &grid)
     {
         i = currentCell->i();
         j = currentCell->j();
-        _T(i,j) = _T(i,j) + _dt*(_alpha*Discretization::diffusion(_T,i,j) - Discretization::convection_t(_T,_U,_V,i,j));
+        _T_new(i,j) = _T(i,j) + _dt*(_alpha*Discretization::diffusion(_T,i,j) - Discretization::convection_t(_T,_U,_V,i,j));
     }
-
+    _T = _T_new;
 }
 
 double &Fields::t(int i, int j) { return _T(i, j); }

@@ -136,6 +136,8 @@ class Fields {
     Matrix<double> _RS;
     /// Temperature matrix
     Matrix<double> _T;
+    /// Newly calculated Temperature matrix
+    Matrix<double> _T_new;
 
     /// kinematic viscosity
     double _nu;
