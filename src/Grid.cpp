@@ -105,6 +105,10 @@ void Grid::assign_cell_types(std::vector<std::vector<int>> &geometry_data, std::
                     _cells(i, j) = Cell(i, j, cell_type::ADIABATIC_FIXED_WALL, geometry_data.at(i_geom).at(j_geom));
                     _adiabatic_fixed_wall_cells.push_back(&_cells(i, j));
                 }
+                else if (geometry_data.at(i_geom).at(j_geom) == moving_wall_id) {
+                    _cells(i, j) = Cell(i, j, cell_type::MOVING_WALL, geometry_data.at(i_geom).at(j_geom));
+                    _moving_wall_cells.push_back(&_cells(i, j));
+                }
                 ++i;
             }
             ++j;
@@ -311,6 +315,10 @@ void Grid::parse_geometry_file(std::string filedoc, std::vector<std::vector<int>
         found = inputLine.find("Wall/Obstacle (adiabatic)");
         if (found != std::string::npos){
             adiabatic_fixed_wall_id = inputLine[2] - '0';
+        }
+        found = inputLine.find("MovingWall");
+        if (found != std::string::npos){
+            moving_wall_id = inputLine[2] - '0';
         }
     }
 

@@ -248,7 +248,7 @@ void Case::simulate(int my_rank) {
         {
             for (const auto& boundary: _boundaries)
             {
-                boundary->apply(_field);
+                boundary->apply_pressures(_field);
             }
             err = _pressure_solver->solve(_field, _grid, _boundaries);
             iter_count += 1;
@@ -338,8 +338,15 @@ void Case::output_vtk(int timestep, int my_rank) {
     // Print pressure and temperature from bottom to top
     for (int j = 1; j < _grid.domain().size_y + 1; j++) {
         for (int i = 1; i < _grid.domain().size_x + 1; i++) {
-            double pressure = _field.p(i, j);
-            Pressure->InsertNextTuple(&pressure);
+            if(_grid.cell(i,j).wall_id() == 0){
+                double pressure = _field.p(i, j);
+                Pressure->InsertNextTuple(&pressure);
+            }
+            else{
+                double pressure = 0.0;
+                Pressure->InsertNextTuple(&pressure);
+            }
+            
         }
     }
 
@@ -350,9 +357,16 @@ void Case::output_vtk(int timestep, int my_rank) {
     // Print Velocity from bottom to top
     for (int j = 0; j < _grid.domain().size_y + 1; j++) {
         for (int i = 0; i < _grid.domain().size_x + 1; i++) {
-            vel[0] = (_field.u(i, j) + _field.u(i, j + 1)) * 0.5;
-            vel[1] = (_field.v(i, j) + _field.v(i + 1, j)) * 0.5;
-            Velocity->InsertNextTuple(vel);
+            if(_grid.cell(i,j).wall_id() == 0){
+                vel[0] = (_field.u(i, j) + _field.u(i, j + 1)) * 0.5;
+                vel[1] = (_field.v(i, j) + _field.v(i + 1, j)) * 0.5;
+                Velocity->InsertNextTuple(vel);
+            }
+            else{
+                vel[0] = 0.0;
+                vel[1] = 0.0;
+                Velocity->InsertNextTuple(vel);
+            }
         }
     }
 
