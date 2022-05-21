@@ -35,13 +35,29 @@ void Fields::calculate_fluxes(Grid &grid)
 {
     int i, j;
 
-    for (const auto& currentCell : grid.fluid_cells()) 
-    {
-        i = currentCell->i();
-        j = currentCell->j();
+    if(_energy_eq == "off"){
+        for (const auto& currentCell : grid.fluid_cells()) 
+        {
+            i = currentCell->i();
+            j = currentCell->j();
         
-        _F(i, j) = _U(i,j) + _dt*(_nu*(Discretization::laplacian(_U,i,j)) - Discretization::convection_u(_U,_V,i,j) + _gx);
-        _G(i, j) = _V(i,j) + _dt*(_nu*(Discretization::laplacian(_V,i,j)) - Discretization::convection_v(_U,_V,i,j) + _gy);
+            _F(i, j) = _U(i,j) + _dt*(_nu*(Discretization::laplacian(_U,i,j)) - Discretization::convection_u(_U,_V,i,j) + _gx);
+            _G(i, j) = _V(i,j) + _dt*(_nu*(Discretization::laplacian(_V,i,j)) - Discretization::convection_v(_U,_V,i,j) + _gy);
+        }
+    }else if(_energy_eq == "on"){
+        for (const auto& currentCell : grid.fluid_cells()) 
+        {
+            i = currentCell->i();
+            j = currentCell->j();
+        
+            _F(i, j) = _U(i,j) + _dt*(_nu*(Discretization::laplacian(_U,i,j)) - Discretization::convection_u(_U,_V,i,j));
+            _F(i, j) -= 0.5*_dt*_beta*(_T(i,j) + _T(i+1,j))*_gx;
+            _G(i, j) = _V(i,j) + _dt*(_nu*(Discretization::laplacian(_V,i,j)) - Discretization::convection_v(_U,_V,i,j));
+            _G(i, j) -= 0.5*_dt*_beta*(_T(i,j) + _T(i,j+1))*_gy;
+        }
+    }else{
+        std::cout<< "Something went wrong with engery equation on and off\nPlease check\n";
+        exit(0);
     }
 
     for (const auto& currentCell : grid.fixed_wall_cells())

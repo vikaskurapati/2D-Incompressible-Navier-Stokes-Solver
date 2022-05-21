@@ -349,16 +349,16 @@ void Case::output_vtk(int timestep, int my_rank) {
         }
     }
 
-    for (int i; i < obstacle_wall_cells.size(); ++i)
-    {
-        structuredGrid -> BlankCell(obstacle_wall_cells.at(i));
-    }
+    // for (int i; i < obstacle_wall_cells.size(); ++i)
+    // {
+    //     structuredGrid -> BlankCell(obstacle_wall_cells.at(i));
+    // }
 
     // Print pressure and temperature from bottom to top
     for (int j = 1; j < _grid.domain().size_y + 1; j++) {
         for (int i = 1; i < _grid.domain().size_x + 1; i++) {
-                double pressure = _field.p(i, j);
-                Pressure->InsertNextTuple(&pressure);            
+            double pressure = _field.p(i, j);
+            Pressure->InsertNextTuple(&pressure);            
         }
     }
 
@@ -369,9 +369,9 @@ void Case::output_vtk(int timestep, int my_rank) {
     // Print Velocity from bottom to top
     for (int j = 0; j < _grid.domain().size_y + 1; j++) {
         for (int i = 0; i < _grid.domain().size_x + 1; i++) {
-                vel[0] = (_field.u(i, j) + _field.u(i, j + 1)) * 0.5;
-                vel[1] = (_field.v(i, j) + _field.v(i + 1, j)) * 0.5;
-                Velocity->InsertNextTuple(vel);
+            vel[0] = (_field.u(i, j) + _field.u(i, j + 1)) * 0.5;
+            vel[1] = (_field.v(i, j) + _field.v(i + 1, j)) * 0.5;
+            Velocity->InsertNextTuple(vel);
         }
     }
 
