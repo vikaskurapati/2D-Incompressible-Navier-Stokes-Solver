@@ -326,6 +326,8 @@ void Case::output_vtk(int timestep, int my_rank) {
     structuredGrid->SetDimensions(_grid.domain().size_x + 1, _grid.domain().size_y + 1, 1);
     structuredGrid->SetPoints(points);
 
+    std::vector<vtkIdType> obstacle_wall_cells;
+
     // Pressure Array
     vtkDoubleArray *Pressure = vtkDoubleArray::New();
     Pressure->SetName("pressure");
@@ -336,18 +338,27 @@ void Case::output_vtk(int timestep, int my_rank) {
     Velocity->SetName("velocity");
     Velocity->SetNumberOfComponents(3);
 
+    for (int i=0; i < _grid.imax(); ++i)
+    {
+        for (int j=0; j<_grid.jmax(); ++j)
+        {
+            if(_grid.cell(i,j).wall_id()!=0)
+            {
+                obstacle_wall_cells.push_back(i+j*_grid.imax());
+            }
+        }
+    }
+
+    for (int i; i < obstacle_wall_cells.size(); ++i)
+    {
+        structuredGrid -> BlankCell(obstacle_wall_cells.at(i));
+    }
+
     // Print pressure and temperature from bottom to top
     for (int j = 1; j < _grid.domain().size_y + 1; j++) {
         for (int i = 1; i < _grid.domain().size_x + 1; i++) {
-            if(_grid.cell(i,j).wall_id() == 0 or _grid.cell(i,j).wall_id() == inflow_id or _grid.cell(i,j).wall_id() == outflow_id){
                 double pressure = _field.p(i, j);
-                Pressure->InsertNextTuple(&pressure);
-            }
-            else{
-                double pressure = 0.0;
-                Pressure->InsertNextTuple(&pressure);
-            }
-            
+                Pressure->InsertNextTuple(&pressure);            
         }
     }
 
@@ -358,16 +369,9 @@ void Case::output_vtk(int timestep, int my_rank) {
     // Print Velocity from bottom to top
     for (int j = 0; j < _grid.domain().size_y + 1; j++) {
         for (int i = 0; i < _grid.domain().size_x + 1; i++) {
-            if(_grid.cell(i,j).wall_id() == 0 or _grid.cell(i,j).wall_id() == inflow_id or _grid.cell(i,j).wall_id() == outflow_id){
                 vel[0] = (_field.u(i, j) + _field.u(i, j + 1)) * 0.5;
                 vel[1] = (_field.v(i, j) + _field.v(i + 1, j)) * 0.5;
                 Velocity->InsertNextTuple(vel);
-            }
-            else{
-                vel[0] = 0.0;
-                vel[1] = 0.0;
-                Velocity->InsertNextTuple(vel);
-            }
         }
     }
 
