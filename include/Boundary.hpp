@@ -63,8 +63,8 @@ class MovingWallBoundary : public Boundary {
 class InFlow : public Boundary
 {
   public:
-    InFlow(std::vector<Cell *> cells, std::map<int, double> inlet_velocity, double inlet_pressure);
-    InFlow(std::vector<Cell *> cells, std::map<int, double> inlet_velocity, std::map<int, double> wall_temperature, double inlet_pressure);
+    InFlow(std::vector<Cell *> cells, std::map<int, double> inlet_velocity);
+    InFlow(std::vector<Cell *> cells, std::map<int, double> inlet_velocity, std::map<int, double> wall_temperature);
     virtual ~InFlow() = default;
     virtual void apply(Fields &field);
     virtual void apply_pressures(Fields &field);
@@ -73,7 +73,6 @@ class InFlow : public Boundary
     std::vector<Cell *> _cells;
     std::map<int, double> _inlet_velocity;
     std::map<int, double> _wall_temperature;
-    double _inlet_pressure;
 };
 
 class OutFlow: public Boundary{

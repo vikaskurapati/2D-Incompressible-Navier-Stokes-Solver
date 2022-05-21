@@ -58,7 +58,6 @@ Case::Case(std::string file_name, int argn, char **args) {
     int num_walls;  /* number of walls */
     double Tc; /*Cold wall temperature */
     double Th; /*Hot wall temperature */
-    double dP; /*Pressure difference in inflow and outflow for plane Shear Flow*/
 
     if (file.is_open()) {
 
@@ -93,7 +92,6 @@ Case::Case(std::string file_name, int argn, char **args) {
                 if (var == "beta") file >> beta;
                 if (var == "energy_eq") file >> energy_eq;
                 if (var == "num_walls") file >> num_walls;
-                if (var == "dP") file >> dP;
                 }
         }
     }
@@ -125,18 +123,6 @@ Case::Case(std::string file_name, int argn, char **args) {
     _max_iter = itermax;
     _tolerance = eps;
     // Construct boundaries
-    if(not _grid.inflow_cells().empty())
-    {
-        _boundaries.push_back(
-            std::make_unique<InFlow>(_grid.inflow_cells(), std::map<int, double> {{PlaneShearFlow::inflow_wall_id, UI}}, PI+dP));
-    }
-
-    if(not _grid.outflow_cells().empty())
-    {
-        _boundaries.push_back(
-            std::make_unique<OutFlow>(_grid.outflow_cells(), PI));
-    }
-
     if (not _grid.moving_wall_cells().empty()) {
         _boundaries.push_back(
             std::make_unique<MovingWallBoundary>(_grid.moving_wall_cells(), LidDrivenCavity::wall_velocity));
@@ -144,6 +130,18 @@ Case::Case(std::string file_name, int argn, char **args) {
 
     if (not _grid.fixed_wall_cells().empty()) {
         _boundaries.push_back(std::make_unique<FixedWallBoundary>(_grid.fixed_wall_cells()));
+    }
+    
+    if(not _grid.inflow_cells().empty())
+    {
+        _boundaries.push_back(
+            std::make_unique<InFlow>(_grid.inflow_cells(), std::map<int, double> {{PlaneShearFlow::inflow_wall_id, UI}}));
+    }
+
+    if(not _grid.outflow_cells().empty())
+    {
+        _boundaries.push_back(
+            std::make_unique<OutFlow>(_grid.outflow_cells(), 0.0));
     }
 
 }
