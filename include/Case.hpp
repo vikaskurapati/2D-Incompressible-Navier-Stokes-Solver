@@ -49,6 +49,9 @@ class Case {
     std::string _geom_name{"NONE"};
     /// Relative input file path
     std::string _prefix;
+    /// Energy equation should be consider or not
+    std::string _energy_eq = "off";  
+
 
     /// Simulation time
     double _t_end;

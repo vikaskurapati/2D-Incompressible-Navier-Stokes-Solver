@@ -54,7 +54,6 @@ Case::Case(std::string file_name, int argn, char **args) {
     double TI;      /* initial Temperature */
     double alpha;   /* thermal diffusivity */
     double beta;    /* coefficient of thermal expansion */
-    std::string energy_eq = "off";  /* energy equation should be consider or not */
     int num_walls;  /* number of walls */
     double Tc; /*Cold wall temperature */
     double Th; /*Hot wall temperature */
@@ -90,7 +89,7 @@ Case::Case(std::string file_name, int argn, char **args) {
                 if (var == "TI") file >> TI;
                 if (var == "alpha") file >> alpha;
                 if (var == "beta") file >> beta;
-                if (var == "energy_eq") file >> energy_eq;
+                if (var == "energy_eq") file >> _energy_eq;
                 if (var == "num_walls") file >> num_walls;
                 }
         }
@@ -116,7 +115,7 @@ Case::Case(std::string file_name, int argn, char **args) {
     build_domain(domain, imax, jmax);
     _grid = Grid(_geom_name, domain);
 
-    _field = Fields(_grid, nu, dt, tau, alpha, beta, energy_eq, _grid.domain().size_x, _grid.domain().size_y, UI, VI, PI, TI);
+    _field = Fields(_grid, nu, dt, tau, alpha, beta, _energy_eq, _grid.domain().size_x, _grid.domain().size_y, UI, VI, PI, TI);
 
     _discretization = Discretization(domain.dx, domain.dy, gamma);
     _pressure_solver = std::make_unique<SOR>(omg);
@@ -230,6 +229,7 @@ void Case::simulate(int my_rank) {
     std::cout<<"Simulation is Running!\nPlease Refer to " << _dict_name << "_run_log_"<<my_rank<< ".log for Simulation log!\n";
     //Simulation Progress
     int progress, last_progress;
+    if(Case::_energy_eq == "off"){
     while (t < t_end)
     {
         err=100.0;
@@ -281,6 +281,64 @@ void Case::simulate(int my_rank) {
             last_progress = progress;
         } 
     }
+    }else if (Case::_energy_eq == "on"){
+    std::cout<< "\n\n\nEnergy Equation is On\nNeed to apply boundary conditions\n\n\n\n\n";
+    while (t < t_end)
+    {
+        err=100.0;
+        iter_count = 0;
+        dt = _field.calculate_dt(_grid);
+        for (int i=0; i < _boundaries.size(); i++)
+        {
+            _boundaries[i]->apply(_field);
+        }
+        _field.calculate_temperatures(_grid);
+        _field.calculate_fluxes(_grid);
+        _field.calculate_rs(_grid);
+        while(err > _tolerance && iter_count < _max_iter)
+        {
+            for (const auto& boundary: _boundaries)
+            {
+                boundary->apply_pressures(_field);
+            }
+            err = _pressure_solver->solve(_field, _grid, _boundaries);
+            iter_count += 1;
+        }
+
+        _field.calculate_velocities(_grid);
+        t += dt;
+        timestep+=1;
+        output<<std::setprecision(4)<<std::fixed;
+        if(t-output_counter*_output_freq>=0)
+        {
+            Case::output_vtk(timestep, my_rank);
+            output<<"Time: "<<t<<" Residual: "<<err<<" PPE Iterations: "<<iter_count<<std::endl;
+            if (iter_count == _max_iter || std::isnan(err))
+            {
+                std::cout << "The PPE Solver didn't converge for Time = " << t << " Please check the log file and increase max iterations or other parameters for convergence"<< "\n";
+            }
+            output_counter+=1;
+        }
+        //Printing Simulation Progress 
+        progress = t/t_end * 100;
+        if(progress % 10 == 0 && progress != last_progress){
+            std::cout<<"[";
+            for(int i=0;i<progress/10;i++){
+                std::cout<<"===";
+            }
+            if(progress==100)
+                std::cout<<"]";
+            else 
+                std::cout<<">";
+            std::cout<<" %"<<progress<<std::endl;
+            last_progress = progress;
+        } 
+    }
+    }else{
+        std::cout<< "Something went wrong with engery equation on and off\nPlease check\n";
+        exit(0);
+    }
+
     if(t_end!=(output_counter-1)*_output_freq) // Recording at t_end if the output frequency is not a multiple of t_end
     {
         Case::output_vtk(timestep, my_rank);
@@ -338,9 +396,9 @@ void Case::output_vtk(int timestep, int my_rank) {
     Velocity->SetName("velocity");
     Velocity->SetNumberOfComponents(3);
 
-    for (int i=0; i < _grid.imax(); ++i)
+    for (int i=1; i < _grid.imax(); ++i)
     {
-        for (int j=0; j<_grid.jmax(); ++j)
+        for (int j=1; j<_grid.jmax(); ++j)
         {
             if(_grid.cell(i,j).wall_id()!=0)
             {
@@ -349,10 +407,10 @@ void Case::output_vtk(int timestep, int my_rank) {
         }
     }
 
-    // for (int i; i < obstacle_wall_cells.size(); ++i)
-    // {
-    //     structuredGrid -> BlankCell(obstacle_wall_cells.at(i));
-    // }
+    for (int i; i < obstacle_wall_cells.size(); ++i)
+    {
+        structuredGrid -> BlankCell(obstacle_wall_cells.at(i));
+    }
 
     // Print pressure and temperature from bottom to top
     for (int j = 1; j < _grid.domain().size_y + 1; j++) {
