@@ -20,3 +20,13 @@ semester 2020 and it was largely redesigned for the summer semester
 If your name should be in this list, please submit a merge request.
 
 We also thank https://instagram.com/radioactivebunnies for designing such a cool logo for us :)
+
+For the part of this course:
+
+- Vikas Kurapati
+- Surya Vamshi Penumarthi
+- Kartik Bali
+
+The above people have contributed as per the commit history.
+
+We would like to thank Harish Ramachandran and Durganshu Mishra specially for helping us with some ideas about writing blank cells in vtk files and with corner cases of boundary conditions.
