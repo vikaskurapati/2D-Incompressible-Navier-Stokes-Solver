@@ -101,7 +101,7 @@ Case::Case(std::string file_name, int argn, char **args) {
         }
     }
     file.close();
-
+    
     _datfile_name = file_name;
     std::map<int, double> wall_vel;
     if (_geom_name.compare("NONE") == 0) {
