@@ -388,3 +388,15 @@ const std::vector<Cell *> &Grid::moving_wall_cells() const { return _moving_wall
 const std::vector<Cell *> &Grid::inflow_cells() const { return _inflow_cells; }
 
 const std::vector<Cell *> &Grid::outflow_cells() const {return _outflow_cells;}
+
+const std::vector<Cell *> &Grid::hot_fixed_wall_cells() const{
+    return _hot_fixed_wall_cells;
+}
+
+const std::vector<Cell *> &Grid::cold_fixed_wall_cells() const{
+    return _cold_fixed_wall_cells;
+}
+
+const std::vector<Cell *> &Grid::adiabatic_fixed_wall_cells() const{
+    return _adiabatic_fixed_wall_cells;
+}

@@ -57,7 +57,7 @@ Case::Case(std::string file_name, int argn, char **args) {
     int num_walls;  /* number of walls */
     double Tc; /*Cold wall temperature */
     double Th; /*Hot wall temperature */
-
+    
     if (file.is_open()) {
 
         std::string var;
@@ -91,6 +91,9 @@ Case::Case(std::string file_name, int argn, char **args) {
                 if (var == "beta") file >> beta;
                 if (var == "energy_eq") file >> _energy_eq;
                 if (var == "num_walls") file >> num_walls;
+                //If following Fluid Trap Convention
+                //if (var == "wall_temp_4") file >> Th;
+                //if (var == "wall_temp_5") file >> Tc;
                 }
         }
     }
@@ -142,6 +145,27 @@ Case::Case(std::string file_name, int argn, char **args) {
         _boundaries.push_back(
             std::make_unique<OutFlow>(_grid.outflow_cells(), 0.0));
     }
+    
+    if(not _grid.hot_fixed_wall_cells().empty()){
+        _boundaries.push_back(
+            std::make_unique<HotFixedWallBoundary>(_grid.hot_fixed_wall_cells()));
+    }
+
+    if(not _grid.cold_fixed_wall_cells().empty()){
+        _boundaries.push_back(
+            std::make_unique<ColdFixedWallBoundary>(_grid.cold_fixed_wall_cells()));
+    }
+
+    if(not _grid.adiabatic_fixed_wall_cells().empty()){
+        _boundaries.push_back(
+            std::make_unique<AdiabaticFixedWallBoundary>(
+                _grid.adiabatic_fixed_wall_cells()));
+    }
+
+    std::string wall_str_hot = "wall_temp_" + 
+                std::to_string(_grid.get_hot_fixed_wall_id());
+    std::string wall_str_cold = "wall_temp_" +
+                std::to_string(_grid.get_cold_fixed_wall_id());
 
 }
 
