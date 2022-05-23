@@ -57,6 +57,9 @@ Case::Case(std::string file_name, int argn, char **args) {
     int num_walls;  /* number of walls */
     double Tc; /*Cold wall temperature */
     double Th; /*Hot wall temperature */
+    double T3; /*3rd wall temperature */
+    double T4; /*4rd wall temperature */
+    double T5; /*5rd wall temperature */
 
     if (file.is_open()) {
 
@@ -91,6 +94,9 @@ Case::Case(std::string file_name, int argn, char **args) {
                 if (var == "beta") file >> beta;
                 if (var == "energy_eq") file >> _energy_eq;
                 if (var == "num_walls") file >> num_walls;
+                if (var == "wall_temp_3") file >> T3;
+                if (var == "wall_temp_4") file >> T4;
+                if (var == "wall_temp_5") file >> T5;
                 }
         }
     }
@@ -115,6 +121,14 @@ Case::Case(std::string file_name, int argn, char **args) {
     build_domain(domain, imax, jmax);
     _grid = Grid(_geom_name, domain);
 
+    // Assigning hot and cold temperatues accordingly
+    if(_grid.get_hot_fixed_wall_id() == 3){ Th = T3;}
+    if(_grid.get_hot_fixed_wall_id() == 4){ Th = T4;}
+    if(_grid.get_hot_fixed_wall_id() == 5){ Th = T5;}
+    if(_grid.get_cold_fixed_wall_id() == 3){ Tc = T3;}
+    if(_grid.get_cold_fixed_wall_id() == 4){ Tc = T4;}
+    if(_grid.get_cold_fixed_wall_id() == 5){ Tc = T5;}
+
     _field = Fields(_grid, nu, dt, tau, alpha, beta, _energy_eq, _grid.domain().size_x, _grid.domain().size_y, UI, VI, PI, TI);
 
     _discretization = Discretization(domain.dx, domain.dy, gamma);
@@ -129,6 +143,14 @@ Case::Case(std::string file_name, int argn, char **args) {
 
     if (not _grid.fixed_wall_cells().empty()) {
         _boundaries.push_back(std::make_unique<FixedWallBoundary>(_grid.fixed_wall_cells()));
+    }
+
+    if (not _grid.hot_fixed_wall_cells().empty()) {
+        _boundaries.push_back(std::make_unique<FixedWallBoundary>(_grid.hot_fixed_wall_cells(), Th));
+    }
+
+    if (not _grid.cold_fixed_wall_cells().empty()) {
+        _boundaries.push_back(std::make_unique<FixedWallBoundary>(_grid.cold_fixed_wall_cells(), Tc));
     }
     
     if(not _grid.inflow_cells().empty())

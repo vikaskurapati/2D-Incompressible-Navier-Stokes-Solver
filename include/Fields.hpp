@@ -121,6 +121,9 @@ class Fields {
     /// pressure matrix access and modify
     Matrix<double> &p_matrix();
 
+    /// getting energy equation status on or off 
+    bool get_energy_eq() { return _energy_eq == "on"; };
+
   private:
     /// x-velocity matrix
     Matrix<double> _U;

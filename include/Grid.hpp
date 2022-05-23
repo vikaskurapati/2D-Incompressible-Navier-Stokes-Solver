@@ -76,9 +76,20 @@ class Grid {
 
     const std::vector<Cell *> &outflow_cells() const;
 
-    int get_inflow_wall_id(){ return inflow_wall_id;};
+    const std::vector<Cell *> &hot_fixed_wall_cells() const;
 
-    int get_outflow_wall_id(){ return outflow_wall_id;};
+    const std::vector<Cell *> &cold_fixed_wall_cells() const;
+
+    const std::vector<Cell *> &adiabatic_fixed_wall_cells() const;
+
+    const int get_inflow_wall_id() const { return inflow_wall_id;};
+
+    const int get_outflow_wall_id() const { return outflow_wall_id;};
+
+    const int get_hot_fixed_wall_id() const { return hot_fixed_wall_id;};
+
+    const int get_cold_fixed_wall_id() const { return cold_fixed_wall_id;};
+
 
   private:
     /**@brief Default lid driven cavity case generator
@@ -87,15 +98,6 @@ class Grid {
      * case without need for a pgm file
      */
     void build_lid_driven_cavity(std::string geom_name);
-
-    /**@brief PlaneShear Flow case generator
-     * 
-     * This function creates plane shear flow case
-     * when the .dat file has PlaneShear Flow name in it
-     * without need for a pgm file
-     */
-
-    void build_planeshearflow(std::string geom_name);
 
     /// Build cell data structures with given geometrical data
     void assign_cell_types(std::vector<std::vector<int>> &geometry_data, std::string geom_name);
