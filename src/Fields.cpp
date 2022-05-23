@@ -119,6 +119,183 @@ void Fields::calculate_fluxes(Grid &grid)
         }
     }
 
+    for (const auto& currentCell : grid.hot_fixed_wall_cells())
+    {
+        i = currentCell->i();
+        j = currentCell->j();
+        if(currentCell->is_border(border_position::TOP))
+        {
+            if (currentCell->is_border(border_position::RIGHT))
+            {
+                _F(i,j) = 0.0;
+                _G(i,j) = 0.0;
+            }
+            else if(currentCell->is_border(border_position::LEFT))
+            {
+                _F(i-1,j) = 0.0;
+                _G(i,j) = 0.0;
+            }
+            else if(currentCell->is_border(border_position::BOTTOM))
+            {
+                _G(i,j) = 0.0;
+                _G(i,j-1) = 0.0;
+            }
+            else{
+                _G(i,j) = _V(i,j);
+            }
+        }
+        else if (currentCell->is_border(border_position::BOTTOM))
+        {
+            if(currentCell->is_border(border_position::RIGHT))
+            {
+                _F(i,j) = 0.0;
+                _G(i,j-1) = 0.0;
+            }
+            else if(currentCell->is_border(border_position::LEFT))
+            {
+                _F(i-1,j) = 0.0;
+                _G(i,j-1) = 0.0;
+            }
+
+            else{
+                _G(i,j-1) = _V(i,j-1);
+            }
+        }
+        else if(currentCell->is_border(border_position::RIGHT))
+        {
+            if(currentCell->is_border(border_position::LEFT))
+            {
+                _F(i,j) = 0.0;
+                _F(i-1,j) = 0.0;
+            }
+            else{
+                _F(i,j) = _U(i,j);
+            }
+        }
+        else if(currentCell->is_border(border_position::LEFT))
+        {
+            _F(i-1,j) = _U(i-1,j);
+        }
+    }
+
+    for (const auto& currentCell : grid.cold_fixed_wall_cells())
+    {
+        i = currentCell->i();
+        j = currentCell->j();
+        if(currentCell->is_border(border_position::TOP))
+        {
+            if (currentCell->is_border(border_position::RIGHT))
+            {
+                _F(i,j) = 0.0;
+                _G(i,j) = 0.0;
+            }
+            else if(currentCell->is_border(border_position::LEFT))
+            {
+                _F(i-1,j) = 0.0;
+                _G(i,j) = 0.0;
+            }
+            else if(currentCell->is_border(border_position::BOTTOM))
+            {
+                _G(i,j) = 0.0;
+                _G(i,j-1) = 0.0;
+            }
+            else{
+                _G(i,j) = _V(i,j);
+            }
+        }
+        else if (currentCell->is_border(border_position::BOTTOM))
+        {
+            if(currentCell->is_border(border_position::RIGHT))
+            {
+                _F(i,j) = 0.0;
+                _G(i,j-1) = 0.0;
+            }
+            else if(currentCell->is_border(border_position::LEFT))
+            {
+                _F(i-1,j) = 0.0;
+                _G(i,j-1) = 0.0;
+            }
+
+            else{
+                _G(i,j-1) = _V(i,j-1);
+            }
+        }
+        else if(currentCell->is_border(border_position::RIGHT))
+        {
+            if(currentCell->is_border(border_position::LEFT))
+            {
+                _F(i,j) = 0.0;
+                _F(i-1,j) = 0.0;
+            }
+            else{
+                _F(i,j) = _U(i,j);
+            }
+        }
+        else if(currentCell->is_border(border_position::LEFT))
+        {
+            _F(i-1,j) = _U(i-1,j);
+        }
+    }
+
+    for (const auto& currentCell : grid.adiabatic_fixed_wall_cells())
+    {
+        i = currentCell->i();
+        j = currentCell->j();
+        if(currentCell->is_border(border_position::TOP))
+        {
+            if (currentCell->is_border(border_position::RIGHT))
+            {
+                _F(i,j) = 0.0;
+                _G(i,j) = 0.0;
+            }
+            else if(currentCell->is_border(border_position::LEFT))
+            {
+                _F(i-1,j) = 0.0;
+                _G(i,j) = 0.0;
+            }
+            else if(currentCell->is_border(border_position::BOTTOM))
+            {
+                _G(i,j) = 0.0;
+                _G(i,j-1) = 0.0;
+            }
+            else{
+                _G(i,j) = _V(i,j);
+            }
+        }
+        else if (currentCell->is_border(border_position::BOTTOM))
+        {
+            if(currentCell->is_border(border_position::RIGHT))
+            {
+                _F(i,j) = 0.0;
+                _G(i,j-1) = 0.0;
+            }
+            else if(currentCell->is_border(border_position::LEFT))
+            {
+                _F(i-1,j) = 0.0;
+                _G(i,j-1) = 0.0;
+            }
+
+            else{
+                _G(i,j-1) = _V(i,j-1);
+            }
+        }
+        else if(currentCell->is_border(border_position::RIGHT))
+        {
+            if(currentCell->is_border(border_position::LEFT))
+            {
+                _F(i,j) = 0.0;
+                _F(i-1,j) = 0.0;
+            }
+            else{
+                _F(i,j) = _U(i,j);
+            }
+        }
+        else if(currentCell->is_border(border_position::LEFT))
+        {
+            _F(i-1,j) = _U(i-1,j);
+        }
+    }
+
     for (const auto& currentCell: grid.moving_wall_cells())
     {
         i = currentCell->i();
