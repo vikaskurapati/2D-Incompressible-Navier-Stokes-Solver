@@ -79,7 +79,7 @@ double Discretization::convection_t(const Matrix<double> &T, const Matrix<double
     dutdx += _gamma*std::abs(U(i,j))*(T(i,j)-T(i+1,j));
     dutdx -= _gamma*std::abs(U(i-1,j))*(T(i-1,j)-T(i,j));
 
-    dutdx = (0.25/_dx)*dutdx;
+    dutdx = (0.5/_dx)*dutdx;
 
     dvtdy = (T(i,j)+T(i,j+1))*V(i,j);
     dvtdy -= (T(i,j-1)+T(i,j))*V(i,j-1);
@@ -87,13 +87,7 @@ double Discretization::convection_t(const Matrix<double> &T, const Matrix<double
     dvtdy += _gamma*std::abs(V(i,j))*(T(i,j)-T(i,j+1));
     dvtdy -= _gamma*std::abs(V(i,j-1))*(T(i,j-1)-T(i,j));
 
-    dvtdy = (0.25/_dy)*dvtdy;
-
-    // dutdx = (1/_dx)*(interpolate(T,i,j,i+1,j)*U(i,j) - U(i-1,j)*interpolate(T,i-1,j,i,j));
-    // dutdx = dutdx + (_gamma/_dx)*(std::abs(U(i,j))*(T(i,j)-T(i+1,j))*0.5 - std::abs(U(i-1,j))*(T(i-1,j)-T(i,j))*0.5);
-
-    // dvtdy = (1/_dy)*(interpolate(T,i,j,i,j-1)*V(i,j) - V(i,j-1)*interpolate(T,i,j-1,i,j));
-    // dvtdy = dvtdy + (_gamma/_dy)*(std::abs(V(i,j))*(T(i,j)-T(i,j+1))*0.5 - std::abs(V(i,j-1))*(T(i,j-1)-T(i,j))*0.5);
+    dvtdy = (0.5/_dy)*dvtdy;
 
     result = dutdx + dvtdy;
 

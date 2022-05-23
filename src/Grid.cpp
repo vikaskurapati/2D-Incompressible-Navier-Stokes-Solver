@@ -78,34 +78,43 @@ void Grid::assign_cell_types(std::vector<std::vector<int>> &geometry_data, std::
         for (int j_geom = _domain.jmin; j_geom < _domain.jmax; ++j_geom) {
             { i = 0; }
             for (int i_geom = _domain.imin; i_geom < _domain.imax; ++i_geom) {
-                if (geometry_data.at(i_geom).at(j_geom) == 0) {
+                if (geometry_data.at(i_geom).at(j_geom) == 0) 
+                {
                     _cells(i, j) = Cell(i, j, cell_type::FLUID);
                     _fluid_cells.push_back(&_cells(i, j));
-                } else if (geometry_data.at(i_geom).at(j_geom) == inflow_wall_id) {
+                } 
+                else if (geometry_data.at(i_geom).at(j_geom) == inflow_wall_id) 
+                {
                     _cells(i, j) = Cell(i, j, cell_type::INFLOW, geometry_data.at(i_geom).at(j_geom));
                     _inflow_cells.push_back(&_cells(i, j));
                 }
-                else if (geometry_data.at(i_geom).at(j_geom) == outflow_wall_id) {
+                else if (geometry_data.at(i_geom).at(j_geom) == outflow_wall_id) 
+                {
                     _cells(i, j) = Cell(i, j, cell_type::OUTFLOW, geometry_data.at(i_geom).at(j_geom));
                     _outflow_cells.push_back(&_cells(i, j));
                 }
-                else if (geometry_data.at(i_geom).at(j_geom) == fixed_wall_id) {
+                else if (geometry_data.at(i_geom).at(j_geom) == fixed_wall_id) 
+                {
                     _cells(i, j) = Cell(i, j, cell_type::FIXED_WALL, geometry_data.at(i_geom).at(j_geom));
                     _fixed_wall_cells.push_back(&_cells(i, j));
                 }
-                else if (geometry_data.at(i_geom).at(j_geom) == hot_fixed_wall_id) {
+                else if (geometry_data.at(i_geom).at(j_geom) == hot_fixed_wall_id) 
+                {
                     _cells(i, j) = Cell(i, j, cell_type::HOT_FIXED_WALL, geometry_data.at(i_geom).at(j_geom));
                     _hot_fixed_wall_cells.push_back(&_cells(i, j));
                 }
-                else if (geometry_data.at(i_geom).at(j_geom) == cold_fixed_wall_id) {
+                else if (geometry_data.at(i_geom).at(j_geom) == cold_fixed_wall_id) 
+                {
                     _cells(i, j) = Cell(i, j, cell_type::COLD_FIXED_WALL, geometry_data.at(i_geom).at(j_geom));
                     _cold_fixed_wall_cells.push_back(&_cells(i, j));
                 }
-                else if (geometry_data.at(i_geom).at(j_geom) == adiabatic_fixed_wall_id) {
+                else if (geometry_data.at(i_geom).at(j_geom) == adiabatic_fixed_wall_id) 
+                {
                     _cells(i, j) = Cell(i, j, cell_type::ADIABATIC_FIXED_WALL, geometry_data.at(i_geom).at(j_geom));
                     _adiabatic_fixed_wall_cells.push_back(&_cells(i, j));
                 }
-                else if (geometry_data.at(i_geom).at(j_geom) == moving_wall_id) {
+                else if (geometry_data.at(i_geom).at(j_geom) == moving_wall_id) 
+                {
                     _cells(i, j) = Cell(i, j, cell_type::MOVING_WALL, geometry_data.at(i_geom).at(j_geom));
                     _moving_wall_cells.push_back(&_cells(i, j));
                 }
@@ -301,7 +310,11 @@ void Grid::parse_geometry_file(std::string filedoc, std::vector<std::vector<int>
             outflow_wall_id = inputLine[2] - '0';
         }
         found = inputLine.find("Wall/Obstacle") && !inputLine.find("Wall/Obstacle (hot)") && !inputLine.find("Wall/Obstacle (cold)") && !inputLine.find("Wall/Obstacle (adiabatic)");
-        if (found != std::string::npos){
+        bool found1  = (inputLine.find("Wall/Obstacle") != std::string::npos);
+        found1 = found1 && (inputLine.find("Wall/Obstacle (hot)")==std::string::npos);
+        found1 = found1 && (inputLine.find("Wall/Obstacle (cold)")==std::string::npos);
+        found1 = found1 && (inputLine.find("Wall/Obstacle (adiabatic") == std::string::npos);
+        if (found1){
             fixed_wall_id = inputLine[2] - '0';
         }
         found = inputLine.find("Wall/Obstacle (hot)");

@@ -38,8 +38,8 @@ Case::Case(std::string file_name, int argn, char **args) {
     double UI;      /* velocity x-direction */
     double VI;      /* velocity y-direction */
     double PI;      /* pressure */
-    double GX;      /* gravitation x-direction */
-    double GY;      /* gravitation y-direction */
+    double GX{0.0};      /* gravitation x-direction */
+    double GY{0.0};      /* gravitation y-direction */
     double xlength; /* length of the domain x-dir.*/
     double ylength; /* length of the domain y-dir.*/
     double dt;      /* time step */
@@ -129,7 +129,7 @@ Case::Case(std::string file_name, int argn, char **args) {
     if(_grid.get_cold_fixed_wall_id() == 4){ Tc = T4;}
     if(_grid.get_cold_fixed_wall_id() == 5){ Tc = T5;}
 
-    _field = Fields(_grid, nu, dt, tau, alpha, beta, _energy_eq, _grid.domain().size_x, _grid.domain().size_y, UI, VI, PI, TI);
+    _field = Fields(_grid, nu, dt, tau, alpha, beta, _energy_eq, _grid.domain().size_x, _grid.domain().size_y, UI, VI, PI, TI, GX, GY);
 
     _discretization = Discretization(domain.dx, domain.dy, gamma);
     _pressure_solver = std::make_unique<SOR>(omg);
@@ -152,7 +152,11 @@ Case::Case(std::string file_name, int argn, char **args) {
     if (not _grid.cold_fixed_wall_cells().empty()) {
         _boundaries.push_back(std::make_unique<FixedWallBoundary>(_grid.cold_fixed_wall_cells(), Tc));
     }
-    
+
+    if (not _grid.adiabatic_fixed_wall_cells().empty()) {
+        _boundaries.push_back(std::make_unique<AdiabaticWallBoundary>(_grid.adiabatic_fixed_wall_cells()));
+    }
+
     if(not _grid.inflow_cells().empty())
     {
         _boundaries.push_back(
@@ -303,8 +307,9 @@ void Case::simulate(int my_rank) {
             last_progress = progress;
         } 
     }
-    }else if (Case::_energy_eq == "on"){
-    std::cout<< "\n\n\nEnergy Equation is On\nNeed to apply boundary conditions\n\n\n\n\n";
+    }
+    else if (Case::_energy_eq == "on"){
+    std::cout<< "\nEnergy Equation is On\n";
     while (t < t_end)
     {
         err=100.0;
@@ -412,6 +417,11 @@ void Case::output_vtk(int timestep, int my_rank) {
     vtkDoubleArray *Pressure = vtkDoubleArray::New();
     Pressure->SetName("pressure");
     Pressure->SetNumberOfComponents(1);
+    
+    // Temperatrue Array
+    vtkDoubleArray *Temperature = vtkDoubleArray::New();
+    Temperature->SetName("temperature");
+    Temperature->SetNumberOfComponents(1);
 
     // Velocity Array
     vtkDoubleArray *Velocity = vtkDoubleArray::New();
@@ -438,7 +448,9 @@ void Case::output_vtk(int timestep, int my_rank) {
     for (int j = 1; j < _grid.domain().size_y + 1; j++) {
         for (int i = 1; i < _grid.domain().size_x + 1; i++) {
             double pressure = _field.p(i, j);
-            Pressure->InsertNextTuple(&pressure);            
+            Pressure->InsertNextTuple(&pressure);     
+            double temperature = _field.t(i,j);
+            Temperature->InsertNextTuple(&temperature);     
         }
     }
 
@@ -457,6 +469,9 @@ void Case::output_vtk(int timestep, int my_rank) {
 
     // Add Pressure to Structured Grid
     structuredGrid->GetCellData()->AddArray(Pressure);
+
+    // Add Temperature to Structured Grid
+    structuredGrid->GetCellData()->AddArray(Temperature);
 
     // Add Velocity to Structured Grid
     structuredGrid->GetPointData()->AddArray(Velocity);

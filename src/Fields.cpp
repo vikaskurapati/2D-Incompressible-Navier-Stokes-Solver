@@ -4,8 +4,8 @@
 #include <iostream>
 #include <cmath>
 
-Fields::Fields(Grid& grid, double nu, double dt, double tau, double alpha, double beta,std::string energy_eq, int imax, int jmax, double UI, double VI, double PI, double TI)
-    : _nu(nu), _dt(dt), _tau(tau), _alpha(alpha), _beta(beta), _energy_eq(energy_eq)
+Fields::Fields(Grid& grid, double nu, double dt, double tau, double alpha, double beta,std::string energy_eq, int imax, int jmax, double UI, double VI, double PI, double TI, double gx, double gy)
+    : _nu(nu), _dt(dt), _tau(tau), _alpha(alpha), _beta(beta), _energy_eq(energy_eq), _gx(gx), _gy(gy)
 {
     _U = Matrix<double>(imax + 2, jmax + 2);
     _V = Matrix<double>(imax + 2, jmax + 2);
@@ -233,7 +233,6 @@ double Fields::calculate_dt(Grid &grid) {
     }else{
         _dt = _tau*std::min({dt1, dt2, dt3});
     }
-    
     return _dt; 
 }
 
@@ -246,7 +245,7 @@ void Fields::calculate_temperatures(Grid &grid)
     {
         i = currentCell->i();
         j = currentCell->j();
-        _T_new(i,j) = _T(i,j) + _dt*(_alpha*Discretization::diffusion(_T,i,j) - Discretization::convection_t(_T,_U,_V,i,j));
+        _T_new(i,j) = _T(i,j) + _dt*(_alpha*Discretization::laplacian(_T,i,j) - Discretization::convection_t(_T,_U,_V,i,j));
     }
     _T = _T_new;
 }
