@@ -268,6 +268,7 @@ void Case::simulate(int my_rank) {
         {
             _boundaries[i]->apply(_field);
         }
+
         if (Case::_energy_eq == "on"){
             _field.calculate_temperatures(_grid);
         }
@@ -365,39 +366,33 @@ void Case::output_vtk(int timestep, int my_rank) {
     Pressure->SetName("pressure");
     Pressure->SetNumberOfComponents(1);
     
-    // Temperatrue Array
-    vtkDoubleArray *Temperature = vtkDoubleArray::New();
-    Temperature->SetName("temperature");
-    Temperature->SetNumberOfComponents(1);
 
     // Velocity Array
     vtkDoubleArray *Velocity = vtkDoubleArray::New();
     Velocity->SetName("velocity");
     Velocity->SetNumberOfComponents(3);
 
-    for (int i=1; i < _grid.imax(); ++i)
+    for (int i=1; i <= _grid.imax(); ++i)
     {
-        for (int j=1; j<_grid.jmax(); ++j)
+        for (int j=1; j<=_grid.jmax(); ++j)
         {
             if(_grid.cell(i,j).wall_id()!=0)
             {
-                obstacle_wall_cells.push_back(i+j*_grid.imax());
+                obstacle_wall_cells.push_back(i - 1 +(j-1)*_grid.imax());
             }
         }
     }
 
-    // for (int i; i < obstacle_wall_cells.size(); ++i)
-    // {
-    //     structuredGrid -> BlankCell(obstacle_wall_cells.at(i));
-    // }
+    for (int i=0; i < obstacle_wall_cells.size(); ++i)
+    {
+        structuredGrid -> BlankCell(obstacle_wall_cells.at(i));
+    }
 
     // Print pressure and temperature from bottom to top
     for (int j = 1; j < _grid.domain().size_y + 1; j++) {
         for (int i = 1; i < _grid.domain().size_x + 1; i++) {
             double pressure = _field.p(i, j);
             Pressure->InsertNextTuple(&pressure);     
-            double temperature = _field.t(i,j);
-            Temperature->InsertNextTuple(&temperature);    
         }
     }
 
@@ -414,11 +409,29 @@ void Case::output_vtk(int timestep, int my_rank) {
         }
     }
 
+    if(_energy_eq =="on")
+    {
+    // Temperatrue Array
+    vtkDoubleArray *Temperature = vtkDoubleArray::New();
+    Temperature->SetName("temperature");
+    Temperature->SetNumberOfComponents(1);
+    
+    // Print pressure and temperature from bottom to top
+    for (int j = 1; j < _grid.domain().size_y + 1; j++) {
+        for (int i = 1; i < _grid.domain().size_x + 1; i++) {
+            double temperature = _field.t(i,j);
+            Temperature->InsertNextTuple(&temperature);    
+        }
+    }
+    // Add Temperature to Structured Grid
+    structuredGrid->GetCellData()->AddArray(Temperature);
+    }
+
+
     // Add Pressure to Structured Grid
     structuredGrid->GetCellData()->AddArray(Pressure);
 
-    // Add Temperature to Structured Grid
-    structuredGrid->GetCellData()->AddArray(Temperature);
+
 
     // Add Velocity to Structured Grid
     structuredGrid->GetPointData()->AddArray(Velocity);
