@@ -13,7 +13,7 @@ check-format-job:
     - ./tools/check-format
   only:  
     - master
-    - ws2
+    - merge_requests
 
 check-compile-full:
   stage: build
