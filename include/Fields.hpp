@@ -25,29 +25,30 @@ class Fields {
      * @param[in] initial pressure
      *
      */
-    Fields(Grid& grid, double _nu, double _dt, double _tau, double _alpha, double _beta, std::string energy_eq, int imax, int jmax, double UI, double VI, double PI, double TI, double gx, double gy);
+    Fields(Grid &grid, double _nu, double _dt, double _tau, double _alpha, double _beta, std::string energy_eq,
+           int imax, int jmax, double UI, double VI, double PI, double TI, double gx, double gy);
 
     /**
      * @brief Calculates the convective and diffusive fluxes in x and y
      * direction based on explicit discretization of the momentum equations
      *
      * @param[in] grid in which the fluxes are calculated
-     * 
+     *
      * \f$F_(i, j) = U_(i,j) + dt*(\nu*(\nabla(U,i,j)) - convection_u + g_x)\f$
      * \f$G_(i, j) = V_(i,j) + dt*(\nu*(\nabla(V,i,j)) - convection_v + g_y)\f$
-     * 
+     *
      * Where convection_u and convection_v are defined in Discretization
-     * 
+     *
      * $convection_u = \fraction{\partial u^2}{\partial x} + \fraction{\partial uv}{\partial y}$
      * $convection_v = \fraction{\partial uv}{\partial x} + \fraction{\partial v^2}{\partial y}$
-     * 
+     *
      * Also, boundary conditions for fluxes were also updated
-     * 
+     *
      * \f$F_(0,j) = U_(0,j) for j = 1...j_max\f$
      * \f$F_(imax, j) = U_(imax, j) for j = 1...j_max\f$
      * \f$G_(i,0) = V_(i,0) for i = 1...i_max\f$
      * \f$G_(i, jmax) = V_(i, jmax) for i = 1...i_max\f$
-     * 
+     *
      * Refer Equations 9, 10 and 17 in Worksheet
      *
      */
@@ -58,7 +59,7 @@ class Fields {
      * Poisson equation
      *
      * @param[in] grid in which the calculations are done
-     * 
+     *
      * \f$RS_(i,j) = (((F_(i,j)-F_(i-1,j))/dx)+((G_(i,j)-G_(i,j-1))/dy))/dt\f$
      *
      */
@@ -68,7 +69,7 @@ class Fields {
      * @brief Velocity calculation using pressure values
      *
      * @param[in] grid in which the calculations are done
-     * 
+     *
      * \f$U_(i,j) = F_(i,j) - (dt/dx)*(P_(i+1,j)-P_(i,j))\f$
      * \f$V_(i,j) = G_(i,j) - (dt/dy)*(P_(i,j+1)-P_(i,j))\f$
      *
@@ -79,7 +80,7 @@ class Fields {
      * @brief Temperature calculation using previous and velocities values
      *
      * @param[in] grid in which the calculations are done
-     * 
+     *
      * Need to Write
      *
      */
@@ -121,7 +122,7 @@ class Fields {
     /// pressure matrix access and modify
     Matrix<double> &p_matrix();
 
-    /// getting energy equation status on or off 
+    /// getting energy equation status on or off
     bool get_energy_eq() { return _energy_eq == "on"; };
 
   private:

@@ -82,14 +82,13 @@ class Grid {
 
     const std::vector<Cell *> &adiabatic_fixed_wall_cells() const;
 
-    const int get_inflow_wall_id() const { return inflow_wall_id;};
+    const int get_inflow_wall_id() const { return inflow_wall_id; };
 
-    const int get_outflow_wall_id() const { return outflow_wall_id;};
+    const int get_outflow_wall_id() const { return outflow_wall_id; };
 
-    const int get_hot_fixed_wall_id() const { return hot_fixed_wall_id;};
+    const int get_hot_fixed_wall_id() const { return hot_fixed_wall_id; };
 
-    const int get_cold_fixed_wall_id() const { return cold_fixed_wall_id;};
-
+    const int get_cold_fixed_wall_id() const { return cold_fixed_wall_id; };
 
   private:
     /**@brief Default lid driven cavity case generator

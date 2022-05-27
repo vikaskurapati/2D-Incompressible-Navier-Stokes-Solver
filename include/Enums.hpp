@@ -11,11 +11,10 @@ const double wall_velocity = 1.0;
 } // namespace LidDrivenCavity
 
 namespace PlaneShearFlow {
-    const int inflow_wall_id = 1;
-    const int outflow_wall_id = 2;
-    const int fixed_wall_id = 4;
-}
-
+const int inflow_wall_id = 1;
+const int outflow_wall_id = 2;
+const int fixed_wall_id = 4;
+} // namespace PlaneShearFlow
 
 enum class border_position {
     TOP,

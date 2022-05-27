@@ -4,7 +4,6 @@
 
 #include "Cell.hpp"
 #include "Fields.hpp"
-
 /**
  * @brief Abstact of boundary conditions.
  *
@@ -64,8 +63,7 @@ class AdiabaticWallBoundary : public Boundary {
 class MovingWallBoundary : public Boundary {
   public:
     MovingWallBoundary(std::vector<Cell *> cells, double wall_velocity);
-    MovingWallBoundary(std::vector<Cell *> cells, std::map<int, double> wall_velocity,
-                       double wall_temperature);
+    MovingWallBoundary(std::vector<Cell *> cells, std::map<int, double> wall_velocity, double wall_temperature);
     virtual ~MovingWallBoundary() = default;
     virtual void apply(Fields &field);
     virtual void apply_pressures(Fields &field);
@@ -76,8 +74,7 @@ class MovingWallBoundary : public Boundary {
     double _wall_temperature;
 };
 
-class InFlow : public Boundary
-{
+class InFlow : public Boundary {
   public:
     InFlow(std::vector<Cell *> cells, std::map<int, double> inlet_velocity);
     InFlow(std::vector<Cell *> cells, std::map<int, double> inlet_velocity, double wall_temperature);
@@ -91,7 +88,7 @@ class InFlow : public Boundary
     double _wall_temperature;
 };
 
-class OutFlow: public Boundary{
+class OutFlow : public Boundary {
   public:
     OutFlow(std::vector<Cell *> cells, double outlet_pressure);
     OutFlow(std::vector<Cell *> cells, double wall_temperature, double outlet_pressure);

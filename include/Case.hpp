@@ -36,7 +36,7 @@ class Case {
      * Calculates velocities
      * Outputs the solution files
      */
-    void simulate(int my_rank=1);
+    void simulate(int my_rank = 1);
 
   private:
     /// Plain case name without paths
@@ -50,8 +50,7 @@ class Case {
     /// Relative input file path
     std::string _prefix;
     /// Energy equation should be consider or not
-    std::string _energy_eq = "off";  
-
+    std::string _energy_eq = "off";
 
     /// Simulation time
     double _t_end;
@@ -90,7 +89,7 @@ class Case {
      * @param[in] Timestep of the solution
      */
     void output_vtk(int t, int my_rank = 0);
-    std::ofstream output_log(std::string dat_file_name,int myrank);
-    std::ofstream simulation_log_file(int my_rank=0);
+    std::ofstream output_log(std::string dat_file_name, int myrank);
+    std::ofstream simulation_log_file(int my_rank = 0);
     void build_domain(Domain &domain, int imax_domain, int jmax_domain);
 };
