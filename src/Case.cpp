@@ -492,11 +492,16 @@ void Case::output_log( std::string dat_file_name, double nu, double UI, double V
     output << "GY : "<<GY<<"\n";
     output << "PI : "<<PI<<"\n";
     output << "itermax : "<<itermax<<"\n";
-    output << "Temp Initial : "<<TI<<"\n";
-    output << "alpha : "<<alpha<<"\n";
-    output << "beta : "<<beta<<"\n";
-    output << "No of Temperature walls: "<<num_walls<<"\n";
-    output << "Cold Wall Temperature : "<<Tc<<"\n";
-    output << "Hot Wall Temperature : "<<Th<<"\n";
+    output << "Energy Equation : " << _energy_eq<<"\n";
+    if(_energy_eq == "on"){
+        output << "Temp Initial : "<<TI<<"\n";
+        output << "alpha : "<<alpha<<"\n";
+        output << "beta : "<<beta<<"\n";
+        output << "No of Temperature walls: "<<num_walls<<"\n";
+        output << "Cold Wall Temperature : "<<Tc<<"\n";
+        output << "Hot Wall Temperature : "<<Th<<"\n";
+    }
+    
+    
     output.close();
 }
