@@ -76,6 +76,13 @@ eg. The following creates a 2nd group of VTK files with changed parameters in th
 ```
 All the input parameters of the simulations and convergence results are stored as a log file in the output directory with the name "Lid_Driven_Cavity" followed by the integer parameter. For instance after running the above shell command, a log file with the name "Lid_Driven_Cavity_run_rog_2" is created in `../example_cases/LidDrivenCavity/` directory.
 
+### Cases with special obstacles or boundary conditions
+
+An extra parameter with name "geo_file" needs to be provided to handle cases with obstacles or heated walls or cold walls or adiabatic walls. If no geo_file 
+parameter is provided in the .dat file, the LidDriven Cavity with the parameters in the .dat file would be run automatically. 
+
+The user should maintain consistency between the .pgm file with obstacles clearly defined and should have the same number of discretizations in all directions in the .dat. The user should ensure that they use the same numbering in .pgm and in .dat file. For example, if adiabatic wall has number 4 in .pgm file, they should ensure that the adiabatic wall is wall_temp_5 in .dat file. If the pgm file has 80 points in x and 20 points in y, they should ensure that imax is 78 and jmax is 18 in .dat file(2 ghost cells in both directions).
+
 ## Special systems
 
 ### macOS
