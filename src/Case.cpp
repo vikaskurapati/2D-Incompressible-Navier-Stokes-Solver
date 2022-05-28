@@ -278,8 +278,7 @@ void Case::simulate(int my_rank) {
         err = 100.0;
         iter_count = 0;
         dt = _field.calculate_dt(_grid);
-        for (size_t i=0; i < _boundaries.size(); i++)
-        {
+        for (size_t i = 0; i < _boundaries.size(); i++) {
             _boundaries[i]->apply(_field);
         }
 

@@ -18,7 +18,6 @@ void FixedWallBoundary::apply(Fields &field) {
                 field.v(i, j) = 0.0;
                 field.u(i - 1, j) = -field.u(i - 1, j + 1);
                 field.v(i, j - 1) = -field.v(i + 1, j - 1);
-                field.p(i, j) = 0.5 * (field.p(i, j + 1) + field.p(i + 1, j));
                 if (field.get_energy_eq()) {
                     field.t(i, j) = 0.5 * (4.0 * _wall_temperature - field.t(i, j + 1) - field.t(i + 1, j));
                 }
@@ -27,7 +26,6 @@ void FixedWallBoundary::apply(Fields &field) {
                 field.v(i, j) = 0.0;
                 field.u(i, j) = -field.u(i, j + 1);
                 field.v(i, j - 1) = -field.v(i - 1, j - 1);
-                field.p(i, j) = 0.5 * (field.p(i, j + 1) + field.p(i - 1, j));
                 if (field.get_energy_eq()) {
                     field.t(i, j) = 0.5 * (4.0 * _wall_temperature - field.t(i, j + 1) - field.t(i - 1, j));
                 }
@@ -36,14 +34,12 @@ void FixedWallBoundary::apply(Fields &field) {
                 field.v(i, j) = 0.0;
                 field.v(i, j - 1) = 0.0;
                 field.u(i - 1, j) = 0.0;
-                field.p(i, j) = 0.5 * (field.p(i, j + 1) + field.p(i, j - 1));
                 if (field.get_energy_eq()) {
                     field.t(i, j) = 0.5 * (4.0 * _wall_temperature - field.t(i, j + 1) - field.t(i, j - 1));
                 }
             } else {
                 field.u(i, j) = -field.u(i, j + 1);
                 field.v(i, j) = 0.0;
-                field.p(i, j) = field.p(i, j + 1);
                 if (field.get_energy_eq()) {
                     field.t(i, j) = 2.0 * _wall_temperature - field.t(i, j + 1);
                 }
@@ -54,7 +50,6 @@ void FixedWallBoundary::apply(Fields &field) {
                 field.v(i, j - 1) = 0.0;
                 field.u(i - 1, j) = -field.u(i - 1, j - 1);
                 field.v(i, j) = -field.v(i + 1, j);
-                field.p(i, j) = 0.5 * (field.p(i + 1, j) + field.p(i, j - 1));
                 if (field.get_energy_eq()) {
                     field.t(i, j) = 0.5 * (4.0 * _wall_temperature - field.t(i + 1, j) - field.t(i, j - 1));
                 }
@@ -62,7 +57,6 @@ void FixedWallBoundary::apply(Fields &field) {
                 field.u(i - 1, j) = 0.0;
                 field.v(i, j - 1) = 0.0;
                 field.u(i, j) = -field.u(i, j - 1);
-                field.v(i, j) = -field.v(i - 1, j);
                 field.p(i, j) = 0.5 * (field.p(i, j - 1) + field.p(i - 1, j));
                 if (field.get_energy_eq()) {
                     field.t(i, j) = 0.5 * (4.0 * _wall_temperature - field.t(i, j - 1) - field.t(i - 1, j));
@@ -72,7 +66,6 @@ void FixedWallBoundary::apply(Fields &field) {
             else {
                 field.u(i, j) = -field.u(i, j - 1);
                 field.v(i, j - 1) = 0;
-                field.p(i, j) = field.p(i, j - 1);
                 if (field.get_energy_eq()) {
                     field.t(i, j) = 2.0 * _wall_temperature - field.t(i, j - 1);
                 }
@@ -83,14 +76,12 @@ void FixedWallBoundary::apply(Fields &field) {
                 field.u(i - 1, j) = 0.0;
                 field.v(i, j - 1) = 0.5 * (field.v(i + 1, j - 1) + field.v(i - 1, j - 1));
                 field.v(i, j) = -0.5 * (field.v(i + 1, j) + field.v(i - 1, j));
-                field.p(i, j) = 0.5 * (field.p(i + 1, j) + field.p(i - 1, j));
                 if (field.get_energy_eq()) {
                     field.t(i, j) = 0.5 * (4.0 * _wall_temperature - field.t(i + 1, j) - field.t(i - 1, j));
                 }
             } else {
                 field.u(i, j) = 0;
                 field.v(i, j) = -field.v(i + 1, j);
-                field.p(i, j) = field.p(i + 1, j);
                 if (field.get_energy_eq()) {
                     field.t(i, j) = 2.0 * _wall_temperature - field.t(i + 1, j);
                 }
@@ -98,7 +89,6 @@ void FixedWallBoundary::apply(Fields &field) {
         } else if (cell->is_border(border_position::LEFT)) {
             field.u(i - 1, j) = 0;
             field.v(i, j) = -field.v(i - 1, j);
-            field.p(i, j) = field.p(i - 1, j);
             if (field.get_energy_eq()) {
                 field.t(i, j) = 2.0 * _wall_temperature - field.t(i - 1, j);
             }
@@ -157,26 +147,22 @@ void AdiabaticWallBoundary::apply(Fields &field) {
                 field.v(i, j) = 0.0;
                 field.u(i - 1, j) = -field.u(i - 1, j + 1);
                 field.v(i, j - 1) = -field.v(i + 1, j - 1);
-                field.p(i, j) = 0.5 * (field.p(i, j + 1) + field.p(i + 1, j));
                 field.t(i, j) = 0.5 * (field.t(i, j + 1) + field.t(i + 1, j));
             } else if (cell->is_border(border_position::LEFT)) {
                 field.u(i - 1, j) = 0.0;
                 field.v(i, j) = 0.0;
                 field.u(i, j) = -field.u(i, j + 1);
                 field.v(i, j - 1) = -field.v(i - 1, j - 1);
-                field.p(i, j) = 0.5 * (field.p(i, j + 1) + field.p(i - 1, j));
                 field.t(i, j) = 0.5 * (field.t(i, j + 1) + field.t(i - 1, j));
             } else if (cell->is_border(border_position::BOTTOM)) {
                 field.u(i, j) = -field.u(i, j - 1);
                 field.v(i, j) = 0.0;
                 field.v(i, j - 1) = 0.0;
                 field.u(i - 1, j) = 0.0;
-                field.p(i, j) = 0.5 * (field.p(i, j + 1) + field.p(i, j - 1));
                 field.t(i, j) = 0.5 * (field.t(i, j + 1) + field.t(i, j - 1));
             } else {
                 field.u(i, j) = -field.u(i, j + 1);
                 field.v(i, j) = 0.0;
-                field.p(i, j) = field.p(i, j + 1);
                 field.t(i, j) = field.t(i, j + 1);
             }
         } else if (cell->is_border(border_position::BOTTOM)) {
@@ -185,21 +171,18 @@ void AdiabaticWallBoundary::apply(Fields &field) {
                 field.v(i, j - 1) = 0.0;
                 field.u(i - 1, j) = -field.u(i - 1, j - 1);
                 field.v(i, j) = -field.v(i + 1, j);
-                field.p(i, j) = 0.5 * (field.p(i + 1, j) + field.p(i, j - 1));
                 field.t(i, j) = 0.5 * (field.t(i + 1, j) + field.t(i, j - 1));
             } else if (cell->is_border(border_position::LEFT)) {
                 field.u(i - 1, j) = 0.0;
                 field.v(i, j - 1) = 0.0;
                 field.u(i, j) = -field.u(i, j - 1);
                 field.v(i, j) = -field.v(i - 1, j);
-                field.p(i, j) = 0.5 * (field.p(i, j - 1) + field.p(i - 1, j));
                 field.t(i, j) = 0.5 * (field.t(i, j - 1) + field.t(i - 1, j));
             }
 
             else {
                 field.u(i, j) = -field.u(i, j - 1);
                 field.v(i, j - 1) = 0;
-                field.p(i, j) = field.p(i, j - 1);
                 field.t(i, j) = field.t(i, j - 1);
             }
         } else if (cell->is_border(border_position::RIGHT)) {
@@ -208,22 +191,20 @@ void AdiabaticWallBoundary::apply(Fields &field) {
                 field.u(i - 1, j) = 0.0;
                 field.v(i, j - 1) = 0.5 * (field.v(i + 1, j - 1) + field.v(i - 1, j - 1));
                 field.v(i, j) = -0.5 * (field.v(i + 1, j) + field.v(i - 1, j));
-                field.p(i, j) = 0.5 * (field.p(i + 1, j) + field.p(i - 1, j));
                 field.t(i, j) = 0.5 * (field.t(i + 1, j) + field.t(i - 1, j));
             } else {
                 field.u(i, j) = 0;
                 field.v(i, j) = -field.v(i + 1, j);
-                field.p(i, j) = field.p(i + 1, j);
                 field.t(i, j) = field.t(i + 1, j);
             }
         } else if (cell->is_border(border_position::LEFT)) {
             field.u(i - 1, j) = 0;
             field.v(i, j) = -field.v(i - 1, j);
-            field.p(i, j) = field.p(i - 1, j);
             field.t(i, j) = field.t(i - 1, j);
         }
     }
 }
+
 void AdiabaticWallBoundary::apply_pressures(Fields &field) {
     int i, j;
     for (const auto &cell : _cells) {
@@ -277,7 +258,6 @@ void MovingWallBoundary::apply(Fields &field) {
             j = cell->j();
             field.u(i, j) = 2.0 * LidDrivenCavity::wall_velocity - field.u(i, j - 1);
             field.v(i, j - 1) = 0;
-            field.p(i, j) = field.p(i, j - 1);
         }
     }
 }
@@ -308,12 +288,10 @@ void InFlow::apply(Fields &field) {
             // assuming inlet velocity is only in u
             field.u(i, j) = _inlet_velocity[PlaneShearFlow::inflow_wall_id];
             field.v(i, j) = -field.v(i + 1, j);
-            field.p(i, j) = field.p(i + 1, j);
         }
         if (cell->is_border(border_position::LEFT)) {
             field.u(i - 1, j) = _inlet_velocity[PlaneShearFlow::inflow_wall_id];
             field.v(i, j) = -field.v(i - 1, j);
-            field.p(i, j) = field.p(i - 1, j);
         }
     }
 }
@@ -345,24 +323,20 @@ void OutFlow::apply(Fields &field) {
         i = cell->i();
         j = cell->j();
         if (cell->is_border(border_position::LEFT)) {
-            field.u(i-1, j) = field.u(i - 2, j);
-            field.v(i-1, j) = field.v(i - 2, j);
-            field.p(i, j) = 2*_outlet_pressure - field.p(i-1,j);
+            field.u(i - 1, j) = field.u(i - 2, j);
+            field.v(i - 1, j) = field.v(i - 2, j);
         }
         if (cell->is_border(border_position::RIGHT)) {
             field.u(i, j) = field.u(i + 1, j);
             field.v(i, j) = field.v(i + 1, j);
-            field.p(i, j) = 2*_outlet_pressure - field.p(i+1,j);
         }
         if (cell->is_border(border_position::TOP)) {
             field.u(i, j) = field.u(i, j + 1);
             field.v(i, j) = field.v(i, j + 1);
-            field.p(i, j) = 2*_outlet_pressure - field.p(i, j+1);
         }
         if (cell->is_border(border_position::BOTTOM)) {
             field.u(i, j - 1) = field.u(i, j);
             field.v(i, j - 1) = field.v(i, j);
-            field.p(i, j) = 2*_outlet_pressure - field.p(i,j-1);
         }
     }
 }
@@ -374,16 +348,16 @@ void OutFlow::apply_pressures(Fields &field) {
         i = cell->i();
         j = cell->j();
         if (cell->is_border(border_position::LEFT)) {
-            field.p(i, j) = 2*_outlet_pressure - field.p(i-1,j);
+            field.p(i, j) = 2 * _outlet_pressure - field.p(i - 1, j);
         }
         if (cell->is_border(border_position::RIGHT)) {
-            field.p(i, j) = 2*_outlet_pressure - field.p(i+1,j);
+            field.p(i, j) = 2 * _outlet_pressure - field.p(i + 1, j);
         }
         if (cell->is_border(border_position::TOP)) {
-            field.p(i, j) = 2*_outlet_pressure - field.p(i, j+1);
+            field.p(i, j) = 2 * _outlet_pressure - field.p(i, j + 1);
         }
         if (cell->is_border(border_position::BOTTOM)) {
-            field.p(i, j) = 2*_outlet_pressure - field.p(i,j-1);
+            field.p(i, j) = 2 * _outlet_pressure - field.p(i, j - 1);
         }
     }
 }
