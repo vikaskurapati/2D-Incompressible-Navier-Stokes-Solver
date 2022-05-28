@@ -83,6 +83,8 @@ parameter is provided in the .dat file, the LidDriven Cavity with the parameters
 
 The user should maintain consistency between the .pgm file with obstacles clearly defined and should have the same number of discretizations in all directions in the .dat. The user should ensure that they use the same numbering in .pgm and in .dat file. For example, if adiabatic wall has number 4 in .pgm file, they should ensure that the adiabatic wall is wall_temp_5 in .dat file. If the pgm file has 80 points in x and 20 points in y, they should ensure that imax is 78 and jmax is 18 in .dat file(2 ghost cells in both directions).
 
+It is upto the user to ensure there are no forbidden cells in the .pgm file. i.e., no obstacle cells should have more than 3 neighboring fluid cells. The script checks for that and exits throwing an error in case there are more than 3 neighboring fluid cells for an obstacle cell or if there is a fluid cell in the ghost layer as we're not dealing with periodic conditions as of now.
+
 ## Special systems
 
 ### macOS
