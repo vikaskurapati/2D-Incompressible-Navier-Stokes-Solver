@@ -345,24 +345,24 @@ void OutFlow::apply(Fields &field) {
         i = cell->i();
         j = cell->j();
         if (cell->is_border(border_position::LEFT)) {
-            field.u(i, j) = field.u(i - 1, j);
-            field.v(i, j) = field.v(i - 1, j);
-            field.p(i, j) = _outlet_pressure;
+            field.u(i-1, j) = field.u(i - 2, j);
+            field.v(i-1, j) = field.v(i - 2, j);
+            field.p(i, j) = 2*_outlet_pressure - field.p(i-1,j);
         }
         if (cell->is_border(border_position::RIGHT)) {
             field.u(i, j) = field.u(i + 1, j);
             field.v(i, j) = field.v(i + 1, j);
-            field.p(i, j) = _outlet_pressure;
+            field.p(i, j) = 2*_outlet_pressure - field.p(i+1,j);
         }
         if (cell->is_border(border_position::TOP)) {
             field.u(i, j) = field.u(i, j + 1);
             field.v(i, j) = field.v(i, j + 1);
-            field.p(i, j) = _outlet_pressure;
+            field.p(i, j) = 2*_outlet_pressure - field.p(i, j+1);
         }
         if (cell->is_border(border_position::BOTTOM)) {
             field.u(i, j - 1) = field.u(i, j);
             field.v(i, j - 1) = field.v(i, j);
-            field.p(i, j) = _outlet_pressure;
+            field.p(i, j) = 2*_outlet_pressure - field.p(i,j-1);
         }
     }
 }
@@ -374,16 +374,16 @@ void OutFlow::apply_pressures(Fields &field) {
         i = cell->i();
         j = cell->j();
         if (cell->is_border(border_position::LEFT)) {
-            field.p(i, j) = _outlet_pressure;
+            field.p(i, j) = 2*_outlet_pressure - field.p(i-1,j);
         }
         if (cell->is_border(border_position::RIGHT)) {
-            field.p(i, j) = _outlet_pressure;
+            field.p(i, j) = 2*_outlet_pressure - field.p(i+1,j);
         }
         if (cell->is_border(border_position::TOP)) {
-            field.p(i, j) = _outlet_pressure;
+            field.p(i, j) = 2*_outlet_pressure - field.p(i, j+1);
         }
         if (cell->is_border(border_position::BOTTOM)) {
-            field.p(i, j) = _outlet_pressure;
+            field.p(i, j) = 2*_outlet_pressure - field.p(i,j-1);
         }
     }
 }
