@@ -74,6 +74,12 @@ class MovingWallBoundary : public Boundary {
     double _wall_temperature;
 };
 
+/**
+ * @brief Inflow wall boundary condition for the outer boundaries of the domain.
+ * Dirichlet for velocities for the given velocity at the inlet,
+ * Neumann for pressure with zero gradient
+ */
+
 class InFlow : public Boundary {
   public:
     InFlow(std::vector<Cell *> cells, std::map<int, double> inlet_velocity);
@@ -87,6 +93,11 @@ class InFlow : public Boundary {
     std::map<int, double> _inlet_velocity;
     double _wall_temperature;
 };
+
+/**
+ * @brief Outflow wall boundary condition for the outer boundaries of the domain.
+ * Neumann for velocities with zero gradient and Dirichilet for pressure with zero gradient
+ */
 
 class OutFlow : public Boundary {
   public:
