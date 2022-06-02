@@ -288,6 +288,9 @@ void InFlow::apply(Fields &field) {
             // assuming inlet velocity is only in u
             field.u(i, j) = _inlet_velocity[PlaneShearFlow::inflow_wall_id];
             field.v(i, j) = -field.v(i + 1, j);
+            if (field.get_energy_eq()) {
+                field.t(i, j) = 0.5 * (4.0 * _wall_temperature - field.t(i, j + 1) - field.t(i + 1, j));
+            }
         }
         if (cell->is_border(border_position::LEFT)) {
             field.u(i - 1, j) = _inlet_velocity[PlaneShearFlow::inflow_wall_id];
