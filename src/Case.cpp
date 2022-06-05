@@ -60,6 +60,9 @@ Case::Case(std::string file_name, int argn, char **args, int my_rank) {
     double T3;     /*3rd wall temperature */
     double T4;     /*4rd wall temperature */
     double T5;     /*5rd wall temperature */
+    // Worksheet 3 additions
+    int iproc = 1;
+    int jproc = 1;
 
     if (file.is_open()) {
 
@@ -97,6 +100,8 @@ Case::Case(std::string file_name, int argn, char **args, int my_rank) {
                 if (var == "wall_temp_3") file >> T3;
                 if (var == "wall_temp_4") file >> T4;
                 if (var == "wall_temp_5") file >> T5;
+                if (var == "iproc") file >> iproc;
+                if (var == "jproc") file >> jproc;
             }
         }
     }
