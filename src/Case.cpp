@@ -100,6 +100,7 @@ Case::Case(std::string file_name, int argn, char **args, int my_rank) {
                 if (var == "wall_temp_3") file >> T3;
                 if (var == "wall_temp_4") file >> T4;
                 if (var == "wall_temp_5") file >> T5;
+                // Worksheet 3 Additions
                 if (var == "iproc") file >> iproc;
                 if (var == "jproc") file >> jproc;
             }
@@ -235,7 +236,7 @@ void Case::set_file_names(std::string file_name) {
 }
 
 /**
- * This function is the main simulation loop. In the simulation loop, following steps are required
+ * This function is the main simulation loop. In the simulation loop, following steps are required(Serial)
  * - Calculate and apply boundary conditions for all the boundaries in _boundaries container
  *   using apply() member function of Boundary class -> done
  * - Calculate fluxes (F and G) using calculate_fluxes() member function of Fields class. -> Hope Surya done it
@@ -247,14 +248,8 @@ void Case::set_file_names(std::string file_name) {
  * - Calculate the velocities u and v using calculate_velocities() member function of Fields class
  * - Calculate the maximal timestep size for the next iteration using calculate_dt() member function of Fields class
  * - Write vtk files using output_vtk() function
- *
- * Please note that some classes such as PressureSolver, Boundary are abstract classes which means they only provide the
- * interface. No member functions should be defined in abstract classes. You need to define functions in inherited
- * classes such as MovingWallBoundary class.
- *
- * For information about the classes and functions, you can check the header files.
  */
-void Case::simulate(int my_rank) {
+void Case::simulate_serial(int my_rank) {
 
     double t = 0.0;
     double dt = _field.dt();
@@ -342,7 +337,26 @@ void Case::simulate(int my_rank) {
     output.close();
 }
 
-void Case::output_vtk(int timestep, int my_rank) {
+/*
+* The main simulation function for Parallel implementation. Refer to simulate_serial for the mathematics involved
+*/
+
+void Case::simulate_parallel(int my_rank)
+{
+    double t = 0.0;
+    double dt _field.dt();
+    double t = 0.0;
+    double dt = _field.dt();
+    int timestep = 0;
+    int output_counter = 0;
+    double t_end = _t_end;
+    double err = 100;
+    // starting simulation
+    int iter_count = 0;
+
+}
+
+void Case::output_vtk(int timestep, int my_rank, int rank=0) {
     // Create a new structured grid
     vtkSmartPointer<vtkStructuredGrid> structuredGrid = vtkSmartPointer<vtkStructuredGrid>::New();
 
@@ -449,7 +463,9 @@ void Case::output_vtk(int timestep, int my_rank) {
 
     // Create Filename
     std::string outputname =
-        _dict_name + '/' + _case_name + "_" + std::to_string(my_rank) + "." + std::to_string(timestep) + ".vtk";
+        _dict_name + '/' + _case_name + "_" + std::to_string(my_rank) + "." + 
+        std::to_string(rank) + "." + ::to_string(timestep) + ".vtk"; //my_rank is the user's input and rank is the parallel rank
+    
 
     writer->SetFileName(outputname.c_str());
     writer->SetInputData(structuredGrid);

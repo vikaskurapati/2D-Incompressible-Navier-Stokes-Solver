@@ -28,7 +28,7 @@ class Case {
     Case(std::string file_name, int argn, char **args, int my_rank = 1);
 
     /**
-     * @brief Main function to simulate the flow until the end time.
+     * @brief Main function to simulate the flow until the end time(Serial Implementation).
      *
      * Calculates the fluxes
      * Calculates the right hand side
@@ -36,7 +36,8 @@ class Case {
      * Calculates velocities
      * Outputs the solution files
      */
-    void simulate(int my_rank = 1);
+    void simulate_serial(int my_rank = 1);
+    void simulate_parallel(int my_rank = 1);
 
   private:
     /// Plain case name without paths
