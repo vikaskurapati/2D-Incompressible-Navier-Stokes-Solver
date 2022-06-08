@@ -14,19 +14,17 @@ int main(int argn, char **args) {
     MPI_Comm_rank(MPI_COMM_WORLD, &rank);
     MPI_Comm_size(MPI_COMM_WORLD, &size);
     
-    if(rank == 0)
-    {
     if (argn > 2) {
         std::string file_name{args[1]};
         int problem_rank{std::stoi(args[2])};
-        Case problem(file_name, argn, args, rank);
+        Case problem(file_name, argn, args, problem_rank, rank);
         if(size == 1)
         {   
             problem.simulate_serial(problem_rank);
         }
         else
         {
-            problem.simulate_parallel(problem_rank);
+            problem.simulate_serial(problem_rank);
         }
     }
     // in case the user doesn't provide any extra argument apart from the input file path
@@ -37,13 +35,12 @@ int main(int argn, char **args) {
         problem.simulate_serial();
         }
         else{
-            problem.simulate_parallel();
+            problem.simulate_serial();
         } 
     }else {
         std::cout << "Error: No input file is provided to fluidchen." << std::endl;
         std::cout << "Example usage: /path/to/fluidchen /path/to/input_data.dat" << std::endl;
     }
-}
     MPI_Finalize();
     return 0;
 }

@@ -25,7 +25,7 @@ class Case {
      *
      * @param[in] Input file name
      */
-    Case(std::string file_name, int argn, char **args, int my_rank = 1);
+    Case(std::string file_name, int argn, char **args, int my_rank = 0, int process_rank = 0);
 
     /**
      * @brief Main function to simulate the flow until the end time(Serial Implementation).
@@ -57,6 +57,10 @@ class Case {
     double _t_end;
     /// Solution file outputting frequency
     double _output_freq;
+
+    int _process_rank;
+    int _iproc;
+    int _jproc;
 
     Fields _field;
     Grid _grid;

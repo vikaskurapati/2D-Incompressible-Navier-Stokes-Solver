@@ -30,7 +30,8 @@ namespace filesystem = std::experimental::filesystem;
 #include <vtkStructuredGridWriter.h>
 #include <vtkTuple.h>
 
-Case::Case(std::string file_name, int argn, char **args, int my_rank) {
+Case::Case(std::string file_name, int argn, char **args, int my_rank, int process_rank
+) {
     // Read input parameters
     const int MAX_LINE_LENGTH = 1024;
     std::ifstream file(file_name);
@@ -61,8 +62,6 @@ Case::Case(std::string file_name, int argn, char **args, int my_rank) {
     double T4;     /*4rd wall temperature */
     double T5;     /*5rd wall temperature */
     // Worksheet 3 additions
-    int iproc = 1;
-    int jproc = 1;
 
     if (file.is_open()) {
 
@@ -101,14 +100,15 @@ Case::Case(std::string file_name, int argn, char **args, int my_rank) {
                 if (var == "wall_temp_4") file >> T4;
                 if (var == "wall_temp_5") file >> T5;
                 // Worksheet 3 Additions
-                if (var == "iproc") file >> iproc;
-                if (var == "jproc") file >> jproc;
+                if (var == "iproc") file >> _iproc;
+                if (var == "jproc") file >> _jproc;
             }
         }
     }
     file.close();
 
     _datfile_name = file_name;
+    _process_rank =  process_rank;
 
     std::map<int, double> wall_vel;
     if (_geom_name.compare("NONE") == 0) {
@@ -337,26 +337,7 @@ void Case::simulate_serial(int my_rank) {
     output.close();
 }
 
-/*
-* The main simulation function for Parallel implementation. Refer to simulate_serial for the mathematics involved
-*/
-
-void Case::simulate_parallel(int my_rank)
-{
-    double t = 0.0;
-    double dt _field.dt();
-    double t = 0.0;
-    double dt = _field.dt();
-    int timestep = 0;
-    int output_counter = 0;
-    double t_end = _t_end;
-    double err = 100;
-    // starting simulation
-    int iter_count = 0;
-
-}
-
-void Case::output_vtk(int timestep, int my_rank, int rank=0) {
+void Case::output_vtk(int timestep, int my_rank) {
     // Create a new structured grid
     vtkSmartPointer<vtkStructuredGrid> structuredGrid = vtkSmartPointer<vtkStructuredGrid>::New();
 
@@ -463,8 +444,7 @@ void Case::output_vtk(int timestep, int my_rank, int rank=0) {
 
     // Create Filename
     std::string outputname =
-        _dict_name + '/' + _case_name + "_" + std::to_string(my_rank) + "." + 
-        std::to_string(rank) + "." + ::to_string(timestep) + ".vtk"; //my_rank is the user's input and rank is the parallel rank
+        _dict_name + '/' + _case_name + "_" + std::to_string(my_rank) + "." + std::to_string(timestep) + ".vtk"; //my_rank is the user's input and rank is the parallel rank
     
 
     writer->SetFileName(outputname.c_str());
@@ -479,6 +459,9 @@ void Case::build_domain(Domain &domain, int imax_domain, int jmax_domain) {
     domain.jmax = jmax_domain + 2;
     domain.size_x = imax_domain;
     domain.size_y = jmax_domain;
+
+    std::cout << _process_rank << "\n";
+
 }
 
 void Case::output_log(std::string dat_file_name, double nu, double UI, double VI, double PI, double GX, double GY,
