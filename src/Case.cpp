@@ -453,15 +453,28 @@ void Case::output_vtk(int timestep, int my_rank) {
 }
 
 void Case::build_domain(Domain &domain, int imax_domain, int jmax_domain) {
-    domain.imin = 0;
-    domain.jmin = 0;
-    domain.imax = imax_domain + 2;
-    domain.jmax = jmax_domain + 2;
-    domain.size_x = imax_domain;
-    domain.size_y = jmax_domain;
 
-    std::cout << _process_rank << "\n";
+    int I;
+    int J;
+    
+    I = _process_rank/_iproc +1;
+    J = _process_rank%_iproc +1;
 
+    domain.imin = (I-1)*imax_domain/_iproc;
+    domain.imax = I*imax_domain/_iproc +2;
+    domain.jmin = (J-1)*jmax_domain/_jproc;
+    domain.jmax = J*jmax_domain/_jproc +2;
+    domain.size_x = imax_domain/_iproc;
+    domain.size_y = jmax_domain/_jproc;
+
+    // std::cout << "Rank: " << _process_rank << " " << domain.imin << " " << domain.imax << " " << domain.jmin << " " << domain.jmax << "\n";
+
+    // domain.imin = 0;
+    // domain.jmin = 0;
+    // domain.imax = imax_domain + 2;
+    // domain.jmax = jmax_domain + 2;
+    // domain.size_x = imax_domain;
+    // domain.size_y = jmax_domain;
 }
 
 void Case::output_log(std::string dat_file_name, double nu, double UI, double VI, double PI, double GX, double GY,
