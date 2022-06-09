@@ -30,9 +30,10 @@ namespace filesystem = std::experimental::filesystem;
 #include <vtkStructuredGridWriter.h>
 #include <vtkTuple.h>
 
-Case::Case(std::string file_name, int argn, char **args, int my_rank, int process_rank
-) {
+Case::Case(std::string file_name, int argn, char **args, int my_rank) {
     // Read input parameters
+    MPI_Comm_rank(MPI_COMM_WORLD, &_process_rank);
+    MPI_Comm_size(MPI_COMM_WORLD, &_size);
     const int MAX_LINE_LENGTH = 1024;
     std::ifstream file(file_name);
     double nu;      /* viscosity   */
@@ -61,7 +62,6 @@ Case::Case(std::string file_name, int argn, char **args, int my_rank, int proces
     double T3;     /*3rd wall temperature */
     double T4;     /*4rd wall temperature */
     double T5;     /*5rd wall temperature */
-    // Worksheet 3 additions
 
     if (file.is_open()) {
 
@@ -105,10 +105,28 @@ Case::Case(std::string file_name, int argn, char **args, int my_rank, int proces
             }
         }
     }
+
     file.close();
 
+    if (_iproc * _jproc != _size) {
+        std::cout << _iproc << " " << _jproc << std::endl;
+        MPI_Finalize();
+        std::cerr << "iproc*jproc!=size, please check" << std::endl;
+        exit(0);
+    }
+
+    if (imax % _iproc != 0) {
+        MPI_Finalize();
+        std::cerr << "imax isnt divisible by iproc, please check" << std::endl;
+        exit(0);
+    }
+    if (jmax % _jproc != 0) {
+        MPI_Finalize();
+        std::cerr << "jmax isnt divisible by jproc, please check" << std::endl;
+        exit(0);
+    }
+
     _datfile_name = file_name;
-    _process_rank =  process_rank;
 
     std::map<int, double> wall_vel;
     if (_geom_name.compare("NONE") == 0) {
@@ -249,7 +267,7 @@ void Case::set_file_names(std::string file_name) {
  * - Calculate the maximal timestep size for the next iteration using calculate_dt() member function of Fields class
  * - Write vtk files using output_vtk() function
  */
-void Case::simulate_serial(int my_rank) {
+void Case::simulate(int my_rank) {
 
     double t = 0.0;
     double dt = _field.dt();
@@ -443,9 +461,9 @@ void Case::output_vtk(int timestep, int my_rank) {
     vtkSmartPointer<vtkStructuredGridWriter> writer = vtkSmartPointer<vtkStructuredGridWriter>::New();
 
     // Create Filename
-    std::string outputname =
-        _dict_name + '/' + _case_name + "_" + std::to_string(my_rank) + "." + std::to_string(timestep) + ".vtk"; //my_rank is the user's input and rank is the parallel rank
-    
+    std::string outputname = _dict_name + '/' + _case_name + "_" + std::to_string(my_rank) + "." +
+                             std::to_string(timestep) +
+                             ".vtk"; // my_rank is the user's input and rank is the parallel rank
 
     writer->SetFileName(outputname.c_str());
     writer->SetInputData(structuredGrid);
@@ -456,25 +474,55 @@ void Case::build_domain(Domain &domain, int imax_domain, int jmax_domain) {
 
     int I;
     int J;
+    int imin, imax, jmin, jmax, size_x, size_y;
+
+    if (_process_rank == 0) {
+        for (int i = 1; i < _size; ++i) {
+            I = i%_iproc + 1;
+            J = i/_iproc + 1;
+            imin = (I - 1) * imax_domain / _iproc;
+            imax = I * imax_domain / _iproc + 2;
+            jmin = (J - 1) * jmax_domain / _jproc;
+            jmax = J * jmax_domain / _jproc + 2;
+            size_x = imax_domain / _iproc;
+            size_y = jmax_domain / _jproc;
+            MPI_Send(&imin, 1, MPI_INT, i, 999, MPI_COMM_WORLD);
+            MPI_Send(&imax, 1, MPI_INT, i, 998, MPI_COMM_WORLD);
+            MPI_Send(&jmin, 1, MPI_INT, i, 997, MPI_COMM_WORLD);
+            MPI_Send(&jmax, 1, MPI_INT, i, 996, MPI_COMM_WORLD);
+            MPI_Send(&size_x, 1, MPI_INT, i, 995, MPI_COMM_WORLD);
+            MPI_Send(&size_y, 1, MPI_INT, i, 994, MPI_COMM_WORLD);
+            
+        }
+            I = _process_rank%_iproc + 1;
+            J = _process_rank/_iproc + 1;
+            domain.imin = (I - 1) * imax_domain / _iproc;
+            domain.imax = I * imax_domain / _iproc + 2;
+            domain.jmin = (J - 1) * jmax_domain / _jproc;
+            domain.jmax = J * jmax_domain / _jproc + 2;
+            domain.size_x = imax_domain / _iproc;
+            domain.size_y = jmax_domain / _jproc;
+    } 
     
-    I = _process_rank/_iproc +1;
-    J = _process_rank%_iproc +1;
+    else {
+        MPI_Status status;
+        MPI_Recv(&domain.imin, 1, MPI_INT, 0, 999, MPI_COMM_WORLD, &status);
+        MPI_Recv(&domain.imax, 1, MPI_INT, 0, 998, MPI_COMM_WORLD, &status);
+        MPI_Recv(&domain.jmin, 1, MPI_INT, 0, 997, MPI_COMM_WORLD, &status);
+        MPI_Recv(&domain.jmax, 1, MPI_INT, 0, 996, MPI_COMM_WORLD, &status);
+        MPI_Recv(&domain.size_x, 1, MPI_INT, 0, 995, MPI_COMM_WORLD, &status);
+        MPI_Recv(&domain.size_y, 1, MPI_INT, 0, 994, MPI_COMM_WORLD, &status);
+    }
 
-    domain.imin = (I-1)*imax_domain/_iproc;
-    domain.imax = I*imax_domain/_iproc +2;
-    domain.jmin = (J-1)*jmax_domain/_jproc;
-    domain.jmax = J*jmax_domain/_jproc +2;
-    domain.size_x = imax_domain/_iproc;
-    domain.size_y = jmax_domain/_jproc;
+    std::cout << "Rank: " << _process_rank << " " << domain.imin << " " << domain.imax << " " << domain.jmin << " "
+              << domain.jmax << "\n";
 
-    // std::cout << "Rank: " << _process_rank << " " << domain.imin << " " << domain.imax << " " << domain.jmin << " " << domain.jmax << "\n";
-
-    // domain.imin = 0;
-    // domain.jmin = 0;
-    // domain.imax = imax_domain + 2;
-    // domain.jmax = jmax_domain + 2;
-    // domain.size_x = imax_domain;
-    // domain.size_y = jmax_domain;
+    domain.imin = 0;
+    domain.jmin = 0;
+    domain.imax = imax_domain + 2;
+    domain.jmax = jmax_domain + 2;
+    domain.size_x = imax_domain;
+    domain.size_y = jmax_domain;
 }
 
 void Case::output_log(std::string dat_file_name, double nu, double UI, double VI, double PI, double GX, double GY,

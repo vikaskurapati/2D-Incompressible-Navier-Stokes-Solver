@@ -25,7 +25,7 @@ class Case {
      *
      * @param[in] Input file name
      */
-    Case(std::string file_name, int argn, char **args, int my_rank = 0, int process_rank = 0);
+    Case(std::string file_name, int argn, char **args, int my_rank = 0);
 
     /**
      * @brief Main function to simulate the flow until the end time(Serial Implementation).
@@ -36,8 +36,7 @@ class Case {
      * Calculates velocities
      * Outputs the solution files
      */
-    void simulate_serial(int my_rank = 1);
-    void simulate_parallel(int my_rank = 1);
+    void simulate(int my_rank = 1);
 
   private:
     /// Plain case name without paths
@@ -58,9 +57,10 @@ class Case {
     /// Solution file outputting frequency
     double _output_freq;
 
-    int _process_rank;
     int _iproc;
     int _jproc;
+    int _process_rank;
+    int _size;
 
     Fields _field;
     Grid _grid;
