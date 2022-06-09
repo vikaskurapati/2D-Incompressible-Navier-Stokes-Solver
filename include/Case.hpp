@@ -57,10 +57,10 @@ class Case {
     /// Solution file outputting frequency
     double _output_freq;
 
-    int _iproc;
-    int _jproc;
-    int _process_rank;
-    int _size;
+    int _iproc{1};
+    int _jproc{1};
+    int _process_rank{0};
+    int _size{1};
 
     Fields _field;
     Grid _grid;
