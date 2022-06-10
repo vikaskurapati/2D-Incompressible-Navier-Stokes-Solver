@@ -7,6 +7,10 @@
 Fields::Fields(Grid &grid, double nu, double dt, double tau, double alpha, double beta, std::string energy_eq, int imax,
                int jmax, double UI, double VI, double PI, double TI, double gx, double gy)
     : _nu(nu), _dt(dt), _tau(tau), _alpha(alpha), _beta(beta), _energy_eq(energy_eq), _gx(gx), _gy(gy) {
+
+    MPI_Comm_rank(MPI_COMM_WORLD, &_process_rank);
+    MPI_Comm_size(MPI_COMM_WORLD, &_size);
+
     _U = Matrix<double>(imax + 2, jmax + 2);
     _V = Matrix<double>(imax + 2, jmax + 2);
     _P = Matrix<double>(imax + 2, jmax + 2);
@@ -24,7 +28,6 @@ Fields::Fields(Grid &grid, double nu, double dt, double tau, double alpha, doubl
         _T(i, j) = TI;
         _T_new(i, j) = TI;
     }
-
     _F = Matrix<double>(imax + 2, jmax + 2, 0.0);
     _G = Matrix<double>(imax + 2, jmax + 2, 0.0);
     _RS = Matrix<double>(imax + 2, jmax + 2, 0.0);
@@ -38,25 +41,30 @@ void Fields::calculate_fluxes(Grid &grid) {
             i = currentCell->i();
             j = currentCell->j();
 
-            _F(i, j) = _U(i, j) + _dt * (_nu * (Discretization::laplacian(_U, i, j)) -
-                                         Discretization::convection_u(_U, _V, i, j) + _gx);
-            _G(i, j) = _V(i, j) + _dt * (_nu * (Discretization::laplacian(_V, i, j)) -
-                                         Discretization::convection_v(_U, _V, i, j) + _gy);
+            if (i != 0 && j != 0 && i != grid.domain().size_x + 1 && j != grid.domain().size_y + 1) {
+                _F(i, j) = _U(i, j) + _dt * (_nu * (Discretization::laplacian(_U, i, j)) -
+                                             Discretization::convection_u(_U, _V, i, j) + _gx);
+                _G(i, j) = _V(i, j) + _dt * (_nu * (Discretization::laplacian(_V, i, j)) -
+                                             Discretization::convection_v(_U, _V, i, j) + _gy);
+            }
         }
     } else if (_energy_eq == "on") {
         for (const auto &currentCell : grid.fluid_cells()) {
             i = currentCell->i();
             j = currentCell->j();
 
-            _F(i, j) = _U(i, j) +
-                       _dt * (_nu * (Discretization::laplacian(_U, i, j)) - Discretization::convection_u(_U, _V, i, j));
-            _F(i, j) -= 0.5 * _dt * _beta * (_T(i, j) + _T(i + 1, j)) * _gx;
-            _G(i, j) = _V(i, j) +
-                       _dt * (_nu * (Discretization::laplacian(_V, i, j)) - Discretization::convection_v(_U, _V, i, j));
-            _G(i, j) -= 0.5 * _dt * _beta * (_T(i, j) + _T(i, j + 1)) * _gy;
+            if (i != 0 && j != 0 && i != grid.domain().size_x + 1 && j != grid.domain().size_y + 1) {
+                _F(i, j) = _U(i, j) + _dt * (_nu * (Discretization::laplacian(_U, i, j)) -
+                                             Discretization::convection_u(_U, _V, i, j));
+                _F(i, j) -= 0.5 * _dt * _beta * (_T(i, j) + _T(i + 1, j)) * _gx;
+                _G(i, j) = _V(i, j) + _dt * (_nu * (Discretization::laplacian(_V, i, j)) -
+                                             Discretization::convection_v(_U, _V, i, j));
+                _G(i, j) -= 0.5 * _dt * _beta * (_T(i, j) + _T(i, j + 1)) * _gy;
+            }
         }
     } else {
-        std::cout << "Something went wrong with engery equation on and off\nPlease check\n";
+        std::cout << "Something went wrong with energy equation on and off\nPlease check\n";
+        MPI_Finalize();
         exit(0);
     }
 
@@ -164,8 +172,10 @@ void Fields::calculate_temperatures(Grid &grid) {
     for (const auto &currentCell : grid.fluid_cells()) {
         i = currentCell->i();
         j = currentCell->j();
-        _T_new(i, j) = _T(i, j) + _dt * (_alpha * Discretization::laplacian(_T, i, j) -
-                                         Discretization::convection_t(_T, _U, _V, i, j));
+        if (i != 0 && j != 0 && i != grid.domain().size_x + 1 && j != grid.domain().size_y + 1) {
+            _T_new(i, j) = _T(i, j) + _dt * (_alpha * Discretization::laplacian(_T, i, j) -
+                                             Discretization::convection_t(_T, _U, _V, i, j));
+        }
     }
     _T = _T_new;
 }

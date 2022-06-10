@@ -1,5 +1,6 @@
 
 #include "Case.hpp"
+#include "Communication.hpp"
 #include "Enums.hpp"
 
 #include <algorithm>
@@ -152,6 +153,7 @@ Case::Case(std::string file_name, int argn, char **args, int my_rank) {
     _grid = Grid(_geom_name, domain);
 
     // Assigning hot and cold temperatues accordingly
+    // Come back and check this once parse geometry file is written
     if (_grid.get_hot_fixed_wall_id() == 3) {
         Th = T3;
     }
@@ -208,8 +210,11 @@ Case::Case(std::string file_name, int argn, char **args, int my_rank) {
     if (not _grid.outflow_cells().empty()) {
         _boundaries.push_back(std::make_unique<OutFlow>(_grid.outflow_cells(), 0.0));
     }
-    output_log(_datfile_name, nu, UI, VI, PI, GX, GY, xlength, ylength, dt, imax, jmax, gamma, omg, tau, itermax, eps,
-               TI, alpha, beta, num_walls, Tc, Th, my_rank);
+
+    if (_process_rank == 0) {
+        output_log(_datfile_name, nu, UI, VI, PI, GX, GY, xlength, ylength, dt, imax, jmax, gamma, omg, tau, itermax,
+                   eps, TI, alpha, beta, num_walls, Tc, Th, my_rank);
+    }
 }
 
 void Case::set_file_names(std::string file_name) {
@@ -285,31 +290,39 @@ void Case::simulate(int my_rank) {
     int iter_count = 0;
 
     Case::output_vtk(timestep, my_rank);
-
-    std::string str = _dict_name + "_run_log_" + std::to_string(my_rank) + ".log";
     std::ofstream output;
-
-    output.open(str, std::ios_base::app);
-    output << "\n\nIteration Log:\n";
-    std::cout << "Simulation is Running!\nPlease Refer to " << _dict_name << "_run_log_" << my_rank
-              << ".log for Simulation log!\n";
-    // Simulation Progress
     int progress, last_progress;
-    if (Case::_energy_eq == "on") {
-        std::cout << "\nEnergy Equation is On\n";
+
+    if (_process_rank == 0) {
+        std::string str = _dict_name + "_run_log_" + std::to_string(my_rank) + ".log";
+
+        output.open(str, std::ios_base::app);
+        output << "\n\nIteration Log:\n";
+        std::cout << "Simulation is Running!\nPlease Refer to " << _dict_name << "_run_log_" << my_rank
+                  << ".log for Simulation log!\n";
+        // Simulation Progress
+        if (Case::_energy_eq == "on") {
+            std::cout << "\nEnergy Equation is On\n";
+        }
     }
+
     while (t < t_end) {
         err = 100.0;
         iter_count = 0;
         dt = _field.calculate_dt(_grid);
+        MPI_Barrier(MPI_COMM_WORLD);
+        dt = Communication::reduce_min(dt);
+
         for (size_t i = 0; i < _boundaries.size(); i++) {
             _boundaries[i]->apply(_field);
         }
-
         if (Case::_energy_eq == "on") {
             _field.calculate_temperatures(_grid);
         }
         _field.calculate_fluxes(_grid);
+        std::cout << "Here MF" << std::endl;
+        MPI_Barrier(MPI_COMM_WORLD);
+
         _field.calculate_rs(_grid);
         while (err > _tolerance && iter_count < _max_iter) {
             for (const auto &boundary : _boundaries) {
@@ -322,15 +335,19 @@ void Case::simulate(int my_rank) {
         _field.calculate_velocities(_grid);
         t += dt;
         timestep += 1;
-        output << std::setprecision(4) << std::fixed;
+        if (_process_rank == 0) {
+            output << std::setprecision(4) << std::fixed;
+        }
         if (t - output_counter * _output_freq >= 0) {
             Case::output_vtk(timestep, my_rank);
-            output << "Time: " << t << " Residual: " << err << " PPE Iterations: " << iter_count << std::endl;
-            if (iter_count == _max_iter || std::isnan(err)) {
-                std::cout
-                    << "The PPE Solver didn't converge for Time = " << t
-                    << " Please check the log file and increase max iterations or other parameters for convergence"
-                    << "\n";
+            if (_process_rank == 0) {
+                output << "Time: " << t << " Residual: " << err << " PPE Iterations: " << iter_count << std::endl;
+                if (iter_count == _max_iter || std::isnan(err)) {
+                    std::cout
+                        << "The PPE Solver didn't converge for Time = " << t
+                        << " Please check the log file and increase max iterations or other parameters for convergence"
+                        << "\n";
+                }
             }
             output_counter += 1;
         }
@@ -468,8 +485,8 @@ void Case::output_vtk(int timestep, int my_rank) {
 
     // Create Filename
     std::string outputname = _dict_name + '/' + _case_name + "_" + std::to_string(my_rank) + "." +
-                             std::to_string(timestep) +
-                             ".vtk"; // my_rank is the user's input and rank is the parallel rank
+                             std::to_string(_process_rank) + "." + std::to_string(timestep) +
+                             ".vtk"; // my_rank is the user's input and _process_rank is the process rank
 
     writer->SetFileName(outputname.c_str());
     writer->SetInputData(structuredGrid);

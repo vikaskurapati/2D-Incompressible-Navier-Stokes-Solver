@@ -261,7 +261,7 @@ void Grid::assign_cell_types(std::vector<std::vector<int>> &geometry_data, std::
             }
         }
     }
-    if (_process_rank == 6) {
+    if (_process_rank == 0) {
         std::cout << std::endl;
         for (int j = _domain.size_y + 1; j >= 0; --j) {
             for (int i = 0; i < _domain.size_x + 2; ++i) {
@@ -270,6 +270,7 @@ void Grid::assign_cell_types(std::vector<std::vector<int>> &geometry_data, std::
             std::cout << std::endl;
         }
     }
+    MPI_Barrier(MPI_COMM_WORLD);
 }
 
 void Grid::parse_geometry_file(std::string filedoc, std::vector<std::vector<int>> &geometry_data) {

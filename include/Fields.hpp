@@ -159,4 +159,7 @@ class Fields {
     double _beta;
     // status if the energy_equations should be turned on or not
     std::string _energy_eq;
+
+    int _process_rank;
+    int _size;
 };
