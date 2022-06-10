@@ -9,6 +9,9 @@
 
 Grid::Grid(std::string geom_name, Domain &domain) {
 
+    MPI_Comm_rank(MPI_COMM_WORLD, &_process_rank);
+    MPI_Comm_size(MPI_COMM_WORLD, &_size);
+
     _domain = domain;
 
     _cells = Matrix<Cell>(_domain.size_x + 2, _domain.size_y + 2);
@@ -26,21 +29,22 @@ Grid::Grid(std::string geom_name, Domain &domain) {
 }
 
 void Grid::build_lid_driven_cavity(std::string geom_name) {
-    std::vector<std::vector<int>> geometry_data(_domain.domain_size_x + 2,
-                                                std::vector<int>(_domain.domain_size_y + 2, 0));
+    std::vector<std::vector<int>> geometry_data(_domain.size_x + 2,
+                                                std::vector<int>(_domain.size_y + 2, 0));
 
-    for (int i = 0; i < _domain.domain_size_x + 2; ++i) {
-        for (int j = 0; j < _domain.domain_size_y + 2; ++j) {
+    for (int i = 0; i < _domain.size_x + 2; ++i) {
+        for (int j = 0; j < _domain.size_y + 2; ++j) {
             // Bottom, left and right walls: no-slip
-            if (i == 0 || j == 0 || i == _domain.domain_size_x + 1) {
+            if ( (i == 0 && _domain.imin == 0) || (j == 0 && _domain.jmin == 0) || (i == _domain.size_x + 1 && _domain.imax == _domain.domain_size_x + 2)) {
                 geometry_data.at(i).at(j) = LidDrivenCavity::fixed_wall_id;
             }
             // Top wall: moving wall
-            else if (j == _domain.domain_size_y + 1) {
+            else if (j == _domain.size_y + 1 && _domain.jmax == _domain.domain_size_y + 2) {
                 geometry_data.at(i).at(j) = LidDrivenCavity::moving_wall_id;
             }
         }
     }
+
     assign_cell_types(geometry_data, geom_name);
 }
 
@@ -243,6 +247,16 @@ void Grid::assign_cell_types(std::vector<std::vector<int>> &geometry_data, std::
             }
         }
     }
+    // MPI_Barrier(MPI_COMM_WORLD);
+    // MPI_Barrier(MPI_COMM_WORLD);
+    if(_process_rank == 1){
+    for (int j = _domain.size_y + 1; j >=0 ; --j) {
+        for (int i = 0; i < _domain.size_x + 2; ++i) {
+            std::cout<< int(_cells(i,j).type()) << " ";
+        }
+        std::cout<< std::endl;
+    }
+    }
 }
 
 void Grid::parse_geometry_file(std::string filedoc, std::vector<std::vector<int>> &geometry_data) {
@@ -358,6 +372,7 @@ void Grid::parse_geometry_file(std::string filedoc, std::vector<std::vector<int>
             exit(0);
         }
     }
+    
 }
 
 int Grid::imax() const { return _domain.size_x; }

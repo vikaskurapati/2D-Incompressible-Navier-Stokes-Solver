@@ -123,6 +123,10 @@ class Grid {
     int adiabatic_fixed_wall_id;
     int moving_wall_id;
 
+    // MPI Additions
+    int _process_rank;
+    int _size;
+
     Domain _domain;
 
     double _dx;

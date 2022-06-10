@@ -111,18 +111,24 @@ Case::Case(std::string file_name, int argn, char **args, int my_rank) {
     if (_iproc * _jproc != _size) {
         std::cout << _iproc << " " << _jproc << std::endl;
         MPI_Finalize();
-        std::cerr << "iproc*jproc!=size, please check" << std::endl;
+        if (_process_rank == 0) {
+            std::cerr << "iproc*jproc!=size, please check" << std::endl;
+        }
         exit(0);
     }
 
     if (imax % _iproc != 0) {
         MPI_Finalize();
-        std::cerr << "imax isnt divisible by iproc, please check" << std::endl;
+        if (_process_rank == 0) {
+            std::cerr << "imax isnt divisible by iproc, please check" << std::endl;
+        }
         exit(0);
     }
     if (jmax % _jproc != 0) {
         MPI_Finalize();
-        std::cerr << "jmax isnt divisible by jproc, please check" << std::endl;
+        if (_process_rank == 0) {
+            std::cerr << "jmax isnt divisible by jproc, please check" << std::endl;
+        }
         exit(0);
     }
 
@@ -478,8 +484,8 @@ void Case::build_domain(Domain &domain, int imax_domain, int jmax_domain) {
 
     if (_process_rank == 0) {
         for (int i = 1; i < _size; ++i) {
-            I = i%_iproc + 1;
-            J = i/_iproc + 1;
+            I = i % _iproc + 1;
+            J = i / _iproc + 1;
             imin = (I - 1) * imax_domain / _iproc;
             imax = I * imax_domain / _iproc + 2;
             jmin = (J - 1) * jmax_domain / _jproc;
@@ -492,18 +498,17 @@ void Case::build_domain(Domain &domain, int imax_domain, int jmax_domain) {
             MPI_Send(&jmax, 1, MPI_INT, i, 996, MPI_COMM_WORLD);
             MPI_Send(&size_x, 1, MPI_INT, i, 995, MPI_COMM_WORLD);
             MPI_Send(&size_y, 1, MPI_INT, i, 994, MPI_COMM_WORLD);
-            
         }
-            I = _process_rank%_iproc + 1;
-            J = _process_rank/_iproc + 1;
-            domain.imin = (I - 1) * imax_domain / _iproc;
-            domain.imax = I * imax_domain / _iproc + 2;
-            domain.jmin = (J - 1) * jmax_domain / _jproc;
-            domain.jmax = J * jmax_domain / _jproc + 2;
-            domain.size_x = imax_domain / _iproc;
-            domain.size_y = jmax_domain / _jproc;
-    } 
-    
+        I = _process_rank % _iproc + 1;
+        J = _process_rank / _iproc + 1;
+        domain.imin = (I - 1) * imax_domain / _iproc;
+        domain.imax = I * imax_domain / _iproc + 2;
+        domain.jmin = (J - 1) * jmax_domain / _jproc;
+        domain.jmax = J * jmax_domain / _jproc + 2;
+        domain.size_x = imax_domain / _iproc;
+        domain.size_y = jmax_domain / _jproc;
+    }
+
     else {
         MPI_Status status;
         MPI_Recv(&domain.imin, 1, MPI_INT, 0, 999, MPI_COMM_WORLD, &status);
@@ -514,15 +519,18 @@ void Case::build_domain(Domain &domain, int imax_domain, int jmax_domain) {
         MPI_Recv(&domain.size_y, 1, MPI_INT, 0, 994, MPI_COMM_WORLD, &status);
     }
 
-    std::cout << "Rank: " << _process_rank << " " << domain.imin << " " << domain.imax << " " << domain.jmin << " "
-              << domain.jmax << "\n";
-
-    domain.imin = 0;
-    domain.jmin = 0;
-    domain.imax = imax_domain + 2;
-    domain.jmax = jmax_domain + 2;
-    domain.size_x = imax_domain;
-    domain.size_y = jmax_domain;
+    if (_process_rank + 1 < _size && (_process_rank + 1) % _iproc != 0) {
+        domain.neighbour_ranks[1] = _process_rank + 1;
+    }
+    if (_process_rank - 1 >= 0 && (_process_rank) % _iproc != 0) {
+        domain.neighbour_ranks[0] = _process_rank - 1;
+    }
+    if (_process_rank + _iproc < _size) {
+        domain.neighbour_ranks[3] = _process_rank + _iproc;
+    }
+    if (_process_rank - _iproc >= 0) {
+        domain.neighbour_ranks[2] = _process_rank - _iproc;
+    }
 }
 
 void Case::output_log(std::string dat_file_name, double nu, double UI, double VI, double PI, double GX, double GY,
