@@ -143,13 +143,21 @@ Case::Case(std::string file_name, int argn, char **args, int process_rank, int s
     set_file_names(file_name);
 
     // Build up the domain
-    Domain domain;
     domain.dx = xlength / static_cast<double>(imax);
     domain.dy = ylength / static_cast<double>(jmax);
     domain.domain_size_x = imax;
     domain.domain_size_y = jmax;
 
     build_domain(domain, imax, jmax);
+    MPI_Barrier(MPI_COMM_WORLD);
+
+    // if (_process_rank == 0) {
+    //     for (int i = 0; i < domain.neighbour_ranks.size(); i++) {
+    //         std::cout << domain.neighbour_ranks[i] << "  ";
+    //     }
+    // }
+    // MPI_Barrier(MPI_COMM_WORLD);
+
     _grid = Grid(_geom_name, domain, _process_rank, _size);
 
     // Assigning hot and cold temperatues accordingly
@@ -316,12 +324,13 @@ void Case::simulate(int my_rank) {
         }
         if (Case::_energy_eq == "on") {
             _field.calculate_temperatures(_grid);
-            Communication::communicate(_field.t_matrix(), domain, _process_rank);
+            Communication::communicate(_field.t_matrix(), domain, _process_rank, _iproc);
             // communicate temperature
         }
         _field.calculate_fluxes(_grid);
-        Communication::communicate(_field.f_matrix(), domain, _process_rank);
-        Communication::communicate(_field.g_matrix(), domain, _process_rank);
+
+        Communication::communicate(_field.f_matrix(), domain, _process_rank, _iproc);
+        Communication::communicate(_field.g_matrix(), domain, _process_rank, _iproc);
         // communicate fluxes
         _field.calculate_rs(_grid);
         while (err > _tolerance && iter_count < _max_iter) {
@@ -329,18 +338,17 @@ void Case::simulate(int my_rank) {
                 boundary->apply_pressures(_field);
             }
             // communicate pressures
-            Communication::communicate(_field.p_matrix(), domain, _process_rank);
+            Communication::communicate(_field.p_matrix(), domain, _process_rank, _iproc);
             err = _pressure_solver->solve(_field, _grid, _boundaries);
             // add residuals
             iter_count += 1;
         }
         _field.calculate_velocities(_grid);
-        Communication::communicate(_field.u_matrix(), domain, _process_rank);
+        Communication::communicate(_field.u_matrix(), domain, _process_rank, _iproc);
         // exchange velocities
-        Communication::communicate(_field.v_matrix(), domain, _process_rank);
+        Communication::communicate(_field.v_matrix(), domain, _process_rank, _iproc);
         t += dt;
         timestep += 1;
-        // break;
         if (_process_rank == 0) {
             output << std::setprecision(4) << std::fixed;
         }
