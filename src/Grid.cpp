@@ -7,10 +7,10 @@
 #include <sstream>
 #include <vector>
 
-Grid::Grid(std::string geom_name, Domain &domain) {
+Grid::Grid(std::string geom_name, Domain &domain, int process_rank, int size) {
 
-    MPI_Comm_rank(MPI_COMM_WORLD, &_process_rank);
-    MPI_Comm_size(MPI_COMM_WORLD, &_size);
+    _process_rank = process_rank;
+    _size = size;
 
     _domain = domain;
 
@@ -261,16 +261,16 @@ void Grid::assign_cell_types(std::vector<std::vector<int>> &geometry_data, std::
             }
         }
     }
-    if (_process_rank == 0) {
-        std::cout << std::endl;
-        for (int j = _domain.size_y + 1; j >= 0; --j) {
-            for (int i = 0; i < _domain.size_x + 2; ++i) {
-                std::cout << int(_cells(i, j).type()) << " ";
-            }
-            std::cout << std::endl;
-        }
-    }
-    MPI_Barrier(MPI_COMM_WORLD);
+    // if (_process_rank == 0) {
+    //     std::cout << std::endl;
+    //     for (int j = _domain.size_y + 1; j >= 0; --j) {
+    //         for (int i = 0; i < _domain.size_x + 2; ++i) {
+    //             std::cout << int(_cells(i, j).type()) << " ";
+    //         }
+    //         std::cout << std::endl;
+    //     }
+    // }
+    // MPI_Barrier(MPI_COMM_WORLD);
 }
 
 void Grid::parse_geometry_file(std::string filedoc, std::vector<std::vector<int>> &geometry_data) {

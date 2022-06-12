@@ -29,7 +29,7 @@ class Grid {
      * @param[in] cell size in y direction
      *
      */
-    Grid(std::string geom_name, Domain &domain);
+    Grid(std::string geom_name, Domain &domain, int process_rank = 0, int size = 1);
 
     /// index based cell access
     Cell cell(int i, int j) const;

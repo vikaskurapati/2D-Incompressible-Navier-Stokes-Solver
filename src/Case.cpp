@@ -31,10 +31,8 @@ namespace filesystem = std::experimental::filesystem;
 #include <vtkStructuredGridWriter.h>
 #include <vtkTuple.h>
 
-Case::Case(std::string file_name, int argn, char **args, int my_rank) {
+Case::Case(std::string file_name, int argn, char **args, int process_rank, int size, int my_rank) {
     // Read input parameters
-    MPI_Comm_rank(MPI_COMM_WORLD, &_process_rank);
-    MPI_Comm_size(MPI_COMM_WORLD, &_size);
     const int MAX_LINE_LENGTH = 1024;
     std::ifstream file(file_name);
     double nu;      /* viscosity   */
@@ -109,8 +107,10 @@ Case::Case(std::string file_name, int argn, char **args, int my_rank) {
 
     file.close();
 
+    _process_rank = process_rank;
+    _size = size;
+
     if (_iproc * _jproc != _size) {
-        std::cout << _iproc << " " << _jproc << std::endl;
         MPI_Finalize();
         if (_process_rank == 0) {
             std::cerr << "iproc*jproc!=size, please check" << std::endl;
@@ -150,7 +150,7 @@ Case::Case(std::string file_name, int argn, char **args, int my_rank) {
     domain.domain_size_y = jmax;
 
     build_domain(domain, imax, jmax);
-    _grid = Grid(_geom_name, domain);
+    _grid = Grid(_geom_name, domain, _process_rank, _size);
 
     // Assigning hot and cold temperatues accordingly
     // Come back and check this once parse geometry file is written
@@ -174,7 +174,7 @@ Case::Case(std::string file_name, int argn, char **args, int my_rank) {
     }
 
     _field = Fields(_grid, nu, dt, tau, alpha, beta, _energy_eq, _grid.domain().size_x, _grid.domain().size_y, UI, VI,
-                    PI, TI, GX, GY);
+                    PI, TI, GX, GY, _process_rank, _size);
 
     _discretization = Discretization(domain.dx, domain.dy, gamma);
     _pressure_solver = std::make_unique<SOR>(omg);
@@ -320,9 +320,7 @@ void Case::simulate(int my_rank) {
             _field.calculate_temperatures(_grid);
         }
         _field.calculate_fluxes(_grid);
-        std::cout << "Here MF" << std::endl;
-        MPI_Barrier(MPI_COMM_WORLD);
-
+        std::cout << "Here" << std::endl;
         _field.calculate_rs(_grid);
         while (err > _tolerance && iter_count < _max_iter) {
             for (const auto &boundary : _boundaries) {

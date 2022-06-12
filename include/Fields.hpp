@@ -26,7 +26,7 @@ class Fields {
      *
      */
     Fields(Grid &grid, double _nu, double _dt, double _tau, double _alpha, double _beta, std::string energy_eq,
-           int imax, int jmax, double UI, double VI, double PI, double TI, double gx, double gy);
+           int imax, int jmax, double UI, double VI, double PI, double TI, double gx, double gy, int process_rank = 0, int size = 0);
 
     /**
      * @brief Calculates the convective and diffusive fluxes in x and y
