@@ -6,15 +6,12 @@
 #include "Communication.hpp"
 
 int main(int argn, char **args) {
-    // taking an extra argument in case the user wants to store the vtk files as a separate group without
-    // overwriting older data sets
     int rank, size;
     Communication communication;
-    // MPI_Init(&argn, &args);
-    // MPI_Comm_rank(MPI_COMM_WORLD, &rank);
-    // MPI_Comm_size(MPI_COMM_WORLD, &size);
 
     communication.init_parallel(&argn, args, rank, size);
+    // taking an extra argument in case the user wants to store the vtk files as a separate group without
+    // overwriting older data sets
 
     if (argn > 2) {
         std::string file_name{args[1]};
@@ -32,7 +29,6 @@ int main(int argn, char **args) {
         std::cout << "Example usage: /path/to/fluidchen /path/to/input_data.dat" << std::endl;
     }
 
-    // MPI_Finalize();
     communication.finalize();
 
     return 0;

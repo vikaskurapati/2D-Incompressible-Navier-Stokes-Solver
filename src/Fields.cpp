@@ -8,7 +8,6 @@ Fields::Fields(Grid &grid, double nu, double dt, double tau, double alpha, doubl
                int jmax, double UI, double VI, double PI, double TI, double gx, double gy, int process_rank, int size)
     : _nu(nu), _dt(dt), _tau(tau), _alpha(alpha), _beta(beta), _energy_eq(energy_eq), _gx(gx), _gy(gy) {
 
-    
     _process_rank = process_rank;
     _size = size;
 
@@ -29,6 +28,7 @@ Fields::Fields(Grid &grid, double nu, double dt, double tau, double alpha, doubl
         _T(i, j) = TI;
         _T_new(i, j) = TI;
     }
+
     _F = Matrix<double>(imax + 2, jmax + 2, 0.0);
     _G = Matrix<double>(imax + 2, jmax + 2, 0.0);
     _RS = Matrix<double>(imax + 2, jmax + 2, 0.0);
@@ -117,9 +117,9 @@ void Fields::calculate_rs(Grid &grid) {
     double dy = grid.dy();
     int i, j;
     for (const auto &currentCell : grid.fluid_cells()) {
+        i = currentCell->i();
+        j = currentCell->j();
         if (i != 0 && j != 0 && i != grid.domain().size_x + 1 && j != grid.domain().size_y + 1) {
-            i = currentCell->i();
-            j = currentCell->j();
             _RS(i, j) = (((_F(i, j) - _F(i - 1, j)) / dx) + ((_G(i, j) - _G(i, j - 1)) / dy)) / _dt;
         }
     }
@@ -130,15 +130,15 @@ void Fields::calculate_velocities(Grid &grid) {
     double dy = grid.dy();
     int i, j;
     for (const auto &currentCell : grid.fluid_cells()) {
+        i = currentCell->i();
+        j = currentCell->j();
         if (i != 0 && j != 0 && i != grid.domain().size_x + 1 && j != grid.domain().size_y + 1) {
-
-            i = currentCell->i();
-            j = currentCell->j();
             _U(i, j) = _F(i, j) - (_dt / dx) * (_P(i + 1, j) - _P(i, j));
             _V(i, j) = _G(i, j) - (_dt / dy) * (_P(i, j + 1) - _P(i, j));
         }
     }
 }
+
 double Fields::calculate_dt(Grid &grid) {
     double dt1, dt2, dt3, dt4;
     double dx = grid.dx();

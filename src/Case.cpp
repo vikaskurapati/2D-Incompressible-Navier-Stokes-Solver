@@ -310,17 +310,15 @@ void Case::simulate(int my_rank) {
         err = 100.0;
         iter_count = 0;
         dt = _field.calculate_dt(_grid);
-        MPI_Barrier(MPI_COMM_WORLD);
         dt = Communication::reduce_min(dt);
-
         for (size_t i = 0; i < _boundaries.size(); i++) {
             _boundaries[i]->apply(_field);
         }
         if (Case::_energy_eq == "on") {
             _field.calculate_temperatures(_grid);
+            //communicate temperature
         }
         _field.calculate_fluxes(_grid);
-        std::cout << "Here" << std::endl;
         _field.calculate_rs(_grid);
         while (err > _tolerance && iter_count < _max_iter) {
             for (const auto &boundary : _boundaries) {
@@ -329,10 +327,10 @@ void Case::simulate(int my_rank) {
             err = _pressure_solver->solve(_field, _grid, _boundaries);
             iter_count += 1;
         }
-
         _field.calculate_velocities(_grid);
         t += dt;
         timestep += 1;
+        // break;
         if (_process_rank == 0) {
             output << std::setprecision(4) << std::fixed;
         }
@@ -482,7 +480,7 @@ void Case::output_vtk(int timestep, int my_rank) {
     vtkSmartPointer<vtkStructuredGridWriter> writer = vtkSmartPointer<vtkStructuredGridWriter>::New();
 
     // Create Filename
-    std::string outputname = _dict_name + '/' + _case_name + "_" + std::to_string(my_rank) + "." +
+    std::string outputname = _dict_name + '/' + _case_name + "_" + std::to_string(my_rank) + "_" +
                              std::to_string(_process_rank) + "." + std::to_string(timestep) +
                              ".vtk"; // my_rank is the user's input and _process_rank is the process rank
 
