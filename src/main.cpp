@@ -16,7 +16,7 @@ int main(int argn, char **args) {
     if (argn > 2) {
         std::string file_name{args[1]};
         int problem_rank{std::stoi(args[2])};
-        Case problem(file_name, argn, args, rank, problem_rank, size);
+        Case problem(file_name, argn, args, rank, size, problem_rank);
         problem.simulate(problem_rank);
     }
     // in case the user doesn't provide any extra argument apart from the input file path

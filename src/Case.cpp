@@ -316,18 +316,28 @@ void Case::simulate(int my_rank) {
         }
         if (Case::_energy_eq == "on") {
             _field.calculate_temperatures(_grid);
-            //communicate temperature
+            Communication::communicate(_field.t_matrix(), domain, _process_rank);
+            // communicate temperature
         }
         _field.calculate_fluxes(_grid);
+        Communication::communicate(_field.f_matrix(), domain, _process_rank);
+        Communication::communicate(_field.g_matrix(), domain, _process_rank);
+        // communicate fluxes
         _field.calculate_rs(_grid);
         while (err > _tolerance && iter_count < _max_iter) {
             for (const auto &boundary : _boundaries) {
                 boundary->apply_pressures(_field);
             }
+            // communicate pressures
+            Communication::communicate(_field.p_matrix(), domain, _process_rank);
             err = _pressure_solver->solve(_field, _grid, _boundaries);
+            // add residuals
             iter_count += 1;
         }
         _field.calculate_velocities(_grid);
+        Communication::communicate(_field.u_matrix(), domain, _process_rank);
+        // exchange velocities
+        Communication::communicate(_field.v_matrix(), domain, _process_rank);
         t += dt;
         timestep += 1;
         // break;
@@ -348,18 +358,20 @@ void Case::simulate(int my_rank) {
             output_counter += 1;
         }
         // Printing Simulation Progress
-        progress = t / t_end * 100;
-        if (progress % 10 == 0 && progress != last_progress) {
-            std::cout << "[";
-            for (int i = 0; i < progress / 10; i++) {
-                std::cout << "===";
+        if (_process_rank == 0) {
+            progress = t / t_end * 100;
+            if (progress % 10 == 0 && progress != last_progress) {
+                std::cout << "[";
+                for (int i = 0; i < progress / 10; i++) {
+                    std::cout << "===";
+                }
+                if (progress == 100)
+                    std::cout << "]";
+                else
+                    std::cout << ">";
+                std::cout << " %" << progress << std::endl;
+                last_progress = progress;
             }
-            if (progress == 100)
-                std::cout << "]";
-            else
-                std::cout << ">";
-            std::cout << " %" << progress << std::endl;
-            last_progress = progress;
         }
     }
 
@@ -367,10 +379,15 @@ void Case::simulate(int my_rank) {
         (output_counter - 1) * _output_freq) // Recording at t_end if the output frequency is not a multiple of t_end
     {
         Case::output_vtk(timestep, my_rank);
-        output << "Time Step: " << timestep << " Residue: " << err << " PPE Iterations: " << iter_count << std::endl;
+        if (_process_rank == 0) {
+            output << "Time Step: " << timestep << " Residue: " << err << " PPE Iterations: " << iter_count
+                   << std::endl;
+        }
         output_counter += 1;
     }
-    std::cout << "Simulation has ended\n";
+    if (_process_rank == 0) {
+        std::cout << "Simulation has ended\n";
+    }
     output.close();
 }
 
