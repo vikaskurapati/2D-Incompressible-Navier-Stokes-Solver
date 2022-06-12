@@ -64,6 +64,7 @@ class Case {
 
     Fields _field;
     Grid _grid;
+    Domain domain;
     Discretization _discretization;
     std::unique_ptr<PressureSolver> _pressure_solver;
     std::vector<std::unique_ptr<Boundary>> _boundaries;

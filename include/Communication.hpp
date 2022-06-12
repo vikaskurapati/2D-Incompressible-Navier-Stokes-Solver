@@ -1,5 +1,6 @@
 #pragma once
-
+#include "Datastructures.hpp"
+#include "Domain.hpp"
 
 class Communication
 {
@@ -9,5 +10,5 @@ class Communication
     static void finalize();
     static double reduce_min(double dt);
     static double reduce_sum(double res);
-    static void communicate(/*field */);
+    static void communicate(Matrix<double>& matrix, const Domain& domain, int incoming_rank, int iproc);
 };
