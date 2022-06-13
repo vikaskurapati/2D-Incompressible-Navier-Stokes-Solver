@@ -158,7 +158,7 @@ Case::Case(std::string file_name, int argn, char **args, int process_rank, int s
     // }
     // MPI_Barrier(MPI_COMM_WORLD);
 
-    _grid = Grid(_geom_name, domain, _process_rank, _size);
+    _grid = Grid(_geom_name, domain, _process_rank, _size, _iproc, _jproc);
 
     // Assigning hot and cold temperatues accordingly
     // Come back and check this once parse geometry file is written
