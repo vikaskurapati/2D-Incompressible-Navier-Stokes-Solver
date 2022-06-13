@@ -338,8 +338,10 @@ void Case::simulate(int my_rank) {
                 boundary->apply_pressures(_field);
             }
             // communicate pressures
-            Communication::communicate(_field.p_matrix(), domain, _process_rank, _iproc);
             err = _pressure_solver->solve(_field, _grid, _boundaries);
+            err = Communication::reduce_sum(err);
+            err = err/_size;
+            Communication::communicate(_field.p_matrix(), domain, _process_rank, _iproc);
             // add residuals
             iter_count += 1;
         }

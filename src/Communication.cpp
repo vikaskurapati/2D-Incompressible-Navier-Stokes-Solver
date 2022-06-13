@@ -32,36 +32,34 @@ void Communication::communicate(Matrix<double> &matrix, const Domain &domain, in
 
     std::vector<double> sender;
 
-    //send left to right, receive right to left
+    // send left to right, receive right to left
 
     if (domain.neighbour_ranks[0] != -1) {
 
         sender = matrix.get_col(1); // skipping one level to get the first fluid level without buffer
         std::vector<double> receiver(sender.size());
-        
-        MPI_Send(&sender[0] , sender.size() , MPI_DOUBLE , incoming_rank - 1 , 1000 , MPI_COMM_WORLD);
+
+        MPI_Send(&sender[0], sender.size(), MPI_DOUBLE, incoming_rank - 1, 1000, MPI_COMM_WORLD);
         MPI_Status status;
 
-        MPI_Recv( &receiver[0] , sender.size() , MPI_DOUBLE , incoming_rank - 1 , 1001 , MPI_COMM_WORLD , &status);
+        MPI_Recv(&receiver[0], sender.size(), MPI_DOUBLE, incoming_rank - 1, 1001, MPI_COMM_WORLD, &status);
         // MPI_Sendrecv(&sender, sender.size(), MPI_DOUBLE, domain.neighbour_ranks[0], 1000, &receiver, sender.size(),
         //              MPI_DOUBLE, incoming_rank, 1000, MPI_COMM_WORLD, &status);
 
         matrix.set_col(receiver, 0);
     }
-    //receive left to right, send right to left
+    // receive left to right, send right to left
 
     if (domain.neighbour_ranks[1] != -1) {
 
         sender = matrix.get_col(domain.size_x); // skipping one level to get the first fluid level without buffer
         std::vector<double> receiver(sender.size());
         MPI_Status status;
-
-        MPI_Recv(&receiver[0], sender.size(), MPI_DOUBLE, incoming_rank + 1, 1000, MPI_COMM_WORLD, &status);
-        matrix.set_col(receiver, domain.size_x + 1);
-
         MPI_Send(&sender[0], sender.size(), MPI_DOUBLE, incoming_rank + 1, 1001, MPI_COMM_WORLD);
         // MPI_Sendrecv(&sender, sender.size(), MPI_DOUBLE, domain.neighbour_ranks[1], 1001, &receiver, sender.size(),
         //              MPI_DOUBLE, incoming_rank, 1001, MPI_COMM_WORLD, &status);
+        MPI_Recv(&receiver[0], sender.size(), MPI_DOUBLE, incoming_rank + 1, 1000, MPI_COMM_WORLD, &status);
+        matrix.set_col(receiver, domain.size_x + 1);
     }
 
     if (domain.neighbour_ranks[2] != -1) {
@@ -83,11 +81,11 @@ void Communication::communicate(Matrix<double> &matrix, const Domain &domain, in
         sender = matrix.get_row(domain.size_y);
         std::vector<double> receiver(sender.size());
         MPI_Status status;
-
-        MPI_Recv(&receiver[0], sender.size(), MPI_DOUBLE, incoming_rank + iproc, 1002, MPI_COMM_WORLD, &status);
-        matrix.set_row(receiver, domain.size_y + 1);
         MPI_Send(&sender[0], sender.size(), MPI_DOUBLE, incoming_rank + iproc, 1003, MPI_COMM_WORLD);
         // MPI_Sendrecv(&sender, sender.size(), MPI_DOUBLE, domain.neighbour_ranks[1], 1003, &receiver, sender.size(),
         //              MPI_DOUBLE, incoming_rank, 1003, MPI_COMM_WORLD, &status);
+    
+        MPI_Recv(&receiver[0], sender.size(), MPI_DOUBLE, incoming_rank + iproc, 1002, MPI_COMM_WORLD, &status);
+        matrix.set_row(receiver, domain.size_y + 1);
     }
 }
