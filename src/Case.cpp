@@ -313,6 +313,8 @@ void Case::simulate(int my_rank) {
             std::cout << "\nEnergy Equation is On\n";
         }
     }
+    
+    int fluid_cells;
 
     while (t < t_end) {
         err = 100.0;
@@ -339,8 +341,11 @@ void Case::simulate(int my_rank) {
             }
             // communicate pressures
             err = _pressure_solver->solve(_field, _grid, _boundaries);
+            err = err*_grid.fluid_cells().size();
             err = Communication::reduce_sum(err);
-            err = err/_size;
+            fluid_cells = _grid.fluid_cells().size();
+            fluid_cells = Communication::reduce_sum(fluid_cells);
+            err = err/fluid_cells;
             Communication::communicate(_field.p_matrix(), domain, _process_rank, _iproc);
             // add residuals
             iter_count += 1;
