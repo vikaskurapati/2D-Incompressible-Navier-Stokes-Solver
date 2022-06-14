@@ -322,7 +322,8 @@ void Case::simulate(int my_rank) {
             else
                 std::cout << ">";
             std::cout << " %" << progress << std::endl;
-        std::cout << "Time Step: " << timestep << " Residue: " << err << " PPE Iterations: " << iter_count << std::endl;
+            std::cout << "Time Step: " << timestep << " Residue: " << err << " PPE Iterations: " << iter_count
+                      << std::endl;
 
             last_progress = progress;
         }
