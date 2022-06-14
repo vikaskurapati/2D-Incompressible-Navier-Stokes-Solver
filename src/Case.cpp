@@ -1,3 +1,4 @@
+
 #include "Case.hpp"
 #include "Enums.hpp"
 
@@ -8,11 +9,11 @@
 #include <experimental/filesystem>
 #endif
 #include <fstream>
+#include <iomanip>
 #include <iostream>
 #include <map>
-#include <vector>
 #include <typeinfo>
-#include <iomanip>
+#include <vector>
 
 #ifdef GCC_VERSION_9_OR_HIGHER
 namespace filesystem = std::filesystem;
@@ -29,7 +30,7 @@ namespace filesystem = std::experimental::filesystem;
 #include <vtkStructuredGridWriter.h>
 #include <vtkTuple.h>
 
-Case::Case(std::string file_name, int argn, char **args) {
+Case::Case(std::string file_name, int argn, char **args, int my_rank) {
     // Read input parameters
     const int MAX_LINE_LENGTH = 1024;
     std::ifstream file(file_name);
@@ -37,8 +38,8 @@ Case::Case(std::string file_name, int argn, char **args) {
     double UI;      /* velocity x-direction */
     double VI;      /* velocity y-direction */
     double PI;      /* pressure */
-    double GX;      /* gravitation x-direction */
-    double GY;      /* gravitation y-direction */
+    double GX{0.0}; /* gravitation x-direction */
+    double GY{0.0}; /* gravitation y-direction */
     double xlength; /* length of the domain x-dir.*/
     double ylength; /* length of the domain y-dir.*/
     double dt;      /* time step */
@@ -49,6 +50,17 @@ Case::Case(std::string file_name, int argn, char **args) {
     double tau;     /* safety factor for time step*/
     int itermax;    /* max. number of iterations for pressure per time step */
     double eps;     /* accuracy bound for pressure*/
+    // Worksheet 2 Additions
+    double TI;     /* initial Temperature */
+    double alpha;  /* thermal diffusivity */
+    double beta;   /* coefficient of thermal expansion */
+    int num_walls; /* number of walls */
+    double Tc;     /*Cold wall temperature */
+    double Th;     /*Hot wall temperature */
+    double T3;     /*3rd wall temperature */
+    double T4;     /*4rd wall temperature */
+    double T5;     /*5rd wall temperature */
+
     if (file.is_open()) {
 
         std::string var;
@@ -75,17 +87,27 @@ Case::Case(std::string file_name, int argn, char **args) {
                 if (var == "itermax") file >> itermax;
                 if (var == "imax") file >> imax;
                 if (var == "jmax") file >> jmax;
+                // Worksheet 2 Additions
+                if (var == "geo_file") file >> _geom_name;
+                if (var == "TI") file >> TI;
+                if (var == "alpha") file >> alpha;
+                if (var == "beta") file >> beta;
+                if (var == "energy_eq") file >> _energy_eq;
+                if (var == "num_walls") file >> num_walls;
+                if (var == "wall_temp_3") file >> T3;
+                if (var == "wall_temp_4") file >> T4;
+                if (var == "wall_temp_5") file >> T5;
             }
         }
     }
     file.close();
 
     _datfile_name = file_name;
+
     std::map<int, double> wall_vel;
     if (_geom_name.compare("NONE") == 0) {
         wall_vel.insert(std::pair<int, double>(LidDrivenCavity::moving_wall_id, LidDrivenCavity::wall_velocity));
     }
-
     // Set file names for geometry file and output directory
     set_file_names(file_name);
 
@@ -97,9 +119,30 @@ Case::Case(std::string file_name, int argn, char **args) {
     domain.domain_size_y = jmax;
 
     build_domain(domain, imax, jmax);
-
     _grid = Grid(_geom_name, domain);
-    _field = Fields(nu, dt, tau, _grid.domain().size_x, _grid.domain().size_y, UI, VI, PI);
+
+    // Assigning hot and cold temperatues accordingly
+    if (_grid.get_hot_fixed_wall_id() == 3) {
+        Th = T3;
+    }
+    if (_grid.get_hot_fixed_wall_id() == 4) {
+        Th = T4;
+    }
+    if (_grid.get_hot_fixed_wall_id() == 5) {
+        Th = T5;
+    }
+    if (_grid.get_cold_fixed_wall_id() == 3) {
+        Tc = T3;
+    }
+    if (_grid.get_cold_fixed_wall_id() == 4) {
+        Tc = T4;
+    }
+    if (_grid.get_cold_fixed_wall_id() == 5) {
+        Tc = T5;
+    }
+
+    _field = Fields(_grid, nu, dt, tau, alpha, beta, _energy_eq, _grid.domain().size_x, _grid.domain().size_y, UI, VI,
+                    PI, TI, GX, GY);
 
     _discretization = Discretization(domain.dx, domain.dy, gamma);
     _pressure_solver = std::make_unique<SOR>(omg);
@@ -110,9 +153,33 @@ Case::Case(std::string file_name, int argn, char **args) {
         _boundaries.push_back(
             std::make_unique<MovingWallBoundary>(_grid.moving_wall_cells(), LidDrivenCavity::wall_velocity));
     }
+
     if (not _grid.fixed_wall_cells().empty()) {
         _boundaries.push_back(std::make_unique<FixedWallBoundary>(_grid.fixed_wall_cells()));
     }
+
+    if (not _grid.hot_fixed_wall_cells().empty()) {
+        _boundaries.push_back(std::make_unique<FixedWallBoundary>(_grid.hot_fixed_wall_cells(), Th));
+    }
+
+    if (not _grid.cold_fixed_wall_cells().empty()) {
+        _boundaries.push_back(std::make_unique<FixedWallBoundary>(_grid.cold_fixed_wall_cells(), Tc));
+    }
+
+    if (not _grid.adiabatic_fixed_wall_cells().empty()) {
+        _boundaries.push_back(std::make_unique<AdiabaticWallBoundary>(_grid.adiabatic_fixed_wall_cells()));
+    }
+
+    if (not _grid.inflow_cells().empty()) {
+        _boundaries.push_back(std::make_unique<InFlow>(_grid.inflow_cells(),
+                                                       std::map<int, double>{{PlaneShearFlow::inflow_wall_id, UI}}));
+    }
+
+    if (not _grid.outflow_cells().empty()) {
+        _boundaries.push_back(std::make_unique<OutFlow>(_grid.outflow_cells(), 0.0));
+    }
+    output_log(_datfile_name, nu, UI, VI, PI, GX, GY, xlength, ylength, dt, imax, jmax, gamma, omg, tau, itermax, eps,
+               TI, alpha, beta, num_walls, Tc, Th, my_rank);
 }
 
 void Case::set_file_names(std::string file_name) {
@@ -166,9 +233,10 @@ void Case::set_file_names(std::string file_name) {
  * This function is the main simulation loop. In the simulation loop, following steps are required
  * - Calculate and apply boundary conditions for all the boundaries in _boundaries container
  *   using apply() member function of Boundary class -> done
- * - Calculate fluxes (F and G) using calculate_fluxes() member function of Fields class. -> Hope Surya done it correctly
- *   Flux consists of diffusion and convection part, which are located in Discretization class
- * - Calculate right-hand-side of PPE using calculate_rs() member function of Fields class  -> Hope Surya done it correctly
+ * - Calculate fluxes (F and G) using calculate_fluxes() member function of Fields class. -> Hope Surya done it
+ * correctly Flux consists of diffusion and convection part, which are located in Discretization class
+ * - Calculate right-hand-side of PPE using calculate_rs() member function of Fields class  -> Hope Surya done it
+ * correctly
  * - Iterate the pressure poisson equation until the residual becomes smaller than the desired tolerance
  *   or the maximum number of the iterations are performed using solve() member function of PressureSolver class
  * - Calculate the velocities u and v using calculate_velocities() member function of Fields class
@@ -189,72 +257,88 @@ void Case::simulate(int my_rank) {
     int output_counter = 0;
     double t_end = _t_end;
     double err = 100;
-    //starting simulation
+    // starting simulation
     int iter_count = 0;
-    
+
     Case::output_vtk(timestep, my_rank);
 
-    std::ofstream output = output_log(_datfile_name,my_rank);
-    output<<"\n\nIteration Log:\n";
-    std::cout<<"Simulation is Running!\nPlease Refer to " << _dict_name << "_run_log_"<<my_rank<< ".log for Simulation log!\n";
-    //Simulation Progress
+    std::string str = _dict_name + "_run_log_" + std::to_string(my_rank) + ".log";
+    std::ofstream output;
+
+    output.open(str, std::ios_base::app);
+    output << "\n\nIteration Log:\n";
+    std::cout << "Simulation is Running!\nPlease Refer to " << _dict_name << "_run_log_" << my_rank
+              << ".log for Simulation log!\n";
+    // Simulation Progress
     int progress, last_progress;
-    while (t < t_end)
-    {
-        err=100.0;
+    if (Case::_energy_eq == "on") {
+        std::cout << "\nEnergy Equation is On\n";
+    }
+    while (t < t_end) {
+        err = 100.0;
         iter_count = 0;
         dt = _field.calculate_dt(_grid);
-        for (size_t i=0; i < _boundaries.size(); i++)
-        {
+        for (size_t i = 0; i < _boundaries.size(); i++) {
             _boundaries[i]->apply(_field);
         }
 
+        if (Case::_energy_eq == "on") {
+            _field.calculate_temperatures(_grid);
+        }
         _field.calculate_fluxes(_grid);
         _field.calculate_rs(_grid);
-        while(err > _tolerance && iter_count < _max_iter)
-        {
+        while (err > _tolerance && iter_count < _max_iter) {
+            for (const auto &boundary : _boundaries) {
+                boundary->apply_pressures(_field);
+            }
             err = _pressure_solver->solve(_field, _grid, _boundaries);
             iter_count += 1;
         }
+
         _field.calculate_velocities(_grid);
         t += dt;
-        timestep+=1;
-        output<<std::setprecision(4)<<std::fixed;
-        if(t-output_counter*_output_freq>=0)
-        {
+        timestep += 1;
+        output << std::setprecision(4) << std::fixed;
+        if (t - output_counter * _output_freq >= 0) {
             Case::output_vtk(timestep, my_rank);
-            output<<"Time: "<<t<<" Residual: "<<err<<" PPE Iterations: "<<iter_count<<std::endl;
-            if (iter_count == _max_iter || std::isnan(err))
-            {
-                output << "The PPE Solver didn't converge for Time = " << t << " Please check the log file and increase max iterations or other parameters for convergence"<< "\n";
+            output << "Time: " << t << " Residual: " << err << " PPE Iterations: " << iter_count << std::endl;
+            if (iter_count == _max_iter || std::isnan(err)) {
+                std::cout
+                    << "The PPE Solver didn't converge for Time = " << t
+                    << " Please check the log file and increase max iterations or other parameters for convergence"
+                    << "\n";
             }
-            output_counter+=1;
+            output_counter += 1;
         }
-        //Printing Simulation Progress 
-        progress = t/t_end * 100;
-        if(progress % 10 == 0 && progress != last_progress){
-            std::cout<<"[";
-            for(int i=0;i<progress/10;i++){
-                std::cout<<"===";
+        // Printing Simulation Progress
+        progress = t / t_end * 100;
+        if (progress % 10 == 0 && progress != last_progress) {
+            std::cout << "[";
+            for (int i = 0; i < progress / 10; i++) {
+                std::cout << "===";
             }
-            if(progress==100)
-                std::cout<<"]";
-            else 
-                std::cout<<">";
-            std::cout<<" %"<<progress<<std::endl;
+            if (progress == 100)
+                std::cout << "]";
+            else
+                std::cout << ">";
+            std::cout << " %" << progress << std::endl;
+            std::cout << "Time Step: " << timestep << " Residue: " << err << " PPE Iterations: " << iter_count
+                      << std::endl;
+
             last_progress = progress;
         }
     }
-    if(t_end!=(output_counter-1)*_output_freq) // Recording at t_end if the output frequency is not a multiple of t_end
+
+    if (t_end !=
+        (output_counter - 1) * _output_freq) // Recording at t_end if the output frequency is not a multiple of t_end
     {
         Case::output_vtk(timestep, my_rank);
-        output<<"Time Step: "<<timestep<<" Residue: "<<err<<" PPE Iterations: "<<iter_count<<std::endl;
-        output_counter+=1;
+        output << "Time Step: " << timestep << " Residue: " << err << " PPE Iterations: " << iter_count << std::endl;
+        output_counter += 1;
     }
-    std::cout<<"Simulation has ended\n";
+    std::cout << "Simulation has ended\n";
     output.close();
 }
-
 
 void Case::output_vtk(int timestep, int my_rank) {
     // Create a new structured grid
@@ -262,6 +346,9 @@ void Case::output_vtk(int timestep, int my_rank) {
 
     // Create grid
     vtkSmartPointer<vtkPoints> points = vtkSmartPointer<vtkPoints>::New();
+
+    int inflow_id = _grid.get_inflow_wall_id();
+    int outflow_id = _grid.get_outflow_wall_id();
 
     double dx = _grid.dx();
     double dy = _grid.dy();
@@ -287,6 +374,8 @@ void Case::output_vtk(int timestep, int my_rank) {
     structuredGrid->SetDimensions(_grid.domain().size_x + 1, _grid.domain().size_y + 1, 1);
     structuredGrid->SetPoints(points);
 
+    std::vector<vtkIdType> obstacle_wall_cells;
+
     // Pressure Array
     vtkDoubleArray *Pressure = vtkDoubleArray::New();
     Pressure->SetName("pressure");
@@ -296,6 +385,18 @@ void Case::output_vtk(int timestep, int my_rank) {
     vtkDoubleArray *Velocity = vtkDoubleArray::New();
     Velocity->SetName("velocity");
     Velocity->SetNumberOfComponents(3);
+
+    for (int i = 1; i <= _grid.imax(); ++i) {
+        for (int j = 1; j <= _grid.jmax(); ++j) {
+            if (_grid.cell(i, j).wall_id() != 0) {
+                obstacle_wall_cells.push_back(i - 1 + (j - 1) * _grid.imax());
+            }
+        }
+    }
+
+    for (int i = 0; i < obstacle_wall_cells.size(); ++i) {
+        structuredGrid->BlankCell(obstacle_wall_cells.at(i));
+    }
 
     // Print pressure and temperature from bottom to top
     for (int j = 1; j < _grid.domain().size_y + 1; j++) {
@@ -316,6 +417,23 @@ void Case::output_vtk(int timestep, int my_rank) {
             vel[1] = (_field.v(i, j) + _field.v(i + 1, j)) * 0.5;
             Velocity->InsertNextTuple(vel);
         }
+    }
+
+    if (_energy_eq == "on") {
+        // Temperatrue Array
+        vtkDoubleArray *Temperature = vtkDoubleArray::New();
+        Temperature->SetName("temperature");
+        Temperature->SetNumberOfComponents(1);
+
+        // Print pressure and temperature from bottom to top
+        for (int j = 1; j < _grid.domain().size_y + 1; j++) {
+            for (int i = 1; i < _grid.domain().size_x + 1; i++) {
+                double temperature = _field.t(i, j);
+                Temperature->InsertNextTuple(&temperature);
+            }
+        }
+        // Add Temperature to Structured Grid
+        structuredGrid->GetCellData()->AddArray(Temperature);
     }
 
     // Add Pressure to Structured Grid
@@ -345,82 +463,45 @@ void Case::build_domain(Domain &domain, int imax_domain, int jmax_domain) {
     domain.size_y = jmax_domain;
 }
 
-std::ofstream Case::output_log(std::string dat_file_name,int myrank){
+void Case::output_log(std::string dat_file_name, double nu, double UI, double VI, double PI, double GX, double GY,
+                      double xlength, double ylength, double dt, double imax, double jmax, double gamma, double omg,
+                      double tau, double itermax, double eps, double TI, double alpha, double beta, double num_walls,
+                      double Tc, double Th, int my_rank) {
 
     const int MAX_LINE_LENGTH = 1024;
-    //Writing Simulation data to log file
-    double nu;      /* viscosity   */
-    double UI;      /* velocity x-direction */
-    double VI;      /* velocity y-direction */
-    double PI;      /* pressure */
-    double GX;      /* gravitation x-direction */
-    double GY;      /* gravitation y-direction */
-    double xlength; /* length of the domain x-dir.*/
-    double ylength; /* length of the domain y-dir.*/
-    double dt;      /* time step */
-    int imax;       /* number of cells x-direction*/
-    int jmax;       /* number of cells y-direction*/
-    double gamma;   /* uppwind differencing factor*/
-    double omg;     /* relaxation factor */
-    double tau;     /* safety factor for time step*/
-    int itermax;    /* max. number of iterations for pressure per time step */
-    double eps;     /* accuracy bound for pressure*/
-    std::ifstream file(dat_file_name);
-    
-    if (file.is_open()) {
-
-        std::string var;
-        while (!file.eof() && file.good()) {
-            file >> var;
-            if (var[0] == '#') { /* ignore comment line*/
-                file.ignore(MAX_LINE_LENGTH, '\n');
-            } else {
-                if (var == "xlength") file >> xlength;
-                if (var == "ylength") file >> ylength;
-                if (var == "nu") file >> nu;
-                if (var == "t_end") file >> _t_end;
-                if (var == "dt") file >> dt;
-                if (var == "omg") file >> omg;
-                if (var == "eps") file >> eps;
-                if (var == "tau") file >> tau;
-                if (var == "gamma") file >> gamma;
-                if (var == "dt_value") file >> _output_freq;
-                if (var == "UI") file >> UI;
-                if (var == "VI") file >> VI;
-                if (var == "GX") file >> GX;
-                if (var == "GY") file >> GY;
-                if (var == "PI") file >> PI;
-                if (var == "itermax") file >> itermax;
-                if (var == "imax") file >> imax;
-                if (var == "jmax") file >> jmax;
-            }
-        }
-    }
-    file.close();
-    std::string str = _dict_name + "_run_log_" + std::to_string(myrank)+".log";
+    std::string str = _dict_name + "_run_log_" + std::to_string(my_rank) + ".log";
     std::stringstream stream;
-    //stream<<std::fixed<<std::setprecision(2)<<_pressure_solver->return_omega();
-    //str += stream.str();
+    // stream<<std::fixed<<std::setprecision(2)<<_pressure_solver->return_omega();
+    // str += stream.str();
     std::ofstream output(str);
-    output<<"Log File for : "<<dat_file_name<<"\n";
-    output<<"Simulation Parameters:\n";
-    output << "xlength : "<<xlength<<"\n";
-    output << "ylength : "<<ylength<<"\n";
-    output << "nu : "<<nu<<"\n";
-    output << "t_end : "<<_t_end<<"\n";
-    output << "dt : "<<dt<<"\n";
-    output << "omg : "<<omg<<"\n";
-    output << "eps : "<<eps<<"\n";
-    output << "tau : "<<tau<<"\n";
-    output << "gamma : "<<gamma<<"\n";
-    output << "dt_value : "<<_output_freq<<"\n";
-    output << "UI : "<<UI<<"\n";
-    output << "VI : "<<VI<<"\n";
-    output << "GX : "<<GX<<"\n";
-    output << "GY : "<<GY<<"\n";
-    output << "PI : "<<PI<<"\n";
-    output << "itermax : "<<itermax<<"\n";
-    output << "imax : "<<imax<<"\n";
-    output << "jmax : "<<jmax<<"\n";
-    return output;
+
+    output << "Log File for : " << dat_file_name << "\n";
+    output << "Simulation Parameters:\n";
+    output << "xlength : " << xlength << "\n";
+    output << "ylength : " << ylength << "\n";
+    output << "nu : " << nu << "\n";
+    output << "t_end : " << _t_end << "\n";
+    output << "dt : " << dt << "\n";
+    output << "omg : " << omg << "\n";
+    output << "eps : " << eps << "\n";
+    output << "tau : " << tau << "\n";
+    output << "gamma : " << gamma << "\n";
+    output << "dt_value : " << _output_freq << "\n";
+    output << "UI : " << UI << "\n";
+    output << "VI : " << VI << "\n";
+    output << "GX : " << GX << "\n";
+    output << "GY : " << GY << "\n";
+    output << "PI : " << PI << "\n";
+    output << "itermax : " << itermax << "\n";
+    output << "Energy Equation : " << _energy_eq << "\n";
+    if (_energy_eq == "on") {
+        output << "Temp Initial : " << TI << "\n";
+        output << "alpha : " << alpha << "\n";
+        output << "beta : " << beta << "\n";
+        output << "No of Temperature walls: " << num_walls << "\n";
+        output << "Cold Wall Temperature : " << Tc << "\n";
+        output << "Hot Wall Temperature : " << Th << "\n";
+    }
+
+    output.close();
 }

@@ -25,7 +25,7 @@ class Case {
      *
      * @param[in] Input file name
      */
-    Case(std::string file_name, int argn, char **args);
+    Case(std::string file_name, int argn, char **args, int my_rank = 1);
 
     /**
      * @brief Main function to simulate the flow until the end time.
@@ -36,7 +36,7 @@ class Case {
      * Calculates velocities
      * Outputs the solution files
      */
-    void simulate(int my_rank=1);
+    void simulate(int my_rank = 1);
 
   private:
     /// Plain case name without paths
@@ -49,6 +49,8 @@ class Case {
     std::string _geom_name{"NONE"};
     /// Relative input file path
     std::string _prefix;
+    /// Energy equation should be consider or not
+    std::string _energy_eq = "off";
 
     /// Simulation time
     double _t_end;
@@ -87,7 +89,10 @@ class Case {
      * @param[in] Timestep of the solution
      */
     void output_vtk(int t, int my_rank = 0);
-    std::ofstream output_log(std::string dat_file_name,int myrank);
-    std::ofstream simulation_log_file(int my_rank=0);
+    void output_log(std::string dat_file_name, double nu, double UI, double VI, double PI, double GX, double GY,
+                    double xlength, double ylength, double dt, double imax, double jmax, double gamma, double omg,
+                    double tau, double itermax, double eps, double TI, double alpha, double beta, double num_walls,
+                    double Tc, double Th, int my_rank);
+    std::ofstream simulation_log_file(int my_rank = 0);
     void build_domain(Domain &domain, int imax_domain, int jmax_domain);
 };
