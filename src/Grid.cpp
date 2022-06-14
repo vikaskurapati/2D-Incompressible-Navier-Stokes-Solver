@@ -263,16 +263,6 @@ void Grid::assign_cell_types(std::vector<std::vector<int>> &geometry_data, std::
             }
         }
     }
-    // if (_process_rank == 0) {
-    //     std::cout << std::endl;
-    //     for (int j = _domain.size_y + 1; j >= 0; --j) {
-    //         for (int i = 0; i < _domain.size_x + 2; ++i) {
-    //             std::cout << int(_cells(i, j).type()) << " ";
-    //         }
-    //         std::cout << std::endl;
-    //     }
-    // }
-    // MPI_Barrier(MPI_COMM_WORLD);
 }
 
 void Grid::parse_geometry_file(std::string filedoc, std::vector<std::vector<int>> &geometry_data) {
@@ -404,8 +394,8 @@ void Grid::parse_geometry_file(std::string filedoc, std::vector<std::vector<int>
 
         int I, J;
         int imin, jmin, imax, jmax;
-        // Sending Data to other processors
 
+        // Sending Data to other processors
         for (int i = 1; i < _size; ++i) {
             I = i % _iproc + 1;
             J = i / _iproc + 1;
@@ -423,7 +413,7 @@ void Grid::parse_geometry_file(std::string filedoc, std::vector<std::vector<int>
             MPI_Send(&geometry_vec[0], geometry_vec.size(), MPI_INT, i, 789, MPI_COMM_WORLD);
         }
     } else {
-        // Receiving data from t
+
         // Receiving data from the 0 (main) processor
         std::vector<int> geometry_vec((_domain.size_x + 2) * (_domain.size_y + 2));
         MPI_Status status;

@@ -111,7 +111,7 @@ Case::Case(std::string file_name, int argn, char **args, int process_rank, int s
     _size = size;
 
     if (_iproc * _jproc != _size) {
-        MPI_Finalize();
+        Communication::finalize();
         if (_process_rank == 0) {
             std::cerr << "iproc*jproc!=size, please check" << std::endl;
         }
@@ -119,14 +119,14 @@ Case::Case(std::string file_name, int argn, char **args, int process_rank, int s
     }
 
     if (imax % _iproc != 0) {
-        MPI_Finalize();
+        Communication::finalize();
         if (_process_rank == 0) {
             std::cerr << "imax isnt divisible by iproc, please check" << std::endl;
         }
         exit(0);
     }
     if (jmax % _jproc != 0) {
-        MPI_Finalize();
+        Communication::finalize();
         if (_process_rank == 0) {
             std::cerr << "jmax isnt divisible by jproc, please check" << std::endl;
         }
@@ -151,17 +151,9 @@ Case::Case(std::string file_name, int argn, char **args, int process_rank, int s
     build_domain(domain, imax, jmax);
     MPI_Barrier(MPI_COMM_WORLD);
 
-    // if (_process_rank == 0) {
-    //     for (int i = 0; i < domain.neighbour_ranks.size(); i++) {
-    //         std::cout << domain.neighbour_ranks[i] << "  ";
-    //     }
-    // }
-    // MPI_Barrier(MPI_COMM_WORLD);
-
     _grid = Grid(_geom_name, domain, _process_rank, _size, _iproc, _jproc);
 
     // Assigning hot and cold temperatues accordingly
-    // Come back and check this once parse geometry file is written
     if (_grid.get_hot_fixed_wall_id() == 3) {
         Th = T3;
     }
@@ -279,7 +271,7 @@ void Case::set_file_names(std::string file_name) {
  * - Calculate fluxes (F and G) using calculate_fluxes() member function of Fields class. -> Hope Surya done it
  * correctly Flux consists of diffusion and convection part, which are located in Discretization class
  * - Calculate right-hand-side of PPE using calculate_rs() member function of Fields class  -> Hope Surya done it
- * correctly
+ *      correctly
  * - Iterate the pressure poisson equation until the residual becomes smaller than the desired tolerance
  *   or the maximum number of the iterations are performed using solve() member function of PressureSolver class
  * - Calculate the velocities u and v using calculate_velocities() member function of Fields class
@@ -326,33 +318,33 @@ void Case::simulate(int my_rank) {
         }
         if (Case::_energy_eq == "on") {
             _field.calculate_temperatures(_grid);
-            Communication::communicate(_field.t_matrix(), domain, _process_rank, _iproc);
             // communicate temperature
+            Communication::communicate(_field.t_matrix(), domain, _process_rank, _iproc);
         }
         _field.calculate_fluxes(_grid);
 
+        // communicate fluxes
         Communication::communicate(_field.f_matrix(), domain, _process_rank, _iproc);
         Communication::communicate(_field.g_matrix(), domain, _process_rank, _iproc);
-        // communicate fluxes
         _field.calculate_rs(_grid);
         while (err > _tolerance && iter_count < _max_iter) {
             for (const auto &boundary : _boundaries) {
                 boundary->apply_pressures(_field);
             }
-            // communicate pressures
             err = _pressure_solver->solve(_field, _grid, _boundaries);
+            // weighted addition of residuals
             err = err*_grid.fluid_cells().size();
             err = Communication::reduce_sum(err);
             fluid_cells = _grid.fluid_cells().size();
             fluid_cells = Communication::reduce_sum(fluid_cells);
             err = err/fluid_cells;
+            // communicate pressures
             Communication::communicate(_field.p_matrix(), domain, _process_rank, _iproc);
-            // add residuals
             iter_count += 1;
         }
         _field.calculate_velocities(_grid);
-        Communication::communicate(_field.u_matrix(), domain, _process_rank, _iproc);
         // exchange velocities
+        Communication::communicate(_field.u_matrix(), domain, _process_rank, _iproc);
         Communication::communicate(_field.v_matrix(), domain, _process_rank, _iproc);
         t += dt;
         timestep += 1;
@@ -529,14 +521,17 @@ void Case::build_domain(Domain &domain, int imax_domain, int jmax_domain) {
 
     if (_process_rank == 0) {
         for (int i = 1; i < _size; ++i) {
+            // I is process number in x direction, J is process number in y direction
             I = i % _iproc + 1;
             J = i / _iproc + 1;
+            // setting imin, imax, jmin and jmax using rank and size
             imin = (I - 1) * imax_domain / _iproc;
             imax = I * imax_domain / _iproc + 2;
             jmin = (J - 1) * jmax_domain / _jproc;
             jmax = J * jmax_domain / _jproc + 2;
             size_x = imax_domain / _iproc;
             size_y = jmax_domain / _jproc;
+            // Sending domain limits to other processes
             MPI_Send(&imin, 1, MPI_INT, i, 999, MPI_COMM_WORLD);
             MPI_Send(&imax, 1, MPI_INT, i, 998, MPI_COMM_WORLD);
             MPI_Send(&jmin, 1, MPI_INT, i, 997, MPI_COMM_WORLD);
@@ -555,6 +550,7 @@ void Case::build_domain(Domain &domain, int imax_domain, int jmax_domain) {
     }
 
     else {
+        // Receiving domain limits from rank = 0
         MPI_Status status;
         MPI_Recv(&domain.imin, 1, MPI_INT, 0, 999, MPI_COMM_WORLD, &status);
         MPI_Recv(&domain.imax, 1, MPI_INT, 0, 998, MPI_COMM_WORLD, &status);
@@ -586,8 +582,6 @@ void Case::output_log(std::string dat_file_name, double nu, double UI, double VI
     const int MAX_LINE_LENGTH = 1024;
     std::string str = _dict_name + "_run_log_" + std::to_string(my_rank) + ".log";
     std::stringstream stream;
-    // stream<<std::fixed<<std::setprecision(2)<<_pressure_solver->return_omega();
-    // str += stream.str();
     std::ofstream output(str);
 
     output << "Log File for : " << dat_file_name << "\n";
@@ -609,6 +603,9 @@ void Case::output_log(std::string dat_file_name, double nu, double UI, double VI
     output << "PI : " << PI << "\n";
     output << "itermax : " << itermax << "\n";
     output << "Energy Equation : " << _energy_eq << "\n";
+    output << "Number of processes in x-direction" << _iproc << "\n";
+    output << "Number of processes in y-direction" << _jproc << "\n";
+    output << "Total number of process" << _size << "\n";
     if (_energy_eq == "on") {
         output << "Temp Initial : " << TI << "\n";
         output << "alpha : " << alpha << "\n";

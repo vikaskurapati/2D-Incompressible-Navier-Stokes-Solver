@@ -120,13 +120,25 @@ class Fields {
     /// get timestep size
     double dt() const;
 
-    /// pressure matrix access and modify
+    /// t matrix access and modify
     Matrix<double> &t_matrix() ;
+    
+    /// p matrix access and modify
     Matrix<double> &p_matrix() ;
+    
+    /// u matrix access and modify
     Matrix<double> &u_matrix() ;
+    
+    /// v matrix access and modify
     Matrix<double> &v_matrix() ;
+    
+    /// f matrix access and modify
     Matrix<double> &f_matrix() ;
+    
+    /// g matrix access and modify
     Matrix<double> &g_matrix() ;
+
+    /// rs matrix access and modify
     Matrix<double> &rs_matrix() ;
 
     /// getting energy equation status on or off
