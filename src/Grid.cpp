@@ -413,26 +413,26 @@ void Grid::parse_geometry_file(std::string filedoc, std::vector<std::vector<int>
             imax = I * (numrows-2) / _iproc + 2;
             jmin = (J - 1) * (numcols-2) / _jproc;
             jmax = J * (numcols-2) / _jproc + 2;
-            std::vector<int> geometry_vec((imax - imin) * (jmax - jmin));
-            for (int row = imin; row < imax + 1; ++row) {
-                for (int col = jmin; col < jmax + 1; ++col) {
+            std::vector<int> geometry_vec;
+            for (int row = imin; row < imax; ++row) {
+                for (int col = jmin; col < jmax; ++col) {
                     // std::cout<< full_domain[row][col];
-                    // geometry_vec.push_back(full_domain[row][col]);
+                    geometry_vec.push_back(full_domain[row][col]);
                 }
             }
-            // MPI_Send(&geometry_vec[0], geometry_vec.size(), MPI_INT, i, 789, MPI_COMM_WORLD);
+            MPI_Send(&geometry_vec[0], geometry_vec.size(), MPI_INT, i, 789, MPI_COMM_WORLD);
         }
     } else {
         // Receiving data from t
         // Receiving data from the 0 (main) processor
         std::vector<int> geometry_vec((_domain.size_x + 2) * (_domain.size_y + 2));
         MPI_Status status;
-        // MPI_Recv(&geometry_vec[0], geometry_vec.size(), MPI_INT, 0, 789, MPI_COMM_WORLD, &status);
-        // for (int row = 0; row < _domain.size_y + 3; ++row) {
-        //     for (int col = 0; col < _domain.size_x + 3; ++col) {
-        //         geometry_data[row][col] = geometry_vec[row * (_domain.size_x + 2) + col];
-        //     }
-        // }
+        MPI_Recv(&geometry_vec[0], geometry_vec.size(), MPI_INT, 0, 789, MPI_COMM_WORLD, &status);
+    for (int col = 0; col < _domain.size_y + 2; ++col) {
+        for (int row = 0; row < _domain.size_x + 2; ++row) {
+                geometry_data.at(row).at(col) = geometry_vec[row * (_domain.size_y + 2) + col];
+            }
+        }
     }
 
     // MPI: Broadcasting Wall Id
