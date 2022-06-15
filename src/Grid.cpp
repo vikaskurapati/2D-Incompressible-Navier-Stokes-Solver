@@ -33,8 +33,8 @@ Grid::Grid(std::string geom_name, Domain &domain, int process_rank, int size, in
 void Grid::build_lid_driven_cavity(std::string geom_name) {
     std::vector<std::vector<int>> geometry_data(_domain.size_x + 2, std::vector<int>(_domain.size_y + 2, 0));
 
-    for (int i = 0; i < _domain.size_x + 2; ++i) {
-        for (int j = 0; j < _domain.size_y + 2; ++j) {
+    for (int i = 0; i < _domain.imax - _domain.imin; ++i) {
+        for (int j = 0; j < _domain.jmax - _domain.jmin; ++j) {
             // Bottom, left and right walls: no-slip
             if ((i == 0 && _domain.imin == 0) || (j == 0 && _domain.jmin == 0) ||
                 (i == _domain.size_x + 1 && _domain.imax == _domain.domain_size_x + 2)) {
@@ -386,8 +386,8 @@ void Grid::parse_geometry_file(std::string filedoc, std::vector<std::vector<int>
 
         // MPI: Geometry data assigning and sending
         // Assigning Geometry data for 0 (Main) Processor
-        for (int col = 0; col < _domain.size_y + 2; ++col) {
-            for (int row = 0; row < _domain.size_x + 2; ++row) {
+        for (int col = 0; col < _domain.jmax - _domain.jmin; ++col) {
+            for (int row = 0; row < _domain.imax - _domain.imin; ++row) {
                 geometry_data[row][col] = full_domain[row][col];
             }
         }
@@ -399,14 +399,27 @@ void Grid::parse_geometry_file(std::string filedoc, std::vector<std::vector<int>
         for (int i = 1; i < _size; ++i) {
             I = i % _iproc + 1;
             J = i / _iproc + 1;
-            imin = (I - 1) * (numrows-2) / _iproc;
-            imax = I * (numrows-2) / _iproc + 2;
-            jmin = (J - 1) * (numcols-2) / _jproc;
-            jmax = J * (numcols-2) / _jproc + 2;
+            imin = (I - 1) * ((numrows - 2) / _iproc);
+            imax = I * ((numrows - 2) / _iproc) + 2;
+            jmin = (J - 1) * ((numcols - 2) / _jproc);
+            jmax = J * ((numcols - 2) / _jproc) + 2;
+
+            // Dumping extra cells in the last processor
+            if (I == _iproc) {
+                if ((numrows - 2) % _iproc != 0) {
+                    imax = imax + ((numrows - 2) % _iproc);
+                }
+            }
+
+            if (J == _jproc) {
+                if ((numcols - 2) % _jproc != 0) {
+                    jmax = jmax + ((numcols - 2) % _jproc);
+                }
+            }
+
             std::vector<int> geometry_vec;
             for (int row = imin; row < imax; ++row) {
                 for (int col = jmin; col < jmax; ++col) {
-                    // std::cout<< full_domain[row][col];
                     geometry_vec.push_back(full_domain[row][col]);
                 }
             }
@@ -415,12 +428,13 @@ void Grid::parse_geometry_file(std::string filedoc, std::vector<std::vector<int>
     } else {
 
         // Receiving data from the 0 (main) processor
-        std::vector<int> geometry_vec((_domain.size_x + 2) * (_domain.size_y + 2));
+        std::vector<int> geometry_vec((_domain.imax - _domain.imin) * (_domain.jmax - _domain.jmin));
         MPI_Status status;
         MPI_Recv(&geometry_vec[0], geometry_vec.size(), MPI_INT, 0, 789, MPI_COMM_WORLD, &status);
-    for (int col = 0; col < _domain.size_y + 2; ++col) {
-        for (int row = 0; row < _domain.size_x + 2; ++row) {
-                geometry_data.at(row).at(col) = geometry_vec[row * (_domain.size_y + 2) + col];
+
+        for (int col = 0; col < _domain.jmax - _domain.jmin; ++col) {
+            for (int row = 0; row < _domain.imax - _domain.imin; ++row) {
+                geometry_data.at(row).at(col) = geometry_vec[row * (_domain.jmax - _domain.jmin) + col];
             }
         }
     }
