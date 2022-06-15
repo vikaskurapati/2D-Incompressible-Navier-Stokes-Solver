@@ -201,7 +201,6 @@ Case::Case(std::string file_name, int argn, char **args, int process_rank, int s
                    eps, TI, alpha, beta, num_walls, Tc, Th, my_rank);
     }
 }
-
 void Case::set_file_names(std::string file_name) {
     std::string temp_dir;
     bool case_name_flag = true;
@@ -290,7 +289,7 @@ void Case::simulate(int my_rank) {
             std::cout << "\nEnergy Equation is On\n";
         }
     }
-    
+
     int fluid_cells;
 
     while (t < t_end) {
@@ -318,11 +317,11 @@ void Case::simulate(int my_rank) {
             }
             err = _pressure_solver->solve(_field, _grid, _boundaries);
             // weighted addition of residuals
-            err = err*_grid.fluid_cells().size();
+            err = err * _grid.fluid_cells().size();
             err = Communication::reduce_sum(err);
             fluid_cells = _grid.fluid_cells().size();
             fluid_cells = Communication::reduce_sum(fluid_cells);
-            err = err/fluid_cells;
+            err = err / fluid_cells;
             // communicate pressures
             Communication::communicate(_field.p_matrix(), domain, _process_rank, _iproc);
             iter_count += 1;
@@ -341,10 +340,10 @@ void Case::simulate(int my_rank) {
             if (_process_rank == 0) {
                 output << "Time: " << t << " Residual: " << err << " PPE Iterations: " << iter_count << std::endl;
                 if (iter_count == _max_iter || std::isnan(err)) {
-                    std::cout
-                        << "The PPE Solver didn't converge for Time = " << t
-                        << " Please check the log file and increase max iterations or other parameters for convergence"
-                        << "\n";
+                    std::cout << "The PPE Solver didn't converge for Time = " << t
+                              << " Please check the log file and increase max iterations or other parameters for "
+                                 "convergence"
+                              << "\n";
                 }
             }
             output_counter += 1;
@@ -510,26 +509,25 @@ void Case::build_domain(Domain &domain, int imax_domain, int jmax_domain) {
             I = i % _iproc + 1;
             J = i / _iproc + 1;
             // setting imin, imax, jmin and jmax using rank and size
-            imin = (I - 1) * imax_domain / _iproc;
-            imax = I * imax_domain / _iproc + 2;
-            jmin = (J - 1) * jmax_domain / _jproc;
-            jmax = J * jmax_domain / _jproc + 2;
+            imin = (I - 1) * (imax_domain / _iproc);
+            imax = I * (imax_domain / _iproc) + 2;
+            jmin = (J - 1) * (jmax_domain / _jproc);
+            jmax = J * (jmax_domain / _jproc) + 2;
             size_x = imax_domain / _iproc;
             size_y = jmax_domain / _jproc;
 
             // Dumping extra cells in the last processor
-            if(I == _iproc){
-                if(imax_domain%_iproc != 0){
-                    imax = imax + (imax_domain%_iproc) -1 ;
-                    size_x = size_x + (imax_domain%_iproc);
-                    std::cout<< "Addition: "<< imax_domain%_iproc<<std::endl;
+            if (I == _iproc) {
+                if (imax_domain % _iproc != 0) {
+                    imax = imax + (imax_domain % _iproc);
+                    size_x = size_x + (imax_domain % _iproc);
                 }
             }
 
-            if(J == _jproc){
-                if(jmax_domain%_jproc != 0){
-                    jmax = jmax + (jmax_domain%_jproc)-1;
-                    size_y = size_y + (jmax_domain%_jproc);
+            if (J == _jproc) {
+                if (jmax_domain % _jproc != 0) {
+                    jmax = jmax + (jmax_domain % _jproc);
+                    size_y = size_y + (jmax_domain % _jproc);
                 }
             }
 
