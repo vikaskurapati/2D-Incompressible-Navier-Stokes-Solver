@@ -317,11 +317,10 @@ void Case::simulate(int my_rank) {
             }
             err = _pressure_solver->solve(_field, _grid, _boundaries);
             // weighted addition of residuals
-            err = err * _grid.fluid_cells().size();
             err = Communication::reduce_sum(err);
             fluid_cells = _grid.fluid_cells().size();
             fluid_cells = Communication::reduce_sum(fluid_cells);
-            err = err / fluid_cells;
+            err = std::sqrt(err / fluid_cells);
             // communicate pressures
             Communication::communicate(_field.p_matrix(), domain, _process_rank, _iproc);
             iter_count += 1;
