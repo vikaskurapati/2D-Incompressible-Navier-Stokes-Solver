@@ -9,27 +9,40 @@ FixedWallBoundary::FixedWallBoundary(std::vector<Cell *> cells, double wall_temp
 
 void FixedWallBoundary::apply(Fields &field) {
     int i, j;
+    int imax = field.p_matrix().imax();
+    int jmax = field.p_matrix().jmax();
     for (auto &cell : _cells) {
         i = cell->i();
         j = cell->j();
+
         if (cell->is_border(border_position::TOP)) {
             if (cell->is_border(border_position::RIGHT)) {
                 field.u(i, j) = 0.0;
                 field.v(i, j) = 0.0;
-                field.u(i - 1, j) = -field.u(i - 1, j + 1);
-                field.v(i, j - 1) = -field.v(i + 1, j - 1);
-                if (field.get_energy_eq()) {
-                    field.t(i, j) = 0.5 * (4.0 * _wall_temperature - field.t(i, j + 1) - field.t(i + 1, j));
+                if (!(i - 1 < 0 || j - 1 < 0 || j + 1 > jmax || i + 1 > imax)) {
+                    field.u(i - 1, j) = -field.u(i - 1, j + 1);
+                    field.v(i, j - 1) = -field.v(i + 1, j - 1);
+                    if (field.get_energy_eq()) {
+                        field.t(i, j) = 0.5 * (4.0 * _wall_temperature - field.t(i, j + 1) - field.t(i + 1, j));
+                    }
                 }
-            } else if (cell->is_border(border_position::LEFT)) {
-                field.u(i - 1, j) = 0.0;
-                field.v(i, j) = 0.0;
-                field.u(i, j) = -field.u(i, j + 1);
-                field.v(i, j - 1) = -field.v(i - 1, j - 1);
-                if (field.get_energy_eq()) {
-                    field.t(i, j) = 0.5 * (4.0 * _wall_temperature - field.t(i, j + 1) - field.t(i - 1, j));
+
+            }
+
+            else if (cell->is_border(border_position::LEFT)) {
+                if (!(i - 1 < 0 || j - 1 < 0 || j + 1 > jmax || i + 1 > imax)) {
+                    field.u(i - 1, j) = 0.0;
+                    field.v(i, j) = 0.0;
+                    field.u(i, j) = -field.u(i, j + 1);
+                    field.v(i, j - 1) = -field.v(i - 1, j - 1);
+                    if (field.get_energy_eq()) {
+                        field.t(i, j) = 0.5 * (4.0 * _wall_temperature - field.t(i, j + 1) - field.t(i - 1, j));
+                    }
                 }
-            } else if (cell->is_border(border_position::BOTTOM)) {
+
+            }
+
+            else if (cell->is_border(border_position::BOTTOM)) {
                 field.u(i, j) = -field.u(i, j - 1);
                 field.v(i, j) = 0.0;
                 field.v(i, j - 1) = 0.0;
@@ -37,29 +50,37 @@ void FixedWallBoundary::apply(Fields &field) {
                 if (field.get_energy_eq()) {
                     field.t(i, j) = 0.5 * (4.0 * _wall_temperature - field.t(i, j + 1) - field.t(i, j - 1));
                 }
-            } else {
+            }
+
+            else {
                 field.u(i, j) = -field.u(i, j + 1);
                 field.v(i, j) = 0.0;
                 if (field.get_energy_eq()) {
                     field.t(i, j) = 2.0 * _wall_temperature - field.t(i, j + 1);
                 }
             }
-        } else if (cell->is_border(border_position::BOTTOM)) {
+        }
+
+        else if (cell->is_border(border_position::BOTTOM)) {
             if (cell->is_border(border_position::RIGHT)) {
                 field.u(i, j) = 0.0;
-                field.v(i, j - 1) = 0.0;
-                field.u(i - 1, j) = -field.u(i - 1, j - 1);
-                field.v(i, j) = -field.v(i + 1, j);
-                if (field.get_energy_eq()) {
-                    field.t(i, j) = 0.5 * (4.0 * _wall_temperature - field.t(i + 1, j) - field.t(i, j - 1));
+                if (!(i - 1 < 0 || j - 1 < 0 || j + 1 > jmax || i + 1 > imax)) {
+                    field.v(i, j - 1) = 0.0;
+                    field.u(i - 1, j) = -field.u(i - 1, j - 1);
+                    field.v(i, j) = -field.v(i + 1, j);
+                    if (field.get_energy_eq()) {
+                        field.t(i, j) = 0.5 * (4.0 * _wall_temperature - field.t(i + 1, j) - field.t(i, j - 1));
+                    }
                 }
             } else if (cell->is_border(border_position::LEFT)) {
-                field.u(i - 1, j) = 0.0;
-                field.v(i, j - 1) = 0.0;
-                field.u(i, j) = -field.u(i, j - 1);
-                field.p(i, j) = 0.5 * (field.p(i, j - 1) + field.p(i - 1, j));
-                if (field.get_energy_eq()) {
-                    field.t(i, j) = 0.5 * (4.0 * _wall_temperature - field.t(i, j - 1) - field.t(i - 1, j));
+                if (!(i - 1 < 0 || j - 1 < 0 || j + 1 > jmax || i + 1 > imax)) {
+                    field.u(i - 1, j) = 0.0;
+                    field.v(i, j - 1) = 0.0;
+                    field.u(i, j) = -field.u(i, j - 1);
+                    field.p(i, j) = 0.5 * (field.p(i, j - 1) + field.p(i - 1, j));
+                    if (field.get_energy_eq()) {
+                        field.t(i, j) = 0.5 * (4.0 * _wall_temperature - field.t(i, j - 1) - field.t(i - 1, j));
+                    }
                 }
             }
 
@@ -86,7 +107,9 @@ void FixedWallBoundary::apply(Fields &field) {
                     field.t(i, j) = 2.0 * _wall_temperature - field.t(i + 1, j);
                 }
             }
-        } else if (cell->is_border(border_position::LEFT)) {
+        }
+
+        else if (cell->is_border(border_position::LEFT)) {
             field.u(i - 1, j) = 0;
             field.v(i, j) = -field.v(i - 1, j);
             if (field.get_energy_eq()) {

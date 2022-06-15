@@ -166,13 +166,13 @@ Case::Case(std::string file_name, int argn, char **args, int process_rank, int s
     _max_iter = itermax;
     _tolerance = eps;
     // Construct boundaries
+        if (not _grid.fixed_wall_cells().empty()) {
+        _boundaries.push_back(std::make_unique<FixedWallBoundary>(_grid.fixed_wall_cells()));
+    }
+
     if (not _grid.moving_wall_cells().empty()) {
         _boundaries.push_back(
             std::make_unique<MovingWallBoundary>(_grid.moving_wall_cells(), LidDrivenCavity::wall_velocity));
-    }
-
-    if (not _grid.fixed_wall_cells().empty()) {
-        _boundaries.push_back(std::make_unique<FixedWallBoundary>(_grid.fixed_wall_cells()));
     }
 
     if (not _grid.hot_fixed_wall_cells().empty()) {
@@ -297,9 +297,14 @@ void Case::simulate(int my_rank) {
         iter_count = 0;
         dt = _field.calculate_dt(_grid);
         dt = Communication::reduce_min(dt);
+        // if(_process_rank == 2)
+        // {
+        //     std::cout << _boundaries.size() << std::endl;
+        // }
         for (size_t i = 0; i < _boundaries.size(); i++) {
             _boundaries[i]->apply(_field);
         }
+        // MPI_Barrier( MPI_COMM_WORLD);
         if (Case::_energy_eq == "on") {
             _field.calculate_temperatures(_grid);
             // communicate temperature
