@@ -118,21 +118,6 @@ Case::Case(std::string file_name, int argn, char **args, int process_rank, int s
         exit(0);
     }
 
-    if (imax % _iproc != 0) {
-        Communication::finalize();
-        if (_process_rank == 0) {
-            std::cerr << "imax isnt divisible by iproc, please check" << std::endl;
-        }
-        exit(0);
-    }
-    if (jmax % _jproc != 0) {
-        Communication::finalize();
-        if (_process_rank == 0) {
-            std::cerr << "jmax isnt divisible by jproc, please check" << std::endl;
-        }
-        exit(0);
-    }
-
     _datfile_name = file_name;
 
     std::map<int, double> wall_vel;
@@ -531,6 +516,23 @@ void Case::build_domain(Domain &domain, int imax_domain, int jmax_domain) {
             jmax = J * jmax_domain / _jproc + 2;
             size_x = imax_domain / _iproc;
             size_y = jmax_domain / _jproc;
+
+            // Dumping extra cells in the last processor
+            if(I == _iproc){
+                if(imax_domain%_iproc != 0){
+                    imax = imax + (imax_domain%_iproc) -1 ;
+                    size_x = size_x + (imax_domain%_iproc);
+                    std::cout<< "Addition: "<< imax_domain%_iproc<<std::endl;
+                }
+            }
+
+            if(J == _jproc){
+                if(jmax_domain%_jproc != 0){
+                    jmax = jmax + (jmax_domain%_jproc)-1;
+                    size_y = size_y + (jmax_domain%_jproc);
+                }
+            }
+
             // Sending domain limits to other processes
             MPI_Send(&imin, 1, MPI_INT, i, 999, MPI_COMM_WORLD);
             MPI_Send(&imax, 1, MPI_INT, i, 998, MPI_COMM_WORLD);

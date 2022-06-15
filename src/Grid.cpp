@@ -56,9 +56,9 @@ void Grid::assign_cell_types(std::vector<std::vector<int>> &geometry_data, std::
     int j = 0;
 
     if (geom_name.compare("NONE") == 0) {
-        for (int j_geom = 0; j_geom < _domain.size_y + 2; ++j_geom) {
+        for (int j_geom = 0; j_geom < _domain.jmax - _domain.jmin; ++j_geom) {
             { i = 0; }
-            for (int i_geom = 0; i_geom < _domain.size_x + 2; ++i_geom) {
+            for (int i_geom = 0; i_geom < _domain.imax - _domain.imin; ++i_geom) {
                 if (geometry_data.at(i_geom).at(j_geom) == LidDrivenCavity::fixed_wall_id) {
                     _cells(i, j) = Cell(i, j, cell_type::FIXED_WALL, geometry_data.at(i_geom).at(j_geom));
                     _fixed_wall_cells.push_back(&_cells(i, j));
