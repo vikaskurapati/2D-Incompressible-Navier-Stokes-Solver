@@ -338,9 +338,8 @@ void Grid::parse_geometry_file(std::string filedoc, std::vector<std::vector<int>
                 }
                 if (count > 2) {
                     std::cerr << "Error: Given PGM file has a boundary with more fluid neighbors at (" << row << " , "
-                              << col << " ) \nPlease check the file. Correcting it to be fluid and continuing\n";
-                    // exit(0);
-                    geometry_data[row][col] = 0;
+                              << col << " ) \nPlease check the file.\n";
+                    exit(0);
                 }
             }
         }
