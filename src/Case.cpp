@@ -604,9 +604,9 @@ void Case::output_log(std::string dat_file_name, double nu, double UI, double VI
     output << "PI : " << PI << "\n";
     output << "itermax : " << itermax << "\n";
     output << "Energy Equation : " << _energy_eq << "\n";
-    output << "Number of processes in x-direction" << _iproc << "\n";
-    output << "Number of processes in y-direction" << _jproc << "\n";
-    output << "Total number of process" << _size << "\n";
+    output << "Number of processes in x-direction : " << _iproc << "\n";
+    output << "Number of processes in y-direction : " << _jproc << "\n";
+    output << "Total number of process : " << _size << "\n";
     if (_energy_eq == "on") {
         output << "Temp Initial : " << TI << "\n";
         output << "alpha : " << alpha << "\n";
