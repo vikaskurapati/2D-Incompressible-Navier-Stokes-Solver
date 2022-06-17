@@ -30,7 +30,7 @@ void Communication::communicate(Matrix<double> &matrix, const Domain &domain, in
 
     std::vector<double> sender;
 
-    // send left to right, receive right to left
+    // sending and recieving with left neighbour
 
     if (domain.neighbour_ranks[0] != -1) {
 
@@ -44,7 +44,7 @@ void Communication::communicate(Matrix<double> &matrix, const Domain &domain, in
 
         matrix.set_col(receiver, 0);
     }
-    // receive left to right, send right to left
+    // sending and recieving with right neighbour
 
     if (domain.neighbour_ranks[1] != -1) {
 
@@ -57,7 +57,7 @@ void Communication::communicate(Matrix<double> &matrix, const Domain &domain, in
         matrix.set_col(receiver, domain.size_x + 1);
     }
 
-    //send bottom to top, receive top to bottom
+    // sending and recieving with bottom neighbour
     if (domain.neighbour_ranks[2] != -1) {
 
         sender = matrix.get_row(1);
@@ -69,7 +69,7 @@ void Communication::communicate(Matrix<double> &matrix, const Domain &domain, in
         matrix.set_row(receiver, 0);
     }
 
-    //send bottom to top, receive top to bottom
+    // sending and recieving with top neighbour
     if (domain.neighbour_ranks[3] != -1) {
 
         sender = matrix.get_row(domain.size_y);

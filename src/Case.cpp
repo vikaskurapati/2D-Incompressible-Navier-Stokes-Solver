@@ -134,7 +134,6 @@ Case::Case(std::string file_name, int argn, char **args, int process_rank, int s
     domain.domain_size_y = jmax;
 
     build_domain(domain, imax, jmax);
-    MPI_Barrier(MPI_COMM_WORLD);
 
     _grid = Grid(_geom_name, domain, _process_rank, _size, _iproc, _jproc);
 
@@ -297,14 +296,9 @@ void Case::simulate(int my_rank) {
         iter_count = 0;
         dt = _field.calculate_dt(_grid);
         dt = Communication::reduce_min(dt);
-        // if(_process_rank == 2)
-        // {
-        //     std::cout << _boundaries.size() << std::endl;
-        // }
         for (size_t i = 0; i < _boundaries.size(); i++) {
             _boundaries[i]->apply(_field);
         }
-        // MPI_Barrier( MPI_COMM_WORLD);
         if (Case::_energy_eq == "on") {
             _field.calculate_temperatures(_grid);
             // communicate temperature
@@ -543,6 +537,7 @@ void Case::build_domain(Domain &domain, int imax_domain, int jmax_domain) {
             MPI_Send(&size_x, 1, MPI_INT, i, 995, MPI_COMM_WORLD);
             MPI_Send(&size_y, 1, MPI_INT, i, 994, MPI_COMM_WORLD);
         }
+
         I = _process_rank % _iproc + 1;
         J = _process_rank / _iproc + 1;
         domain.imin = (I - 1) * imax_domain / _iproc;
