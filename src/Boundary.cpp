@@ -163,7 +163,6 @@ void AdiabaticWallBoundary::apply(Fields &field) {
     for (auto &cell : _cells) {
         i = cell->i();
         j = cell->j();
-        // std::cout << "Adiabatic";
         if (cell->is_border(border_position::TOP)) {
             if (cell->is_border(border_position::RIGHT)) {
                 field.u(i, j) = 0.0;

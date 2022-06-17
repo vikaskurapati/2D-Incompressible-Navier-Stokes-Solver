@@ -165,7 +165,7 @@ Case::Case(std::string file_name, int argn, char **args, int process_rank, int s
     _max_iter = itermax;
     _tolerance = eps;
     // Construct boundaries
-        if (not _grid.fixed_wall_cells().empty()) {
+    if (not _grid.fixed_wall_cells().empty()) {
         _boundaries.push_back(std::make_unique<FixedWallBoundary>(_grid.fixed_wall_cells()));
     }
 
@@ -360,6 +360,8 @@ void Case::simulate(int my_rank) {
                     std::cout << ">";
                 std::cout << " %" << progress << std::endl;
                 last_progress = progress;
+                std::cout << "Time Step: " << timestep << " Residue: " << err << " PPE Iterations: " << iter_count
+                       << std::endl;
             }
         }
     }
