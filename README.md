@@ -62,8 +62,17 @@ Some default case files are located in the `example_cases` directory. Navigate t
 ```shell
 ./fluidchen ../example_cases/LidDrivenCavity/LidDrivenCavity.dat
 ```
+In order to run **Fluidchen** in parallel using mpi, the case file and the number of processors should be given as an input parameter. Navigate to the `build/` directory and run:
+
+```shell
+mpmirun -np *no.Processors* ./fluidchen *path to the input .dat file*
+```
+
+Here, it is the job of the user to ensure that the product of iproc and jproc given the input .dat file should be equal to the number of processors provided in the run command. If it is not, fluidchen will print an error and exit.
 
 This will run the case file and create the output folder `../example_cases/LidDrivenCavity/LidDrivenCavity_Output`, which holds the `.vtk` files of the solution.
+
+If the case is run in parallel on multiple processors, the output `.vtk` files will have a separate group for each processor. In that case use the `Group Datasets` option in `paraview` to group all the files together to view the domain together.
 
 If the input file does not contain a geometry file (added later in the course), fluidchen will run the lid-driven cavity case with the given parameters.
 
@@ -74,6 +83,12 @@ eg. The following creates a 2nd group of VTK files with changed parameters in th
 ```shell
 ./fluidchen ../example_cases/LidDrivenCavity/LidDrivenCavity.dat 2
 ```
+or 
+
+```shell
+mpirun -np 4 ./fluidchen ../example_cases/LidDrivenCavity/LidDrivenCavity.dat 2
+```
+
 All the input parameters of the simulations and convergence results are stored as a log file in the output directory with the name "Lid_Driven_Cavity" followed by the integer parameter. For instance after running the above shell command, a log file with the name "Lid_Driven_Cavity_run_rog_2" is created in `../example_cases/LidDrivenCavity/` directory.
 
 ### Cases with special obstacles or boundary conditions
