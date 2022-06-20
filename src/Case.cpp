@@ -351,7 +351,7 @@ void Case::simulate(int my_rank) {
             progress = t / t_end * 100;
             if (progress % 10 == 0 && progress != last_progress) {
                 std::cout << "Time Step: " << timestep << " Residue: " << err << " PPE Iterations: " << iter_count
-                       << std::endl;
+                          << std::endl;
                 std::cout << "[";
                 for (int i = 0; i < progress / 10; i++) {
                     std::cout << "=====";
@@ -360,7 +360,7 @@ void Case::simulate(int my_rank) {
                     std::cout << "]";
                 else
                     std::cout << ">";
-                std::cout << progress << "%\r" ;
+                std::cout << progress << "%\r";
                 std::cout.flush();
                 last_progress = progress;
             }

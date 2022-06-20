@@ -121,25 +121,25 @@ class Fields {
     double dt() const;
 
     /// t matrix access and modify
-    Matrix<double> &t_matrix() ;
-    
+    Matrix<double> &t_matrix();
+
     /// p matrix access and modify
-    Matrix<double> &p_matrix() ;
-    
+    Matrix<double> &p_matrix();
+
     /// u matrix access and modify
-    Matrix<double> &u_matrix() ;
-    
+    Matrix<double> &u_matrix();
+
     /// v matrix access and modify
-    Matrix<double> &v_matrix() ;
-    
+    Matrix<double> &v_matrix();
+
     /// f matrix access and modify
-    Matrix<double> &f_matrix() ;
-    
+    Matrix<double> &f_matrix();
+
     /// g matrix access and modify
-    Matrix<double> &g_matrix() ;
+    Matrix<double> &g_matrix();
 
     /// rs matrix access and modify
-    Matrix<double> &rs_matrix() ;
+    Matrix<double> &rs_matrix();
 
     /// getting energy equation status on or off
     bool get_energy_eq() { return _energy_eq == "on"; };

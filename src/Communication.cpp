@@ -78,7 +78,7 @@ void Communication::communicate(Matrix<double> &matrix, const Domain &domain, in
         MPI_Recv(&receiver[0], sender.size(), MPI_DOUBLE, incoming_rank + iproc, 1002, MPI_COMM_WORLD, &status);
 
         MPI_Send(&sender[0], sender.size(), MPI_DOUBLE, incoming_rank + iproc, 1003, MPI_COMM_WORLD);
-    
+
         matrix.set_row(receiver, domain.size_y + 1);
     }
 }
