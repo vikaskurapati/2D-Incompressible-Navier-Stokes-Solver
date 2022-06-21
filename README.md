@@ -65,7 +65,7 @@ Some default case files are located in the `example_cases` directory. Navigate t
 In order to run **Fluidchen** in parallel using mpi, the case file and the number of processors should be given as an input parameter. Navigate to the `build/` directory and run:
 
 ```shell
-mpmirun -np *no.Processors* ./fluidchen *path to the input .dat file*
+mpirun -np *no.Processors* ./fluidchen *path to the input .dat file*
 ```
 
 Here, it is the job of the user to ensure that the product of iproc and jproc given the input .dat file should be equal to the number of processors provided in the run command. If it is not, fluidchen will print an error and exit.
