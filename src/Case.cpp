@@ -64,6 +64,7 @@ Case::Case(std::string file_name, int argn, char **args, int process_rank, int s
     double T4;     /*4rd wall temperature */
     double T5;     /*5rd wall temperature */
 
+    std::string solver_type;
     if (file.is_open()) {
 
         std::string var;
@@ -103,6 +104,8 @@ Case::Case(std::string file_name, int argn, char **args, int process_rank, int s
                 // Worksheet 3 Additions
                 if (var == "iproc") file >> _iproc;
                 if (var == "jproc") file >> _jproc;
+                // Project Additions
+                if (var == "SOLVER") file >> solver_type;
             }
         }
     }
@@ -163,7 +166,17 @@ Case::Case(std::string file_name, int argn, char **args, int process_rank, int s
                     PI, TI, GX, GY, _process_rank, _size);
 
     _discretization = Discretization(domain.dx, domain.dy, gamma);
-    _pressure_solver = std::make_unique<SOR>(omg);
+
+    if(solver_type=="JACOBI"){
+        _pressure_solver = std::make_unique<JACOBI>();
+    }
+    else if(solver_type=="WEIGHTED_JACOBI"){
+        _pressure_solver = std::make_unique<WEIGHTED_JACOBI>();
+    }
+    else {
+        _pressure_solver = std::make_unique<SOR>(omg);
+    }   
+        
     _max_iter = itermax;
     _tolerance = eps;
     // Construct boundaries

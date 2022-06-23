@@ -53,3 +53,52 @@ class SOR : public PressureSolver {
   private:
     double _omega;
 };
+
+
+class JACOBI : public PressureSolver {
+  public:
+    JACOBI() = default;
+
+    /**
+     * @brief Constructor of JACOBI solver
+     *
+     * @param[in] relaxation factor
+     */
+
+    virtual ~JACOBI() = default;
+
+    /**
+     * @brief Solve the pressure equation on given field, grid and boundary
+     *
+     * @param[in] field to be used
+     * @param[in] grid to be used
+     * @param[in] boundary to be used
+     */
+    virtual double solve(Fields &field, Grid &grid, const std::vector<std::unique_ptr<Boundary>> &boundaries);
+};
+
+class WEIGHTED_JACOBI : public PressureSolver{
+  public:
+    WEIGHTED_JACOBI() = default;
+
+    /**
+     *@brief Constructor of WEIGHTED_JACOBI
+     *
+     *@param[in] relaxation factor
+      */
+    WEIGHTED_JACOBI(double omega);
+
+    virtual ~WEIGHTED_JACOBI() = default;
+
+    /**
+     * @brief Solve the pressure equation on given field, grid and boundary
+     *
+     * @param[in] field to be used
+     * @param[in] grid to be used
+     * @param[in] boundary to be used
+     */
+    
+    virtual double solve(Fields &field, Grid &grid, const std::vector<std::unique_ptr<Boundary>> &boundaries);
+    private:
+      double _omega;
+};
