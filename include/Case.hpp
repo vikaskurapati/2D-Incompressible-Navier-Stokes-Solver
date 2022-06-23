@@ -40,7 +40,7 @@ class Case {
 
     /**
      * @brief Destroy the Case object
-     * 
+     *
      */
     ~Case();
 

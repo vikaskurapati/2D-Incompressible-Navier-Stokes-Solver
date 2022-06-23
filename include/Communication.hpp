@@ -26,7 +26,7 @@ class Communication {
     static void finalize();
     /**
      * @brief Method to abort the program due to bad user inputs
-     * 
+     *
      */
     static void abort();
     /**
