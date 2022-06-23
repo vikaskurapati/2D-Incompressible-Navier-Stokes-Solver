@@ -3,12 +3,11 @@
 #include <cmath>
 #include <iostream>
 
-
-double JACOBI::solve(Fields &field, Grid &grid, const std::vector<std::unique_ptr<Boundary>> &boundaries)
-{    double dx = grid.dx();
+double JACOBI::solve(Fields &field, Grid &grid, const std::vector<std::unique_ptr<Boundary>> &boundaries) {
+    double dx = grid.dx();
     double dy = grid.dy();
 
-    double coeff = 1/(2.0 * (1.0/(dx * dx) + 1.0/(dy * dy)));
+    double coeff = 1 / (2.0 * (1.0 / (dx * dx) + 1.0 / (dy * dy)));
     int i, j;
 
     auto p_old = field.p_matrix();
@@ -70,11 +69,11 @@ double SOR::solve(Fields &field, Grid &grid, const std::vector<std::unique_ptr<B
     return rloc;
 }
 
-WEIGHTED_JACOBI::WEIGHTED_JACOBI(double omega) : _omega(omega){}
+WEIGHTED_JACOBI::WEIGHTED_JACOBI(double omega) : _omega(omega) {}
 
-double WEIGHTED_JACOBI::solve(Fields &field, Grid &grid, const std::vector<std::unique_ptr<Boundary>> &boundaries){
+double WEIGHTED_JACOBI::solve(Fields &field, Grid &grid, const std::vector<std::unique_ptr<Boundary>> &boundaries) {
 
-   double dx = grid.dx();
+    double dx = grid.dx();
     double dy = grid.dy();
 
     double coeff = _omega / (2.0 * (1.0 / (dx * dx) + 1.0 / (dy * dy))); // = _omega * h^2 / 4.0, if dx == dy == h
@@ -85,8 +84,8 @@ double WEIGHTED_JACOBI::solve(Fields &field, Grid &grid, const std::vector<std::
         i = currentCell->i();
         j = currentCell->j();
         if (i != 0 && j != 0 && i != grid.domain().size_x + 1 && j != grid.domain().size_y + 1) {
-            field.p(i, j) = (1.0 - _omega) * p_old(i,j) +
-                            coeff * (Discretization::sor_helper(p_old, i, j) - field.rs(i, j));
+            field.p(i, j) =
+                (1.0 - _omega) * p_old(i, j) + coeff * (Discretization::sor_helper(p_old, i, j) - field.rs(i, j));
         }
     }
 
@@ -102,4 +101,5 @@ double WEIGHTED_JACOBI::solve(Fields &field, Grid &grid, const std::vector<std::
         }
     }
 
-    return rlo
+    return rloc;
+}
