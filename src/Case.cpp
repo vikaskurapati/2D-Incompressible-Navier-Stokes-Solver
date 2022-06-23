@@ -105,7 +105,7 @@ Case::Case(std::string file_name, int argn, char **args, int process_rank, int s
                 if (var == "iproc") file >> _iproc;
                 if (var == "jproc") file >> _jproc;
                 // Project Additions
-                if (var == "SOLVER") file >> solver_type;
+                if (var == "iterative_solver") file >> solver_type;
             }
         }
     }
@@ -171,8 +171,14 @@ Case::Case(std::string file_name, int argn, char **args, int process_rank, int s
         _pressure_solver = std::make_unique<JACOBI>();
     }
     else if(solver_type=="WEIGHTED_JACOBI"){
-        _pressure_solver = std::make_unique<WEIGHTED_JACOBI>();
+        _pressure_solver = std::make_unique<WEIGHTED_JACOBI>(omg);
     }
+
+    else if(solver_type == "GAUSS_SEIDEL")
+    {
+        _pressure_solver = std::make_unique<GAUSS_SEIDEL>();
+    }
+
     else {
         _pressure_solver = std::make_unique<SOR>(omg);
     }   

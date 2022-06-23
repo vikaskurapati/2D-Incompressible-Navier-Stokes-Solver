@@ -42,13 +42,16 @@ dt_value     0.2
 #               pressure
 # itermax: maximum number of pressure iterations
 # eps: tolerance for pressure iteration (residual < eps)
-# omg: relaxation factor for SOR
+# solver: iterative solver to solve the PPE
+#         options are: WEIGHTED_JACOBI, SOR, JACOBI, GAUSS_SEIDEL
+# omg: relaxation factor in case of weighted Jacobi, SOR
 # gamma: upwind differencing factor
 #--------------------------------------------
 itermax      500
 eps          0.001
-omg          1.7
+omg          0.66
 gamma        0.5
+solver       SOR    
 
 #--------------------------------------------
 #     kinematic viscosity

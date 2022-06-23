@@ -54,6 +54,10 @@ class SOR : public PressureSolver {
     double _omega;
 };
 
+/**
+ * @brief Jacobi iteration to solve the Pressure Poisson Equation
+ * 
+ */
 
 class JACOBI : public PressureSolver {
   public:
@@ -77,7 +81,11 @@ class JACOBI : public PressureSolver {
     virtual double solve(Fields &field, Grid &grid, const std::vector<std::unique_ptr<Boundary>> &boundaries);
 };
 
-class WEIGHTED_JACOBI : public PressureSolver{
+/**
+ * @brief Weighted Jacobi iterations to solve the Pressure Poisson Equation
+ * 
+ */
+class WEIGHTED_JACOBI : public PressureSolver {
   public:
     WEIGHTED_JACOBI() = default;
 
@@ -85,7 +93,7 @@ class WEIGHTED_JACOBI : public PressureSolver{
      *@brief Constructor of WEIGHTED_JACOBI
      *
      *@param[in] relaxation factor
-      */
+     */
     WEIGHTED_JACOBI(double omega);
 
     virtual ~WEIGHTED_JACOBI() = default;
@@ -97,8 +105,22 @@ class WEIGHTED_JACOBI : public PressureSolver{
      * @param[in] grid to be used
      * @param[in] boundary to be used
      */
-    
+
     virtual double solve(Fields &field, Grid &grid, const std::vector<std::unique_ptr<Boundary>> &boundaries);
-    private:
-      double _omega;
+
+  private:
+    double _omega;
+};
+
+/**
+ * @brief Gauss Seidel iteration to solve the Pressure Poisson Equation
+ * 
+ */
+class GAUSS_SEIDEL : public PressureSolver {
+  public:
+GAUSS_SEIDEL() = default;
+
+virtual ~GAUSS_SEIDEL() = default;
+
+virtual double solve(Fields &field, Grid &grid, const std::vector<std::unique_ptr<Boundary>> &boundaries);
 };
