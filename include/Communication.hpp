@@ -25,6 +25,11 @@ class Communication {
      */
     static void finalize();
     /**
+     * @brief Method to abort the program due to bad user inputs
+     * 
+     */
+    static void abort();
+    /**
      * @brief MPI method to find minimum value across dt across all processors
      *
      * @param dt dt value across different processors

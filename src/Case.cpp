@@ -31,6 +31,11 @@ namespace filesystem = std::experimental::filesystem;
 #include <vtkStructuredGridWriter.h>
 #include <vtkTuple.h>
 
+Case::~Case()
+{
+    Communication::finalize();
+}
+
 Case::Case(std::string file_name, int argn, char **args, int process_rank, int size, int my_rank) {
     // Read input parameters
     const int MAX_LINE_LENGTH = 1024;

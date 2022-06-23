@@ -38,6 +38,12 @@ class Case {
      */
     void simulate(int my_rank = 1);
 
+    /**
+     * @brief Destroy the Case object
+     * 
+     */
+    ~Case();
+
   private:
     /// Plain case name without paths
     std::string _case_name;

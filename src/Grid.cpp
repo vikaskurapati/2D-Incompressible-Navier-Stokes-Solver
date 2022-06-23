@@ -1,5 +1,6 @@
 #include "Grid.hpp"
 #include "Enums.hpp"
+#include "Communication.hpp"
 
 #include <algorithm>
 #include <fstream>
@@ -362,7 +363,8 @@ void Grid::parse_geometry_file(std::string filedoc, std::vector<std::vector<int>
                     if (count > 2) {
                         std::cerr << "Error: Given PGM file has a boundary with more fluid neighbors\nPlease check the "
                                      "file\n";
-                        exit(0);
+                    Communication::abort();
+                    exit(0);
                     }
                 }
             }
@@ -373,6 +375,8 @@ void Grid::parse_geometry_file(std::string filedoc, std::vector<std::vector<int>
             if (full_domain[0][col] == 0 or full_domain[numrows - 1][col] == 0) {
                 std::cerr
                     << "Error: Given PGM file has a outer boundary cell with fluid wall id\nPlease check the file\n";
+                    Communication::abort();
+
                 exit(0);
             }
         }
@@ -380,6 +384,7 @@ void Grid::parse_geometry_file(std::string filedoc, std::vector<std::vector<int>
             if (full_domain[row][0] == 0 or full_domain[row][numcols - 1] == 0) {
                 std::cerr
                     << "Error: Given PGM file has a outer boundary cell with fluid wall id\nPlease check the file\n";
+                    Communication::abort();
                 exit(0);
             }
         }

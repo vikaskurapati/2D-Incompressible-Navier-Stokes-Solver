@@ -29,7 +29,5 @@ int main(int argn, char **args) {
         std::cout << "Example usage: /path/to/fluidchen /path/to/input_data.dat" << std::endl;
     }
 
-    Communication::finalize();
-
     return 0;
 }

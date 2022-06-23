@@ -17,6 +17,8 @@ double Communication::reduce_min(double dt) {
 
 void Communication::finalize() { MPI_Finalize(); }
 
+void Communication::abort(){MPI_Abort(MPI_COMM_WORLD , EXIT_FAILURE);}
+
 double Communication::reduce_sum(double res) {
     double reduced_res;
 
