@@ -156,6 +156,11 @@ class RICHARDSON : public PressureSolver {
 class ConjugateGradient : public PressureSolver {
   public:
     ConjugateGradient() = default;
+    /**
+     * @brief Construct a new Conjugate Gradient object
+     *
+     * @param field to be used for calculations
+     */
     ConjugateGradient(Fields &field);
     virtual ~ConjugateGradient() = default;
 

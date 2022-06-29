@@ -167,22 +167,20 @@ Case::Case(std::string file_name, int argn, char **args, int process_rank, int s
 
     _discretization = Discretization(domain.dx, domain.dy, gamma);
 
-    if(solver_type=="JACOBI"){
+    if (solver_type == "JACOBI") {
         _pressure_solver = std::make_unique<JACOBI>();
-    }
-    else if(solver_type=="WEIGHTED_JACOBI"){
+    } else if (solver_type == "WEIGHTED_JACOBI") {
         _pressure_solver = std::make_unique<WEIGHTED_JACOBI>(omg);
     }
 
-    else if(solver_type == "GAUSS_SEIDEL")
-    {
+    else if (solver_type == "GAUSS_SEIDEL") {
         _pressure_solver = std::make_unique<GAUSS_SEIDEL>();
     }
 
     else {
         _pressure_solver = std::make_unique<SOR>(omg);
-    }   
-        
+    }
+
     _max_iter = itermax;
     _tolerance = eps;
     // Construct boundaries

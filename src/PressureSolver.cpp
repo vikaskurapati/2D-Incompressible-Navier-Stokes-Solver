@@ -195,12 +195,10 @@ double ConjugateGradient::solve(Fields &field, Grid &grid, const std::vector<std
     imax = field.p_matrix().imax();
     jmax = field.p_matrix().jmax();
 
-    for(int i = 1; i < imax-1; ++i)
-    {
-        for(int j = 1; j < jmax - 1; ++j)
-        {
+    for (int i = 1; i < imax - 1; ++i) {
+        for (int j = 1; j < jmax - 1; ++j) {
             double delta = Discretization::laplacian(pressure, i, j);
-            residual(i,j) = rhs(i,j) - delta; 
+            residual(i, j) = rhs(i, j) - delta;
         }
     }
 
@@ -224,7 +222,7 @@ double ConjugateGradient::solve(Fields &field, Grid &grid, const std::vector<std
     for (int i = 0; i < imax; ++i) {
         for (int j = 0; i < jmax; ++j) {
             alpha_num += residual(i, j) * residual(i, j); // num of alpha is delta_new = r^T * r
-            alpha_den += d(i, j) * q(i, j); // den of alpha is d^T * q
+            alpha_den += d(i, j) * q(i, j);               // den of alpha is d^T * q
         }
     }
 
