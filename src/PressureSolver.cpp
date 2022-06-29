@@ -175,3 +175,19 @@ double RICHARDSON::solve(Fields &field, Grid &grid, const std::vector<std::uniqu
 
     return rloc;
 }
+
+double ConjugateGradient::solve(Fields &field, Grid &grid, const std::vector<std::unique_ptr<Boundary>> &boundaries){
+
+auto pressure = field.p_matrix();
+auto rhs = field.rs_matrix();
+
+auto residual = residual(pressure, rhs, grid.dx(), grid.dy());
+
+if(iter == 0)
+{
+    auto d = residual;
+}
+
+
+
+}

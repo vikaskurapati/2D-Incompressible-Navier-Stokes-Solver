@@ -1,6 +1,7 @@
 #pragma once
 
 #include "Boundary.hpp"
+#include "Discretization.hpp"
 #include "Fields.hpp"
 #include "Grid.hpp"
 #include <utility>
@@ -151,3 +152,30 @@ class RICHARDSON : public PressureSolver {
   private:
     double _omega{1.0};
 };
+
+class ConjugateGradient : public PressureSolver {
+  public:
+    ConjugateGradient() = default;
+    virtual ~ConjugateGradient() = default;
+
+    virtual double solve(Fields &field, Grid &grid, const std::vector<std::unique_ptr<Boundary>> &boundaries);
+
+  private:
+    int iter = 0;
+}
+
+Matrix<double>
+residual(Matrix<double> pressure, Matrix<double> rhs, double dx, double dy) {
+    Matrix<double> residual = Matrix<double>(p.imax(), p.jmax(), 0.0);
+
+    for (int i = 1; i < p.imax() - 2; ++i) {
+        /* code */
+        for (int j = 1; j < p.jmax(); ++j) {
+            /* code */
+            double delta = Discretization::laplacian(pressure, i, j);
+            residual(i, j) = rhs(i, j) - delta;
+        }
+    }
+
+    return residual;
+}
