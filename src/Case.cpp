@@ -177,6 +177,14 @@ Case::Case(std::string file_name, int argn, char **args, int process_rank, int s
         _pressure_solver = std::make_unique<GAUSS_SEIDEL>();
     }
 
+    else if (solver_type == "RICHARDSON") {
+        _pressure_solver = std::make_unique<RICHARDSON>(omg);
+    }
+
+    else if (solver_type == "CONJUGATE_GRADIENT") {
+        _pressure_solver = std::make_unique<ConjugateGradient>(_field);
+    }
+
     else {
         _pressure_solver = std::make_unique<SOR>(omg);
     }
