@@ -68,6 +68,8 @@ class Case {
     int _process_rank{0};
     int _size{1};
 
+    std::string _solver_type;
+
     Fields _field;
     Grid _grid;
     Domain domain;

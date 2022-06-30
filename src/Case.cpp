@@ -64,7 +64,6 @@ Case::Case(std::string file_name, int argn, char **args, int process_rank, int s
     double T4;     /*4rd wall temperature */
     double T5;     /*5rd wall temperature */
 
-    std::string solver_type;
     if (file.is_open()) {
 
         std::string var;
@@ -105,7 +104,7 @@ Case::Case(std::string file_name, int argn, char **args, int process_rank, int s
                 if (var == "iproc") file >> _iproc;
                 if (var == "jproc") file >> _jproc;
                 // Project Additions
-                if (var == "iterative_solver") file >> solver_type;
+                if (var == "solver") file >> _solver_type;
             }
         }
     }
@@ -167,25 +166,28 @@ Case::Case(std::string file_name, int argn, char **args, int process_rank, int s
 
     _discretization = Discretization(domain.dx, domain.dy, gamma);
 
-    if (solver_type == "Jacobi") {
+    if (_solver_type == "Jacobi") {
         _pressure_solver = std::make_unique<Jacobi>();
-    } else if (solver_type == "WeightedJacobi") {
+    } 
+    
+    else if (_solver_type == "WeightedJacobi") {
         _pressure_solver = std::make_unique<WeightedJacobi>(omg);
     }
 
-    else if (solver_type == "GaussSeidel") {
+    else if (_solver_type == "GaussSeidel") {
         _pressure_solver = std::make_unique<GaussSeidel>();
     }
 
-    else if (solver_type == "Richardson") {
+    else if (_solver_type == "Richardson") {
         _pressure_solver = std::make_unique<Richardson>(omg);
     }
 
-    else if (solver_type == "ConjugateGradient") {
+    else if (_solver_type == "ConjugateGradient") {
         _pressure_solver = std::make_unique<ConjugateGradient>(_field);
     }
 
     else {
+        _solver_type = "SOR";
         _pressure_solver = std::make_unique<SOR>(omg);
     }
 
@@ -620,6 +622,7 @@ void Case::output_log(std::string dat_file_name, double nu, double UI, double VI
     output << "nu : " << nu << "\n";
     output << "t_end : " << _t_end << "\n";
     output << "dt : " << dt << "\n";
+    output << "Solver : " << _solver_type << "\n";
     output << "omg : " << omg << "\n";
     output << "eps : " << eps << "\n";
     output << "tau : " << tau << "\n";
