@@ -3,7 +3,7 @@
 #include <cmath>
 #include <iostream>
 
-double JACOBI::solve(Fields &field, Grid &grid, const std::vector<std::unique_ptr<Boundary>> &boundaries) {
+double Jacobi::solve(Fields &field, Grid &grid, const std::vector<std::unique_ptr<Boundary>> &boundaries) {
     double dx = grid.dx();
     double dy = grid.dy();
 
@@ -69,9 +69,9 @@ double SOR::solve(Fields &field, Grid &grid, const std::vector<std::unique_ptr<B
     return rloc;
 }
 
-WEIGHTED_JACOBI::WEIGHTED_JACOBI(double omega) : _omega(omega) {}
+WeightedJacobi::WeightedJacobi(double omega) : _omega(omega) {}
 
-double WEIGHTED_JACOBI::solve(Fields &field, Grid &grid, const std::vector<std::unique_ptr<Boundary>> &boundaries) {
+double WeightedJacobi::solve(Fields &field, Grid &grid, const std::vector<std::unique_ptr<Boundary>> &boundaries) {
 
     double dx = grid.dx();
     double dy = grid.dy();
@@ -104,7 +104,7 @@ double WEIGHTED_JACOBI::solve(Fields &field, Grid &grid, const std::vector<std::
     return rloc;
 }
 
-double GAUSS_SEIDEL::solve(Fields &field, Grid &grid, const std::vector<std::unique_ptr<Boundary>> &boundaries) {
+double GaussSeidel::solve(Fields &field, Grid &grid, const std::vector<std::unique_ptr<Boundary>> &boundaries) {
     double dx = grid.dx();
     double dy = grid.dy();
 
@@ -135,14 +135,14 @@ double GAUSS_SEIDEL::solve(Fields &field, Grid &grid, const std::vector<std::uni
     return rloc;
 }
 
-RICHARDSON::RICHARDSON(double omega) : _omega(omega) {
+Richardson::Richardson(double omega) : _omega(omega) {
     if (omega == 0) {
         std::cout << "Invalid Omega for this scheme chosen. Setting omega to be 1.0" << std::endl;
         _omega = 1.0;
     }
 }
 
-double RICHARDSON::solve(Fields &field, Grid &grid, const std::vector<std::unique_ptr<Boundary>> &boundaries) {
+double Richardson::solve(Fields &field, Grid &grid, const std::vector<std::unique_ptr<Boundary>> &boundaries) {
     double dx = grid.dx();
     double dy = grid.dy();
 

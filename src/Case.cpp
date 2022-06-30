@@ -167,21 +167,21 @@ Case::Case(std::string file_name, int argn, char **args, int process_rank, int s
 
     _discretization = Discretization(domain.dx, domain.dy, gamma);
 
-    if (solver_type == "JACOBI") {
-        _pressure_solver = std::make_unique<JACOBI>();
-    } else if (solver_type == "WEIGHTED_JACOBI") {
-        _pressure_solver = std::make_unique<WEIGHTED_JACOBI>(omg);
+    if (solver_type == "Jacobi") {
+        _pressure_solver = std::make_unique<Jacobi>();
+    } else if (solver_type == "WeightedJacobi") {
+        _pressure_solver = std::make_unique<WeightedJacobi>(omg);
     }
 
-    else if (solver_type == "GAUSS_SEIDEL") {
-        _pressure_solver = std::make_unique<GAUSS_SEIDEL>();
+    else if (solver_type == "GaussSeidel") {
+        _pressure_solver = std::make_unique<GaussSeidel>();
     }
 
-    else if (solver_type == "RICHARDSON") {
-        _pressure_solver = std::make_unique<RICHARDSON>(omg);
+    else if (solver_type == "Richardson") {
+        _pressure_solver = std::make_unique<Richardson>(omg);
     }
 
-    else if (solver_type == "CONJUGATE_GRADIENT") {
+    else if (solver_type == "ConjugateGradient") {
         _pressure_solver = std::make_unique<ConjugateGradient>(_field);
     }
 

@@ -60,17 +60,17 @@ class SOR : public PressureSolver {
  *
  */
 
-class JACOBI : public PressureSolver {
+class Jacobi : public PressureSolver {
   public:
-    JACOBI() = default;
+    Jacobi() = default;
 
     /**
-     * @brief Constructor of JACOBI solver
+     * @brief Constructor of Jacobi solver
      *
      * @param[in] relaxation factor
      */
 
-    virtual ~JACOBI() = default;
+    virtual ~Jacobi() = default;
 
     /**
      * @brief Solve the pressure equation on given field, grid and boundary
@@ -86,18 +86,18 @@ class JACOBI : public PressureSolver {
  * @brief Weighted Jacobi iterations to solve the Pressure Poisson Equation
  *
  */
-class WEIGHTED_JACOBI : public PressureSolver {
+class WeightedJacobi : public PressureSolver {
   public:
-    WEIGHTED_JACOBI() = default;
+    WeightedJacobi() = default;
 
     /**
-     *@brief Constructor of WEIGHTED_JACOBI
+     *@brief Constructor of WeightedJacobi
      *
      *@param[in] relaxation factor
      */
-    WEIGHTED_JACOBI(double omega);
+    WeightedJacobi(double omega);
 
-    virtual ~WEIGHTED_JACOBI() = default;
+    virtual ~WeightedJacobi() = default;
 
     /**
      * @brief Solve the pressure equation on given field, grid and boundary
@@ -117,11 +117,11 @@ class WEIGHTED_JACOBI : public PressureSolver {
  * @brief Gauss Seidel iteration to solve the Pressure Poisson Equation
  *
  */
-class GAUSS_SEIDEL : public PressureSolver {
+class GaussSeidel : public PressureSolver {
   public:
-    GAUSS_SEIDEL() = default;
+    GaussSeidel() = default;
 
-    virtual ~GAUSS_SEIDEL() = default;
+    virtual ~GaussSeidel() = default;
 
     /**
      * @brief Solver the pressure equation on given field using Gauss Seidel iterations
@@ -135,17 +135,17 @@ class GAUSS_SEIDEL : public PressureSolver {
     virtual double solve(Fields &field, Grid &grid, const std::vector<std::unique_ptr<Boundary>> &boundaries);
 };
 
-class RICHARDSON : public PressureSolver {
+class Richardson : public PressureSolver {
   public:
-    RICHARDSON() = default;
+    Richardson() = default;
 
     /**
-     * @brief Construct a new RICHARDSON object
+     * @brief Construct a new Richardson object
      *
      * @param omega
      */
-    RICHARDSON(double omega);
-    virtual ~RICHARDSON() = default;
+    Richardson(double omega);
+    virtual ~Richardson() = default;
 
     virtual double solve(Fields &field, Grid &grid, const std::vector<std::unique_ptr<Boundary>> &boundaries);
 
