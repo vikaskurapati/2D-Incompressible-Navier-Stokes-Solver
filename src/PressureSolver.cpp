@@ -146,8 +146,6 @@ double Richardson::solve(Fields &field, Grid &grid, const std::vector<std::uniqu
     double dx = grid.dx();
     double dy = grid.dy();
 
-    double coeff = 2.0 * (1 / (dx * dx) + 1 / (dy * dy));
-
     int i, j;
 
     auto p_old = field.p_matrix();
@@ -156,8 +154,7 @@ double Richardson::solve(Fields &field, Grid &grid, const std::vector<std::uniqu
         i = currentCell->i();
         j = currentCell->j();
         if (i != 0 && j != 0 && i != grid.domain().size_x + 1 && j != grid.domain().size_y + 1) {
-            field.p(i, j) =
-                p_old(i, j) + _omega * (field.rs(i, j) - Discretization::sor_helper(p_old, i, j) - coeff * p_old(i, j));
+            field.p(i, j) = p_old(i, j) + _omega * (field.rs(i, j) - Discretization::laplacian(field.p_matrix(), i, j));
         }
     }
 
@@ -199,13 +196,12 @@ double ConjugateGradient::solve(Fields &field, Grid &grid, const std::vector<std
         int i = currentCell->i();
         int j = currentCell->j();
         if (i != 0 && j != 0 && i != grid.domain().size_x + 1 && j != grid.domain().size_y + 1) {
-            double delta = Discretization::laplacian(pressure, i, j);
-            residual(i, j) - rhs(i, j) - delta;
+            residual(i, j) = rhs(i, j) - Discretization::laplacian(pressure, i, j);
         }
     }
 
     if (iter == 0) {
-        auto d = residual;
+        d = residual;
     }
 
     Matrix<double> q(imax, jmax, 0.0);
@@ -245,7 +241,12 @@ double ConjugateGradient::solve(Fields &field, Grid &grid, const std::vector<std
 
             field.p(i, j) = pressure(i, j) + alpha * d(i, j);
             beta_den += residual(i, j) * residual(i, j);
-            residual(i, j) -= alpha * q(i, j);
+            if (iter == 50) {
+                iter = 0;
+                residual(i, j) = rhs(i, j) - Discretization::laplacian(pressure, i, j);
+            } else {
+                residual(i, j) -= alpha * q(i, j);
+            }
             beta_num += residual(i, j) * residual(i, j);
         }
     }
