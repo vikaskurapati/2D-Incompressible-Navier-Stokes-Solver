@@ -13,6 +13,7 @@ check-format-job:
     - ./tools/check-format
   only:  
     - master
+    - solver-implementations
     - merge_requests
 
 check-compile-full:
@@ -21,4 +22,5 @@ check-compile-full:
     - mkdir ./build && cd ./build && cmake .. && make
   only:  
     - master
+    - solver-implementations
     - merge_requests
