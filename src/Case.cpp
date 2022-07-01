@@ -168,8 +168,8 @@ Case::Case(std::string file_name, int argn, char **args, int process_rank, int s
 
     if (_solver_type == "Jacobi") {
         _pressure_solver = std::make_unique<Jacobi>();
-    } 
-    
+    }
+
     else if (_solver_type == "WeightedJacobi") {
         _pressure_solver = std::make_unique<WeightedJacobi>(omg);
     }
