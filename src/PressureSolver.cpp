@@ -277,3 +277,171 @@ double ConjugateGradient::solve(Fields &field, Grid &grid, const std::vector<std
 
     return rloc;
 }
+
+MultiGridVCycle::MultiGridVCycle(int iter1, int iter2) : _smoothing_pre_recur(iter1), _smoothing_post_recur(iter2) {}
+
+double MultiGridVCycle::solve(Fields &field, Grid &grid, const std::vector<std::unique_ptr<Boundary>> &boundaries) {
+
+    double dx = grid.dx();
+    double dy = grid.dy();
+
+    int imax = grid.imax(); // accessing only fluid cells
+    int jmax = grid.jmax(); // accessing only fluid cells
+
+    _max_multi_grid_level = std::log2((imax < jmax) ? imax : jmax) - 1; // maximum number of levels
+
+    auto p = field.p_matrix();
+    auto rs = field.rs_matrix();
+
+    field.p_matrix() = recursiveMultiGridVCycle(field, p, rs, _max_multi_grid_level, dx, dy);
+    std::cout << "Here" << std::endl;
+    double rloc = 0.0;
+    for (auto currentCell : grid.fluid_cells()) {
+        int i = currentCell->i();
+        int j = currentCell->j();
+        if (i != 0 && j != 0 && i != grid.domain().size_x + 1 && j != grid.domain().size_y + 1) {
+            double val = Discretization::laplacian(field.p_matrix(), i, j) - field.rs(i, j);
+            rloc += (val * val);
+        }
+    }
+
+    return rloc;
+};
+
+Matrix<double> MultiGridVCycle::recursiveMultiGridVCycle(Fields &field, Matrix<double> p, Matrix<double> rs,
+                                                         int current_level, double dx, double dy) {
+    if (current_level == 0) {
+        p = smoother(p, rs, 5 * (_smoothing_pre_recur + _smoothing_post_recur), dx, dy);
+        return p;
+    } else {
+        p = smoother(p, rs, _smoothing_pre_recur, dx, dy);
+        Matrix<double> residual_ = residual(p, rs, dx, dy);
+        auto coarse_residual = restrictor(residual_);
+
+        auto error = Matrix<double>(coarse_residual.imax(), coarse_residual.jmax(), 0.0);
+
+        error = recursiveMultiGridVCycle(field, error, coarse_residual, current_level - 1, 2 * dx, 2 * dy);
+
+        auto error_fine = prolongator(error);
+
+        for (int i = 0; i < error_fine.imax(); ++i) {
+            for (int j = 0; j < error_fine.jmax(); ++j) {
+                p(i, j) = p(i, j) + error_fine(i, j);
+            }
+        }
+        p = smoother(p, rs, _smoothing_post_recur, dx, dy);
+        return p;
+    }
+}
+
+Matrix<double> MultiGridVCycle::residual(Matrix<double> p, Matrix<double> rs, double dx, double dy) {
+    int imax = p.imax();
+    int jmax = p.jmax();
+
+    auto residuals = Matrix<double>(imax + 2, jmax + 2, 0.0);
+
+    for (int i = 1; i <= imax; i++) {
+        for (int j = 1; j <= jmax; j++) {
+            auto helper = (p(i + 1, j) - 2.0 * p(i, j) + p(i - 1, j)) / (dx * dx) +
+                          (p(i, j + 1) - 2.0 * p(i, j) + p(i, j - 1)) / (dy * dy);
+            residuals(i, j) = rs(i, j) - helper;
+        }
+    }
+
+    return residuals;
+}
+
+Matrix<double> MultiGridVCycle::smoother(Matrix<double> error, Matrix<double> rs, int iter, double dx, double dy) {
+    int imax = error.imax() - 2;
+    int jmax = error.jmax() - 2;
+
+    double coeff = 1 / (2.0 * (1.0 / (dx * dx) + 1.0 / (dy * dy)));
+
+    auto error_new = error;
+    for (int it = 0; it < iter; ++it) {
+        for (int i = 1; i <= imax; ++i) {
+            for (int j = 1; i <= jmax; ++j) {
+                auto sor_helper =
+                    (error(i + 1, j) + error(i - 1, j)) / (dx * dx) + (error(i, j + 1) + error(i, j - 1)) / (dy * dy);
+                error_new(i, j) = coeff * (sor_helper - rs(i, j));
+            }
+        }
+        error = error_new;
+    }
+
+    // how to apply the boundary conditions here
+    //  option 1: run for only Lid Driven Cavity. We know boundary conditions as per the limits
+    //  option 2: don't apply boundary conditions after every smoothing. Only once per every multi grid iteration. The
+    //  solution may be very wrong option 3: create new fields, new grid matrices, new boundaries etc. for every
+    //  multigrid level. May be memory intensive and not sure if there is enough time to explore this and make it work.
+    //  Discuss with Makis and make changes.
+
+    return error_new;
+}
+
+Matrix<double> MultiGridVCycle::restrictor(Matrix<double> fine) {
+    int imax = fine.imax() / 2 - 1;
+    int jmax = fine.jmax() / 2 - 1;
+
+    Matrix<double> coarse = Matrix<double>(imax + 2, jmax + 2, 0.0);
+
+    // Slide 57 from https://www.math.hkust.edu.hk/~mawang/teaching/math532/mgtut.pdf
+    for (int i = 1; i <= imax; ++i) {
+        for (int j = 1; j <= jmax; ++j) {
+            coarse(i, j) = 0.25 * fine(2 * i, 2 * j) +
+                           0.125 * (fine(2 * i - 1, 2 * j) + fine(2 * i + i, 2 * j) + fine(2 * i, 2 * j - 1) +
+                                    fine(2 * i, 2 * j + 1)) +
+                           0.0625 * (fine(2 * i - 1, 2 * j - 1) + fine(2 * i - 1, 2 * j + 1) +
+                                     fine(2 * i + 1, 2 * j - 1) + fine(2 * i + 1, 2 * j + 1));
+        }
+    }
+
+    for (int i = 1; i <= imax; ++i) {
+        coarse(i, 0) = fine(2 * i, 0) + 0.5 * (fine(2 * i - 1, 0) + fine(2 * i + 1, 0));
+        coarse(i, jmax + 1) =
+            fine(2 * i, 2 * jmax + 1) + 0.5 * (fine(2 * i - 1, 2 * jmax + 1) + fine(2 * i + 1, 2 * jmax + 1));
+    }
+
+    for (int j = 1; j <= jmax; ++j) {
+        coarse(0, j) = fine(0, 2 * j) + 0.5 * (fine(0, 2 * j - 1) + fine(0, 2 * j + 1));
+        coarse(imax + 1, j) =
+            fine(2 * imax + 1, 2 * j) + 0.5 * (fine(2 * imax + 1, 2 * j - 1) + fine(2 * imax + 1, 2 * j + 1));
+    }
+
+    return coarse;
+}
+
+Matrix<double> MultiGridVCycle::prolongator(Matrix<double> coarse) {
+    int imax = coarse.imax() - 2;
+    int jmax = coarse.jmax() - 2;
+
+    Matrix<double> fine = Matrix<double>(2 * imax + 2, 2 * jmax + 2, 0.0);
+
+    // Slide 56 from https://www.math.hkust.edu.hk/~mawang/teaching/math532/mgtut.pdf
+
+    for (int i = 0; i <= imax; i++) {
+        for (int j = 0; j <= jmax; j++) {
+            fine(2 * i, 2 * j) = coarse(i, j);
+            fine(2 * i + 1, 2 * j) = 0.5 * (coarse(i, j) + coarse(i + 1, j));
+            fine(2 * i, 2 * j + 1) = 0.5 * (coarse(i, j) + coarse(i, j + 1));
+            fine(2 * i + 1, 2 * j + 1) =
+                0.25 * (coarse(i, j) + coarse(i + 1, j) + coarse(i, j + 1) + coarse(i + 1, j + 1));
+        }
+    }
+
+    for (int i = 1; i <= imax; i++) {
+        fine(2 * i - 1, 0) = coarse(i, 0);
+        fine(2 * i, 0) = coarse(i, 0);
+        fine(2 * i - 1, jmax + 1) = coarse(i, jmax + 1);
+        fine(2 * i, jmax + 1) = coarse(i, jmax + 1);
+    }
+
+    for (int j = 1; j <= jmax; j++) {
+        fine(0, 2 * j - 1) = coarse(0, j);
+        fine(0, 2 * j) = coarse(0, j);
+        fine(imax + 1, 2 * j - 1) = coarse(imax + 1, j);
+        fine(imax + 1, 2 * j) = coarse(imax + 1, j);
+    }
+
+    return fine;
+}

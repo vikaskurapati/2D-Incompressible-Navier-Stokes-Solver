@@ -186,6 +186,10 @@ Case::Case(std::string file_name, int argn, char **args, int process_rank, int s
         _pressure_solver = std::make_unique<ConjugateGradient>(_field);
     }
 
+    else if (_solver_type == "MultiGridV") {
+        _pressure_solver = std::make_unique<MultiGridVCycle>(10, 10);
+    }
+
     else {
         _solver_type = "SOR";
         _pressure_solver = std::make_unique<SOR>(omg);
