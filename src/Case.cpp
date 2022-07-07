@@ -187,7 +187,7 @@ Case::Case(std::string file_name, int argn, char **args, int process_rank, int s
     }
 
     else if (_solver_type == "MultiGridV") {
-        _pressure_solver = std::make_unique<MultiGridVCycle>(10, 10);
+        _pressure_solver = std::make_unique<MultiGridVCycle>(5, 5);
     }
 
     else {
@@ -344,10 +344,10 @@ void Case::simulate(int my_rank) {
         Communication::communicate(_field.g_matrix(), domain, _process_rank, _iproc);
         _field.calculate_rs(_grid);
         while (err > _tolerance && iter_count < _max_iter) {
+            err = _pressure_solver->solve(_field, _grid, _boundaries);
             for (const auto &boundary : _boundaries) {
                 boundary->apply_pressures(_field);
             }
-            err = _pressure_solver->solve(_field, _grid, _boundaries);
             // weighted addition of residuals
             err = Communication::reduce_sum(err);
             fluid_cells = _grid.fluid_cells().size();

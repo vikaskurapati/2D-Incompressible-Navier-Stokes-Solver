@@ -294,7 +294,7 @@ double MultiGridVCycle::solve(Fields &field, Grid &grid, const std::vector<std::
     auto rs = field.rs_matrix();
 
     field.p_matrix() = recursiveMultiGridVCycle(field, p, rs, _max_multi_grid_level, dx, dy);
-    std::cout << "Here" << std::endl;
+
     double rloc = 0.0;
     for (auto currentCell : grid.fluid_cells()) {
         int i = currentCell->i();
@@ -311,10 +311,15 @@ double MultiGridVCycle::solve(Fields &field, Grid &grid, const std::vector<std::
 Matrix<double> MultiGridVCycle::recursiveMultiGridVCycle(Fields &field, Matrix<double> p, Matrix<double> rs,
                                                          int current_level, double dx, double dy) {
     if (current_level == 0) {
+        // std::cout << "Here At Last Level" << std::endl<< std::endl;
         p = smoother(p, rs, 5 * (_smoothing_pre_recur + _smoothing_post_recur), dx, dy);
         return p;
     } else {
+        // if(current_level == 3){
+        //     std::cout << "Here" << std::endl<< std::endl;
+        // }
         p = smoother(p, rs, _smoothing_pre_recur, dx, dy);
+
         Matrix<double> residual_ = residual(p, rs, dx, dy);
         auto coarse_residual = restrictor(residual_);
 
@@ -329,14 +334,15 @@ Matrix<double> MultiGridVCycle::recursiveMultiGridVCycle(Fields &field, Matrix<d
                 p(i, j) = p(i, j) + error_fine(i, j);
             }
         }
+
         p = smoother(p, rs, _smoothing_post_recur, dx, dy);
         return p;
     }
 }
 
 Matrix<double> MultiGridVCycle::residual(Matrix<double> p, Matrix<double> rs, double dx, double dy) {
-    int imax = p.imax();
-    int jmax = p.jmax();
+    int imax = p.imax() - 2;
+    int jmax = p.jmax() - 2;
 
     auto residuals = Matrix<double>(imax + 2, jmax + 2, 0.0);
 
@@ -359,13 +365,24 @@ Matrix<double> MultiGridVCycle::smoother(Matrix<double> error, Matrix<double> rs
 
     auto error_new = error;
     for (int it = 0; it < iter; ++it) {
-        for (int i = 1; i <= imax; ++i) {
-            for (int j = 1; i <= jmax; ++j) {
+        for (int j = 1; j <= jmax; ++j) {
+            for (int i = 1; i <= imax; ++i) {
                 auto sor_helper =
                     (error(i + 1, j) + error(i - 1, j)) / (dx * dx) + (error(i, j + 1) + error(i, j - 1)) / (dy * dy);
                 error_new(i, j) = coeff * (sor_helper - rs(i, j));
             }
         }
+
+        for (int i = 1; i <= imax; i++) {
+            error_new(i, 0) = error_new(i, 1);
+            error_new(i, jmax + 1) = error_new(i, jmax);
+        }
+
+        for (int j = 1; j <= jmax; j++) {
+            error_new(0, j) = error_new(1, j);
+            error_new(imax + 1, j) = error_new(imax, j);
+        }
+
         error = error_new;
     }
 
