@@ -115,7 +115,9 @@ Case::Case(std::string file_name, int argn, char **args, int process_rank, int s
     if (_iproc * _jproc != _size) {
         Communication::finalize();
         if (_process_rank == 0) {
-            std::cerr << "iproc*jproc!=size, please check" << std::endl;
+            std::cerr << "please check your iproc(number of processes for x-direction) and jproc(number of processes "
+                         "for y-direction). Their product should be the total number of processes for the problem"
+                      << std::endl;
         }
         exit(0);
     }
@@ -304,13 +306,13 @@ void Case::simulate(int my_rank) {
         if (Case::_energy_eq == "on") {
             _field.calculate_temperatures(_grid);
             // communicate temperature
-            Communication::communicate(_field.t_matrix(), domain, _process_rank, _iproc);
+            Communication::communicate(_field.t_matrix(), domain);
         }
         _field.calculate_fluxes(_grid);
 
         // communicate fluxes
-        Communication::communicate(_field.f_matrix(), domain, _process_rank, _iproc);
-        Communication::communicate(_field.g_matrix(), domain, _process_rank, _iproc);
+        Communication::communicate(_field.f_matrix(), domain);
+        Communication::communicate(_field.g_matrix(), domain);
         _field.calculate_rs(_grid);
         while (err > _tolerance && iter_count < _max_iter) {
             for (const auto &boundary : _boundaries) {
@@ -323,13 +325,13 @@ void Case::simulate(int my_rank) {
             fluid_cells = Communication::reduce_sum(fluid_cells);
             err = std::sqrt(err / fluid_cells);
             // communicate pressures
-            Communication::communicate(_field.p_matrix(), domain, _process_rank, _iproc);
+            Communication::communicate(_field.p_matrix(), domain);
             iter_count += 1;
         }
         _field.calculate_velocities(_grid);
         // exchange velocities
-        Communication::communicate(_field.u_matrix(), domain, _process_rank, _iproc);
-        Communication::communicate(_field.v_matrix(), domain, _process_rank, _iproc);
+        Communication::communicate(_field.u_matrix(), domain);
+        Communication::communicate(_field.v_matrix(), domain);
         t += dt;
         timestep += 1;
         if (_process_rank == 0) {

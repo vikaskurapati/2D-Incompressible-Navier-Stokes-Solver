@@ -48,8 +48,6 @@ class Communication {
      *
      * @param matrix the field matrix whose values need to be communicated
      * @param domain domain details of the processor
-     * @param incoming_rank the rank of the processor
-     * @param iproc total number of processors in the x-direction
      */
-    static void communicate(Matrix<double> &matrix, const Domain &domain, int incoming_rank, int iproc);
+    static void communicate(Matrix<double> &matrix, const Domain &domain);
 };

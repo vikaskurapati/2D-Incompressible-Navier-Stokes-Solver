@@ -1,4 +1,5 @@
 #include "Fields.hpp"
+#include "Communication.hpp"
 
 #include <algorithm>
 #include <cmath>
@@ -65,8 +66,7 @@ void Fields::calculate_fluxes(Grid &grid) {
         }
     } else {
         std::cout << "Something went wrong with energy equation on and off\nPlease check\n";
-        MPI_Finalize();
-        exit(0);
+        Communication::abort();
     }
 
     for (const auto &boundary :

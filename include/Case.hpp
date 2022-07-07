@@ -22,10 +22,15 @@ class Case {
      *
      * Reads input file, creates Fields, Grid, Boundary, Solver and sets
      * Discretization parameters Creates output directory
-     *
-     * @param[in] Input file name
+     * 
+     * @param file_name for the input parameters
+     * @param argn 
+     * @param args 
+     * @param process_rank the rank of the parallel process
+     * @param size total number of processes
+     * @param my_rank the extra parameter given by the user to solve parametric studies
      */
-    Case(std::string file_name, int argn, char **args, int process_rank = 0, int size = 1, int my_rank = 0);
+        Case(std::string file_name, int argn, char **args, int process_rank = 0, int size = 1, int my_rank = 0);
 
     /**
      * @brief Main function to simulate the flow until the end time(Serial Implementation).
