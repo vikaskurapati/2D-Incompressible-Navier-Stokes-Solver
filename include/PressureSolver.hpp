@@ -24,12 +24,20 @@ class PressureSolver {
     virtual double solve(Fields &field, Grid &grid, const std::vector<std::unique_ptr<Boundary>> &boundaries) = 0;
 };
 
+class StationarySolver : public PressureSolver {
+  public:
+    StationarySolver() = default;
+    virtual ~StationarySolver() = default;
+
+    virtual double solve(Fields &field, Grid &grid, const std::vector<std::unique_ptr<Boundary>> &boundaries) = 0;
+};
+
 /**
  * @brief Successive Over-Relaxation algorithm for solution of pressure Poisson
  * equation
  *
  */
-class SOR : public PressureSolver {
+class SOR : public StationarySolver {
   public:
     SOR() = default;
 
@@ -60,15 +68,9 @@ class SOR : public PressureSolver {
  *
  */
 
-class Jacobi : public PressureSolver {
+class Jacobi : public StationarySolver {
   public:
     Jacobi() = default;
-
-    /**
-     * @brief Constructor of Jacobi solver
-     *
-     * @param[in] relaxation factor
-     */
 
     virtual ~Jacobi() = default;
 
@@ -86,7 +88,7 @@ class Jacobi : public PressureSolver {
  * @brief Weighted Jacobi iterations to solve the Pressure Poisson Equation
  *
  */
-class WeightedJacobi : public PressureSolver {
+class WeightedJacobi : public StationarySolver {
   public:
     WeightedJacobi() = default;
 
@@ -117,7 +119,7 @@ class WeightedJacobi : public PressureSolver {
  * @brief Gauss Seidel iteration to solve the Pressure Poisson Equation
  *
  */
-class GaussSeidel : public PressureSolver {
+class GaussSeidel : public StationarySolver {
   public:
     GaussSeidel() = default;
 
@@ -135,7 +137,12 @@ class GaussSeidel : public PressureSolver {
     virtual double solve(Fields &field, Grid &grid, const std::vector<std::unique_ptr<Boundary>> &boundaries);
 };
 
-class Richardson : public PressureSolver {
+/**
+ * @brief This iterator isn't suggested as it is extremely unstable.
+ * USE AT YOUR OWN RISK
+ *
+ */
+class Richardson : public StationarySolver {
   public:
     Richardson() = default;
 
@@ -160,7 +167,27 @@ class Richardson : public PressureSolver {
     double _omega{1.0};
 };
 
-class ConjugateGradient : public PressureSolver {
+class GradientMethods : public PressureSolver {
+  public:
+    GradientMethods() = default;
+    /**
+     * @brief Construct a new Gradient Methods object
+     *
+     * @param field to be used for calculations
+     */
+    explicit GradientMethods(Fields &field);
+
+    virtual ~GradientMethods() = default;
+
+    virtual double solve(Fields &field, Grid &grid, const std::vector<std::unique_ptr<Boundary>> &boundaries) = 0;
+
+  protected:
+    int iter = 0;
+    Matrix<double> residual;
+    Matrix<double> d;
+};
+
+class ConjugateGradient : public GradientMethods {
   public:
     ConjugateGradient() = default;
     /**
@@ -180,11 +207,6 @@ class ConjugateGradient : public PressureSolver {
      */
 
     virtual double solve(Fields &field, Grid &grid, const std::vector<std::unique_ptr<Boundary>> &boundaries);
-
-  private:
-    int iter = 0;
-    Matrix<double> d;
-    Matrix<double> residual;
 };
 
 class MultiGridVCycle : public PressureSolver {

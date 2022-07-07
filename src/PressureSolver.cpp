@@ -173,8 +173,7 @@ double Richardson::solve(Fields &field, Grid &grid, const std::vector<std::uniqu
     return rloc;
 }
 
-ConjugateGradient::ConjugateGradient(Fields &field) {
-
+GradientMethods::GradientMethods(Fields &field){
     int imax = field.p_matrix().imax();
     int jmax = field.p_matrix().jmax();
 
