@@ -163,6 +163,8 @@ class Fields {
     Matrix<double> _T_new;
     /// kinematic viscosity
     double _nu;
+    // status if the energy_equations should be turned on or not
+    std::string _energy_eq;
     /// gravitional accelearation in x direction
     double _gx{0.0};
     /// gravitional accelearation in y direction
@@ -175,8 +177,6 @@ class Fields {
     double _alpha;
     /// coefficient of thermal expansion
     double _beta;
-    // status if the energy_equations should be turned on or not
-    std::string _energy_eq;
 
     int _process_rank;
     int _size;

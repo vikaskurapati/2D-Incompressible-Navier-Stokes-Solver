@@ -113,28 +113,28 @@ class Grid {
      * @return const int of inflow wall id
      */
 
-    const int get_inflow_wall_id() const { return inflow_wall_id; };
+    int get_inflow_wall_id() const { return inflow_wall_id; };
 
     /**
      * @brief Get the outflow wall id object
      *
      * @return const int of outflow wall id
      */
-    const int get_outflow_wall_id() const { return outflow_wall_id; };
+    int get_outflow_wall_id() const { return outflow_wall_id; };
 
     /**
      * @brief Get the hot fixed wall id object
      *
      * @return const int of hot fixed wall id
      */
-    const int get_hot_fixed_wall_id() const { return hot_fixed_wall_id; };
+    int get_hot_fixed_wall_id() const { return hot_fixed_wall_id; };
 
     /**
      * @brief Get the cold fixed wall id object
      *
      * @return const int of cold fixed wall id
      */
-    const int get_cold_fixed_wall_id() const { return cold_fixed_wall_id; };
+    int get_cold_fixed_wall_id() const { return cold_fixed_wall_id; };
 
   private:
     /**@brief Default lid driven cavity case generator

@@ -270,7 +270,6 @@ void Grid::parse_geometry_file(std::string filedoc, std::vector<std::vector<int>
 
     if (_process_rank == 0) {
         int numcols, numrows, depth;
-        char wall_id;
         std::vector<std::vector<int>> full_domain(_domain.domain_size_x + 2,
                                                   std::vector<int>(_domain.domain_size_y + 2, 0));
 

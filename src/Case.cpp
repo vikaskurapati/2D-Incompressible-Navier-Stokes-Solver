@@ -392,9 +392,6 @@ void Case::output_vtk(int timestep, int my_rank) {
     // Create grid
     vtkSmartPointer<vtkPoints> points = vtkSmartPointer<vtkPoints>::New();
 
-    int inflow_id = _grid.get_inflow_wall_id();
-    int outflow_id = _grid.get_outflow_wall_id();
-
     double dx = _grid.dx();
     double dy = _grid.dy();
 
@@ -439,7 +436,7 @@ void Case::output_vtk(int timestep, int my_rank) {
         }
     }
 
-    for (int i = 0; i < obstacle_wall_cells.size(); ++i) {
+    for (size_t i = 0; i < obstacle_wall_cells.size(); ++i) {
         structuredGrid->BlankCell(obstacle_wall_cells.at(i));
     }
 
@@ -583,7 +580,6 @@ void Case::output_log(std::string dat_file_name, double nu, double UI, double VI
                       double tau, double itermax, double eps, double TI, double alpha, double beta, double num_walls,
                       double Tc, double Th, int my_rank) {
 
-    const int MAX_LINE_LENGTH = 1024;
     std::string str = _dict_name + "_run_log_" + std::to_string(my_rank) + ".log";
     std::stringstream stream;
     std::ofstream output(str);

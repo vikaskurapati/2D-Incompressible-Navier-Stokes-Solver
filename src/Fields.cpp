@@ -171,8 +171,6 @@ double Fields::calculate_dt(Grid &grid) {
 }
 
 void Fields::calculate_temperatures(Grid &grid) {
-    double dx = grid.dx();
-    double dy = grid.dy();
     int i, j;
     for (const auto &currentCell : grid.fluid_cells()) {
         i = currentCell->i();
