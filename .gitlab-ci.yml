@@ -12,7 +12,7 @@ check-format-job:
   script:
     - ./tools/check-format
   only:  
-    - master
+    - ws1
     - merge_requests
 
 check-compile-full:
@@ -20,5 +20,5 @@ check-compile-full:
   script:
     - mkdir ./build && cd ./build && cmake .. && make
   only:  
-    - master
+    - ws1
     - merge_requests
