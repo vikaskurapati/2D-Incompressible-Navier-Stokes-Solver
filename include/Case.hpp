@@ -23,12 +23,17 @@ class Case {
      * Reads input file, creates Fields, Grid, Boundary, Solver and sets
      * Discretization parameters Creates output directory
      *
-     * @param[in] Input file name
+     * @param file_name for the input parameters
+     * @param argn
+     * @param args
+     * @param process_rank the rank of the parallel process
+     * @param size total number of processes
+     * @param my_rank the extra parameter given by the user to solve parametric studies
      */
-    Case(std::string file_name, int argn, char **args, int my_rank = 1);
+    Case(std::string file_name, int argn, char **args, int process_rank = 0, int size = 1, int my_rank = 0);
 
     /**
-     * @brief Main function to simulate the flow until the end time.
+     * @brief Main function to simulate the flow until the end time(Serial Implementation).
      *
      * Calculates the fluxes
      * Calculates the right hand side
@@ -37,6 +42,12 @@ class Case {
      * Outputs the solution files
      */
     void simulate(int my_rank = 1);
+
+    /**
+     * @brief Destroy the Case object
+     *
+     */
+    ~Case();
 
   private:
     /// Plain case name without paths
@@ -57,8 +68,14 @@ class Case {
     /// Solution file outputting frequency
     double _output_freq;
 
+    int _iproc{1};
+    int _jproc{1};
+    int _process_rank{0};
+    int _size{1};
+
     Fields _field;
     Grid _grid;
+    Domain domain;
     Discretization _discretization;
     std::unique_ptr<PressureSolver> _pressure_solver;
     std::vector<std::unique_ptr<Boundary>> _boundaries;

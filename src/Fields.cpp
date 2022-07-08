@@ -1,12 +1,17 @@
 #include "Fields.hpp"
+#include "Communication.hpp"
 
 #include <algorithm>
 #include <cmath>
 #include <iostream>
 
 Fields::Fields(Grid &grid, double nu, double dt, double tau, double alpha, double beta, std::string energy_eq, int imax,
-               int jmax, double UI, double VI, double PI, double TI, double gx, double gy)
+               int jmax, double UI, double VI, double PI, double TI, double gx, double gy, int process_rank, int size)
     : _nu(nu), _dt(dt), _tau(tau), _alpha(alpha), _beta(beta), _energy_eq(energy_eq), _gx(gx), _gy(gy) {
+
+    _process_rank = process_rank;
+    _size = size;
+
     _U = Matrix<double>(imax + 2, jmax + 2);
     _V = Matrix<double>(imax + 2, jmax + 2);
     _P = Matrix<double>(imax + 2, jmax + 2);
@@ -38,26 +43,30 @@ void Fields::calculate_fluxes(Grid &grid) {
             i = currentCell->i();
             j = currentCell->j();
 
-            _F(i, j) = _U(i, j) + _dt * (_nu * (Discretization::laplacian(_U, i, j)) -
-                                         Discretization::convection_u(_U, _V, i, j) + _gx);
-            _G(i, j) = _V(i, j) + _dt * (_nu * (Discretization::laplacian(_V, i, j)) -
-                                         Discretization::convection_v(_U, _V, i, j) + _gy);
+            if (i != 0 && j != 0 && i != grid.domain().size_x + 1 && j != grid.domain().size_y + 1) {
+                _F(i, j) = _U(i, j) + _dt * (_nu * (Discretization::laplacian(_U, i, j)) -
+                                             Discretization::convection_u(_U, _V, i, j) + _gx);
+                _G(i, j) = _V(i, j) + _dt * (_nu * (Discretization::laplacian(_V, i, j)) -
+                                             Discretization::convection_v(_U, _V, i, j) + _gy);
+            }
         }
     } else if (_energy_eq == "on") {
         for (const auto &currentCell : grid.fluid_cells()) {
             i = currentCell->i();
             j = currentCell->j();
 
-            _F(i, j) = _U(i, j) +
-                       _dt * (_nu * (Discretization::laplacian(_U, i, j)) - Discretization::convection_u(_U, _V, i, j));
-            _F(i, j) -= 0.5 * _dt * _beta * (_T(i, j) + _T(i + 1, j)) * _gx;
-            _G(i, j) = _V(i, j) +
-                       _dt * (_nu * (Discretization::laplacian(_V, i, j)) - Discretization::convection_v(_U, _V, i, j));
-            _G(i, j) -= 0.5 * _dt * _beta * (_T(i, j) + _T(i, j + 1)) * _gy;
+            if (i != 0 && j != 0 && i != grid.domain().size_x + 1 && j != grid.domain().size_y + 1) {
+                _F(i, j) = _U(i, j) + _dt * (_nu * (Discretization::laplacian(_U, i, j)) -
+                                             Discretization::convection_u(_U, _V, i, j));
+                _F(i, j) -= 0.5 * _dt * _beta * (_T(i, j) + _T(i + 1, j)) * _gx;
+                _G(i, j) = _V(i, j) + _dt * (_nu * (Discretization::laplacian(_V, i, j)) -
+                                             Discretization::convection_v(_U, _V, i, j));
+                _G(i, j) -= 0.5 * _dt * _beta * (_T(i, j) + _T(i, j + 1)) * _gy;
+            }
         }
     } else {
-        std::cout << "Something went wrong with engery equation on and off\nPlease check\n";
-        exit(0);
+        std::cout << "Something went wrong with energy equation on and off\nPlease check\n";
+        Communication::abort();
     }
 
     for (const auto &boundary :
@@ -110,7 +119,9 @@ void Fields::calculate_rs(Grid &grid) {
     for (const auto &currentCell : grid.fluid_cells()) {
         i = currentCell->i();
         j = currentCell->j();
-        _RS(i, j) = (((_F(i, j) - _F(i - 1, j)) / dx) + ((_G(i, j) - _G(i, j - 1)) / dy)) / _dt;
+        if (i != 0 && j != 0 && i != grid.domain().size_x + 1 && j != grid.domain().size_y + 1) {
+            _RS(i, j) = (((_F(i, j) - _F(i - 1, j)) / dx) + ((_G(i, j) - _G(i, j - 1)) / dy)) / _dt;
+        }
     }
 }
 
@@ -121,8 +132,10 @@ void Fields::calculate_velocities(Grid &grid) {
     for (const auto &currentCell : grid.fluid_cells()) {
         i = currentCell->i();
         j = currentCell->j();
-        _U(i, j) = _F(i, j) - (_dt / dx) * (_P(i + 1, j) - _P(i, j));
-        _V(i, j) = _G(i, j) - (_dt / dy) * (_P(i, j + 1) - _P(i, j));
+        if (i != 0 && j != 0 && i != grid.domain().size_x + 1 && j != grid.domain().size_y + 1) {
+            _U(i, j) = _F(i, j) - (_dt / dx) * (_P(i + 1, j) - _P(i, j));
+            _V(i, j) = _G(i, j) - (_dt / dy) * (_P(i, j + 1) - _P(i, j));
+        }
     }
 }
 
@@ -158,14 +171,14 @@ double Fields::calculate_dt(Grid &grid) {
 }
 
 void Fields::calculate_temperatures(Grid &grid) {
-    double dx = grid.dx();
-    double dy = grid.dy();
     int i, j;
     for (const auto &currentCell : grid.fluid_cells()) {
         i = currentCell->i();
         j = currentCell->j();
-        _T_new(i, j) = _T(i, j) + _dt * (_alpha * Discretization::laplacian(_T, i, j) -
-                                         Discretization::convection_t(_T, _U, _V, i, j));
+        if (i != 0 && j != 0 && i != grid.domain().size_x + 1 && j != grid.domain().size_y + 1) {
+            _T_new(i, j) = _T(i, j) + _dt * (_alpha * Discretization::laplacian(_T, i, j) -
+                                             Discretization::convection_t(_T, _U, _V, i, j));
+        }
     }
     _T = _T_new;
 }
@@ -178,6 +191,12 @@ double &Fields::f(int i, int j) { return _F(i, j); }
 double &Fields::g(int i, int j) { return _G(i, j); }
 double &Fields::rs(int i, int j) { return _RS(i, j); }
 
+Matrix<double> &Fields::t_matrix() { return _T; }
 Matrix<double> &Fields::p_matrix() { return _P; }
+Matrix<double> &Fields::u_matrix() { return _U; }
+Matrix<double> &Fields::v_matrix() { return _V; }
+Matrix<double> &Fields::f_matrix() { return _F; }
+Matrix<double> &Fields::g_matrix() { return _G; }
+Matrix<double> &Fields::rs_matrix() { return _RS; }
 
 double Fields::dt() const { return _dt; }

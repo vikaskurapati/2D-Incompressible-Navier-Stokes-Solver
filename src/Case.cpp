@@ -1,5 +1,6 @@
 
 #include "Case.hpp"
+#include "Communication.hpp"
 #include "Enums.hpp"
 
 #include <algorithm>
@@ -30,7 +31,9 @@ namespace filesystem = std::experimental::filesystem;
 #include <vtkStructuredGridWriter.h>
 #include <vtkTuple.h>
 
-Case::Case(std::string file_name, int argn, char **args, int my_rank) {
+Case::~Case() { Communication::finalize(); }
+
+Case::Case(std::string file_name, int argn, char **args, int process_rank, int size, int my_rank) {
     // Read input parameters
     const int MAX_LINE_LENGTH = 1024;
     std::ifstream file(file_name);
@@ -97,10 +100,27 @@ Case::Case(std::string file_name, int argn, char **args, int my_rank) {
                 if (var == "wall_temp_3") file >> T3;
                 if (var == "wall_temp_4") file >> T4;
                 if (var == "wall_temp_5") file >> T5;
+                // Worksheet 3 Additions
+                if (var == "iproc") file >> _iproc;
+                if (var == "jproc") file >> _jproc;
             }
         }
     }
+
     file.close();
+
+    _process_rank = process_rank;
+    _size = size;
+
+    if (_iproc * _jproc != _size) {
+        Communication::finalize();
+        if (_process_rank == 0) {
+            std::cerr << "please check your iproc(number of processes for x-direction) and jproc(number of processes "
+                         "for y-direction). Their product should be the total number of processes for the problem"
+                      << std::endl;
+        }
+        exit(0);
+    }
 
     _datfile_name = file_name;
 
@@ -112,14 +132,14 @@ Case::Case(std::string file_name, int argn, char **args, int my_rank) {
     set_file_names(file_name);
 
     // Build up the domain
-    Domain domain;
     domain.dx = xlength / static_cast<double>(imax);
     domain.dy = ylength / static_cast<double>(jmax);
     domain.domain_size_x = imax;
     domain.domain_size_y = jmax;
 
     build_domain(domain, imax, jmax);
-    _grid = Grid(_geom_name, domain);
+
+    _grid = Grid(_geom_name, domain, _process_rank, _size, _iproc, _jproc);
 
     // Assigning hot and cold temperatues accordingly
     if (_grid.get_hot_fixed_wall_id() == 3) {
@@ -142,20 +162,20 @@ Case::Case(std::string file_name, int argn, char **args, int my_rank) {
     }
 
     _field = Fields(_grid, nu, dt, tau, alpha, beta, _energy_eq, _grid.domain().size_x, _grid.domain().size_y, UI, VI,
-                    PI, TI, GX, GY);
+                    PI, TI, GX, GY, _process_rank, _size);
 
     _discretization = Discretization(domain.dx, domain.dy, gamma);
     _pressure_solver = std::make_unique<SOR>(omg);
     _max_iter = itermax;
     _tolerance = eps;
     // Construct boundaries
+    if (not _grid.fixed_wall_cells().empty()) {
+        _boundaries.push_back(std::make_unique<FixedWallBoundary>(_grid.fixed_wall_cells()));
+    }
+
     if (not _grid.moving_wall_cells().empty()) {
         _boundaries.push_back(
             std::make_unique<MovingWallBoundary>(_grid.moving_wall_cells(), LidDrivenCavity::wall_velocity));
-    }
-
-    if (not _grid.fixed_wall_cells().empty()) {
-        _boundaries.push_back(std::make_unique<FixedWallBoundary>(_grid.fixed_wall_cells()));
     }
 
     if (not _grid.hot_fixed_wall_cells().empty()) {
@@ -178,10 +198,12 @@ Case::Case(std::string file_name, int argn, char **args, int my_rank) {
     if (not _grid.outflow_cells().empty()) {
         _boundaries.push_back(std::make_unique<OutFlow>(_grid.outflow_cells(), 0.0));
     }
-    output_log(_datfile_name, nu, UI, VI, PI, GX, GY, xlength, ylength, dt, imax, jmax, gamma, omg, tau, itermax, eps,
-               TI, alpha, beta, num_walls, Tc, Th, my_rank);
-}
 
+    if (_process_rank == 0) {
+        output_log(_datfile_name, nu, UI, VI, PI, GX, GY, xlength, ylength, dt, imax, jmax, gamma, omg, tau, itermax,
+                   eps, TI, alpha, beta, num_walls, Tc, Th, my_rank);
+    }
+}
 void Case::set_file_names(std::string file_name) {
     std::string temp_dir;
     bool case_name_flag = true;
@@ -230,24 +252,18 @@ void Case::set_file_names(std::string file_name) {
 }
 
 /**
- * This function is the main simulation loop. In the simulation loop, following steps are required
+ * This function is the main simulation loop. In the simulation loop, following steps are required(Serial)
  * - Calculate and apply boundary conditions for all the boundaries in _boundaries container
  *   using apply() member function of Boundary class -> done
  * - Calculate fluxes (F and G) using calculate_fluxes() member function of Fields class. -> Hope Surya done it
  * correctly Flux consists of diffusion and convection part, which are located in Discretization class
  * - Calculate right-hand-side of PPE using calculate_rs() member function of Fields class  -> Hope Surya done it
- * correctly
+ *      correctly
  * - Iterate the pressure poisson equation until the residual becomes smaller than the desired tolerance
  *   or the maximum number of the iterations are performed using solve() member function of PressureSolver class
  * - Calculate the velocities u and v using calculate_velocities() member function of Fields class
  * - Calculate the maximal timestep size for the next iteration using calculate_dt() member function of Fields class
  * - Write vtk files using output_vtk() function
- *
- * Please note that some classes such as PressureSolver, Boundary are abstract classes which means they only provide the
- * interface. No member functions should be defined in abstract classes. You need to define functions in inherited
- * classes such as MovingWallBoundary class.
- *
- * For information about the classes and functions, you can check the header files.
  */
 void Case::simulate(int my_rank) {
 
@@ -261,71 +277,97 @@ void Case::simulate(int my_rank) {
     int iter_count = 0;
 
     Case::output_vtk(timestep, my_rank);
-
-    std::string str = _dict_name + "_run_log_" + std::to_string(my_rank) + ".log";
     std::ofstream output;
-
-    output.open(str, std::ios_base::app);
-    output << "\n\nIteration Log:\n";
-    std::cout << "Simulation is Running!\nPlease Refer to " << _dict_name << "_run_log_" << my_rank
-              << ".log for Simulation log!\n";
-    // Simulation Progress
     int progress, last_progress;
-    if (Case::_energy_eq == "on") {
-        std::cout << "\nEnergy Equation is On\n";
+
+    if (_process_rank == 0) {
+        std::string str = _dict_name + "_run_log_" + std::to_string(my_rank) + ".log";
+
+        output.open(str, std::ios_base::app);
+        output << "\n\nIteration Log:\n";
+        std::cout << "Simulation is Running!\nPlease Refer to " << _dict_name << "_run_log_" << my_rank
+                  << ".log for Simulation log!\n";
+        // Simulation Progress
+        if (Case::_energy_eq == "on") {
+            std::cout << "\nEnergy Equation is On\n";
+        }
     }
+
+    int fluid_cells;
+
     while (t < t_end) {
         err = 100.0;
         iter_count = 0;
         dt = _field.calculate_dt(_grid);
+        dt = Communication::reduce_min(dt);
         for (size_t i = 0; i < _boundaries.size(); i++) {
             _boundaries[i]->apply(_field);
         }
-
         if (Case::_energy_eq == "on") {
             _field.calculate_temperatures(_grid);
+            // communicate temperature
+            Communication::communicate(_field.t_matrix(), domain);
         }
         _field.calculate_fluxes(_grid);
+
+        // communicate fluxes
+        Communication::communicate(_field.f_matrix(), domain);
+        Communication::communicate(_field.g_matrix(), domain);
         _field.calculate_rs(_grid);
         while (err > _tolerance && iter_count < _max_iter) {
             for (const auto &boundary : _boundaries) {
                 boundary->apply_pressures(_field);
             }
             err = _pressure_solver->solve(_field, _grid, _boundaries);
+            // weighted addition of residuals
+            err = Communication::reduce_sum(err);
+            fluid_cells = _grid.fluid_cells().size();
+            fluid_cells = Communication::reduce_sum(fluid_cells);
+            err = std::sqrt(err / fluid_cells);
+            // communicate pressures
+            Communication::communicate(_field.p_matrix(), domain);
             iter_count += 1;
         }
-
         _field.calculate_velocities(_grid);
+        // exchange velocities
+        Communication::communicate(_field.u_matrix(), domain);
+        Communication::communicate(_field.v_matrix(), domain);
         t += dt;
         timestep += 1;
-        output << std::setprecision(4) << std::fixed;
+        if (_process_rank == 0) {
+            output << std::setprecision(4) << std::fixed;
+        }
         if (t - output_counter * _output_freq >= 0) {
             Case::output_vtk(timestep, my_rank);
-            output << "Time: " << t << " Residual: " << err << " PPE Iterations: " << iter_count << std::endl;
-            if (iter_count == _max_iter || std::isnan(err)) {
-                std::cout
-                    << "The PPE Solver didn't converge for Time = " << t
-                    << " Please check the log file and increase max iterations or other parameters for convergence"
-                    << "\n";
+            if (_process_rank == 0) {
+                output << "Time: " << t << " Residual: " << err << " PPE Iterations: " << iter_count << std::endl;
+                if (iter_count == _max_iter || std::isnan(err)) {
+                    std::cout << "The PPE Solver didn't converge for Time = " << t
+                              << " Please check the log file and increase max iterations or other parameters for "
+                                 "convergence"
+                              << "\n";
+                }
             }
             output_counter += 1;
         }
         // Printing Simulation Progress
-        progress = t / t_end * 100;
-        if (progress % 10 == 0 && progress != last_progress) {
-            std::cout << "[";
-            for (int i = 0; i < progress / 10; i++) {
-                std::cout << "===";
+        if (_process_rank == 0) {
+            progress = t / t_end * 100;
+            if (progress % 10 == 0 && progress != last_progress) {
+                std::cout << "Time Step: " << timestep << " Residue: " << err << " PPE Iterations: " << iter_count
+                          << std::endl;
+                std::cout << "[";
+                for (int i = 0; i < progress / 10; i++) {
+                    std::cout << "=====";
+                }
+                if (progress == 100)
+                    std::cout << "]";
+                else
+                    std::cout << ">";
+                std::cout << progress << "%\r";
+                std::cout.flush();
+                last_progress = progress;
             }
-            if (progress == 100)
-                std::cout << "]";
-            else
-                std::cout << ">";
-            std::cout << " %" << progress << std::endl;
-            std::cout << "Time Step: " << timestep << " Residue: " << err << " PPE Iterations: " << iter_count
-                      << std::endl;
-
-            last_progress = progress;
         }
     }
 
@@ -333,10 +375,15 @@ void Case::simulate(int my_rank) {
         (output_counter - 1) * _output_freq) // Recording at t_end if the output frequency is not a multiple of t_end
     {
         Case::output_vtk(timestep, my_rank);
-        output << "Time Step: " << timestep << " Residue: " << err << " PPE Iterations: " << iter_count << std::endl;
+        if (_process_rank == 0) {
+            output << "Time Step: " << timestep << " Residue: " << err << " PPE Iterations: " << iter_count
+                   << std::endl;
+        }
         output_counter += 1;
     }
-    std::cout << "Simulation has ended\n";
+    if (_process_rank == 0) {
+        std::cout << "\nSimulation has ended\n";
+    }
     output.close();
 }
 
@@ -346,9 +393,6 @@ void Case::output_vtk(int timestep, int my_rank) {
 
     // Create grid
     vtkSmartPointer<vtkPoints> points = vtkSmartPointer<vtkPoints>::New();
-
-    int inflow_id = _grid.get_inflow_wall_id();
-    int outflow_id = _grid.get_outflow_wall_id();
 
     double dx = _grid.dx();
     double dy = _grid.dy();
@@ -394,7 +438,7 @@ void Case::output_vtk(int timestep, int my_rank) {
         }
     }
 
-    for (int i = 0; i < obstacle_wall_cells.size(); ++i) {
+    for (size_t i = 0; i < obstacle_wall_cells.size(); ++i) {
         structuredGrid->BlankCell(obstacle_wall_cells.at(i));
     }
 
@@ -446,8 +490,9 @@ void Case::output_vtk(int timestep, int my_rank) {
     vtkSmartPointer<vtkStructuredGridWriter> writer = vtkSmartPointer<vtkStructuredGridWriter>::New();
 
     // Create Filename
-    std::string outputname =
-        _dict_name + '/' + _case_name + "_" + std::to_string(my_rank) + "." + std::to_string(timestep) + ".vtk";
+    std::string outputname = _dict_name + '/' + _case_name + "_" + std::to_string(my_rank) + "_" +
+                             std::to_string(_process_rank) + "." + std::to_string(timestep) +
+                             ".vtk"; // my_rank is the user's input and _process_rank is the process rank
 
     writer->SetFileName(outputname.c_str());
     writer->SetInputData(structuredGrid);
@@ -455,12 +500,81 @@ void Case::output_vtk(int timestep, int my_rank) {
 }
 
 void Case::build_domain(Domain &domain, int imax_domain, int jmax_domain) {
-    domain.imin = 0;
-    domain.jmin = 0;
-    domain.imax = imax_domain + 2;
-    domain.jmax = jmax_domain + 2;
-    domain.size_x = imax_domain;
-    domain.size_y = jmax_domain;
+
+    int I;
+    int J;
+    int imin, imax, jmin, jmax, size_x, size_y;
+
+    if (_process_rank == 0) {
+        for (int i = 1; i < _size; ++i) {
+            // I is process number in x direction, J is process number in y direction
+            I = i % _iproc + 1;
+            J = i / _iproc + 1;
+            // setting imin, imax, jmin and jmax using rank and size
+            imin = (I - 1) * (imax_domain / _iproc);
+            imax = I * (imax_domain / _iproc) + 2;
+            jmin = (J - 1) * (jmax_domain / _jproc);
+            jmax = J * (jmax_domain / _jproc) + 2;
+            size_x = imax_domain / _iproc;
+            size_y = jmax_domain / _jproc;
+
+            // Dumping extra cells in the last processor
+            if (I == _iproc) {
+                if (imax_domain % _iproc != 0) {
+                    imax = imax + (imax_domain % _iproc);
+                    size_x = size_x + (imax_domain % _iproc);
+                }
+            }
+
+            if (J == _jproc) {
+                if (jmax_domain % _jproc != 0) {
+                    jmax = jmax + (jmax_domain % _jproc);
+                    size_y = size_y + (jmax_domain % _jproc);
+                }
+            }
+
+            // Sending domain limits to other processes
+            MPI_Send(&imin, 1, MPI_INT, i, 999, MPI_COMM_WORLD);
+            MPI_Send(&imax, 1, MPI_INT, i, 998, MPI_COMM_WORLD);
+            MPI_Send(&jmin, 1, MPI_INT, i, 997, MPI_COMM_WORLD);
+            MPI_Send(&jmax, 1, MPI_INT, i, 996, MPI_COMM_WORLD);
+            MPI_Send(&size_x, 1, MPI_INT, i, 995, MPI_COMM_WORLD);
+            MPI_Send(&size_y, 1, MPI_INT, i, 994, MPI_COMM_WORLD);
+        }
+
+        I = _process_rank % _iproc + 1;
+        J = _process_rank / _iproc + 1;
+        domain.imin = (I - 1) * imax_domain / _iproc;
+        domain.imax = I * imax_domain / _iproc + 2;
+        domain.jmin = (J - 1) * jmax_domain / _jproc;
+        domain.jmax = J * jmax_domain / _jproc + 2;
+        domain.size_x = imax_domain / _iproc;
+        domain.size_y = jmax_domain / _jproc;
+    }
+
+    else {
+        // Receiving domain limits from rank = 0
+        MPI_Status status;
+        MPI_Recv(&domain.imin, 1, MPI_INT, 0, 999, MPI_COMM_WORLD, &status);
+        MPI_Recv(&domain.imax, 1, MPI_INT, 0, 998, MPI_COMM_WORLD, &status);
+        MPI_Recv(&domain.jmin, 1, MPI_INT, 0, 997, MPI_COMM_WORLD, &status);
+        MPI_Recv(&domain.jmax, 1, MPI_INT, 0, 996, MPI_COMM_WORLD, &status);
+        MPI_Recv(&domain.size_x, 1, MPI_INT, 0, 995, MPI_COMM_WORLD, &status);
+        MPI_Recv(&domain.size_y, 1, MPI_INT, 0, 994, MPI_COMM_WORLD, &status);
+    }
+
+    if (_process_rank + 1 < _size && (_process_rank + 1) % _iproc != 0) {
+        domain.neighbour_ranks[1] = _process_rank + 1;
+    }
+    if (_process_rank - 1 >= 0 && (_process_rank) % _iproc != 0) {
+        domain.neighbour_ranks[0] = _process_rank - 1;
+    }
+    if (_process_rank + _iproc < _size) {
+        domain.neighbour_ranks[3] = _process_rank + _iproc;
+    }
+    if (_process_rank - _iproc >= 0) {
+        domain.neighbour_ranks[2] = _process_rank - _iproc;
+    }
 }
 
 void Case::output_log(std::string dat_file_name, double nu, double UI, double VI, double PI, double GX, double GY,
@@ -468,11 +582,8 @@ void Case::output_log(std::string dat_file_name, double nu, double UI, double VI
                       double tau, double itermax, double eps, double TI, double alpha, double beta, double num_walls,
                       double Tc, double Th, int my_rank) {
 
-    const int MAX_LINE_LENGTH = 1024;
     std::string str = _dict_name + "_run_log_" + std::to_string(my_rank) + ".log";
     std::stringstream stream;
-    // stream<<std::fixed<<std::setprecision(2)<<_pressure_solver->return_omega();
-    // str += stream.str();
     std::ofstream output(str);
 
     output << "Log File for : " << dat_file_name << "\n";
@@ -494,6 +605,9 @@ void Case::output_log(std::string dat_file_name, double nu, double UI, double VI
     output << "PI : " << PI << "\n";
     output << "itermax : " << itermax << "\n";
     output << "Energy Equation : " << _energy_eq << "\n";
+    output << "Number of processes in x-direction : " << _iproc << "\n";
+    output << "Number of processes in y-direction : " << _jproc << "\n";
+    output << "Total number of process : " << _size << "\n";
     if (_energy_eq == "on") {
         output << "Temp Initial : " << TI << "\n";
         output << "alpha : " << alpha << "\n";

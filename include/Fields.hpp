@@ -26,7 +26,8 @@ class Fields {
      *
      */
     Fields(Grid &grid, double _nu, double _dt, double _tau, double _alpha, double _beta, std::string energy_eq,
-           int imax, int jmax, double UI, double VI, double PI, double TI, double gx, double gy);
+           int imax, int jmax, double UI, double VI, double PI, double TI, double gx, double gy, int process_rank = 0,
+           int size = 1);
 
     /**
      * @brief Calculates the convective and diffusive fluxes in x and y
@@ -119,8 +120,26 @@ class Fields {
     /// get timestep size
     double dt() const;
 
-    /// pressure matrix access and modify
+    /// t matrix access and modify
+    Matrix<double> &t_matrix();
+
+    /// p matrix access and modify
     Matrix<double> &p_matrix();
+
+    /// u matrix access and modify
+    Matrix<double> &u_matrix();
+
+    /// v matrix access and modify
+    Matrix<double> &v_matrix();
+
+    /// f matrix access and modify
+    Matrix<double> &f_matrix();
+
+    /// g matrix access and modify
+    Matrix<double> &g_matrix();
+
+    /// rs matrix access and modify
+    Matrix<double> &rs_matrix();
 
     /// getting energy equation status on or off
     bool get_energy_eq() { return _energy_eq == "on"; };
@@ -142,9 +161,10 @@ class Fields {
     Matrix<double> _T;
     /// Newly calculated Temperature matrix
     Matrix<double> _T_new;
-
     /// kinematic viscosity
     double _nu;
+    // status if the energy_equations should be turned on or not
+    std::string _energy_eq;
     /// gravitional accelearation in x direction
     double _gx{0.0};
     /// gravitional accelearation in y direction
@@ -157,6 +177,7 @@ class Fields {
     double _alpha;
     /// coefficient of thermal expansion
     double _beta;
-    // status if the energy_equations should be turned on or not
-    std::string _energy_eq;
+
+    int _process_rank;
+    int _size;
 };

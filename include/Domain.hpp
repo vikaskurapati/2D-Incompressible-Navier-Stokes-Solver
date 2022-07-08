@@ -32,4 +32,7 @@ struct Domain {
     int domain_size_x{-1};
     /// Number of cells in y direction, not-decomposed
     int domain_size_y{-1};
+
+    // MPI Addition to track the neighbours. Left is 0, right is 1, bottom is 2, top is 3
+    std::array<int, 4> neighbour_ranks{-1, -1, -1, -1}; /*array to track neighbours*/
 };
