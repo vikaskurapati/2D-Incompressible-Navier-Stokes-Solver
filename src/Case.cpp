@@ -8,11 +8,11 @@
 #include <experimental/filesystem>
 #endif
 #include <fstream>
+#include <iomanip>
 #include <iostream>
 #include <map>
-#include <vector>
 #include <typeinfo>
-#include <iomanip>
+#include <vector>
 
 #ifdef GCC_VERSION_9_OR_HIGHER
 namespace filesystem = std::filesystem;
@@ -166,9 +166,10 @@ void Case::set_file_names(std::string file_name) {
  * This function is the main simulation loop. In the simulation loop, following steps are required
  * - Calculate and apply boundary conditions for all the boundaries in _boundaries container
  *   using apply() member function of Boundary class -> done
- * - Calculate fluxes (F and G) using calculate_fluxes() member function of Fields class. -> Hope Surya done it correctly
- *   Flux consists of diffusion and convection part, which are located in Discretization class
- * - Calculate right-hand-side of PPE using calculate_rs() member function of Fields class  -> Hope Surya done it correctly
+ * - Calculate fluxes (F and G) using calculate_fluxes() member function of Fields class. -> Hope Surya done it
+ * correctly Flux consists of diffusion and convection part, which are located in Discretization class
+ * - Calculate right-hand-side of PPE using calculate_rs() member function of Fields class  -> Hope Surya done it
+ * correctly
  * - Iterate the pressure poisson equation until the residual becomes smaller than the desired tolerance
  *   or the maximum number of the iterations are performed using solve() member function of PressureSolver class
  * - Calculate the velocities u and v using calculate_velocities() member function of Fields class
@@ -189,72 +190,70 @@ void Case::simulate(int my_rank) {
     int output_counter = 0;
     double t_end = _t_end;
     double err = 100;
-    //starting simulation
+    // starting simulation
     int iter_count = 0;
-    
+
     Case::output_vtk(timestep, my_rank);
 
-    std::ofstream output = output_log(_datfile_name,my_rank);
-    output<<"\n\nIteration Log:\n";
-    std::cout<<"Simulation is Running!\nPlease Refer to " << _dict_name << "_run_log_"<<my_rank<< ".log for Simulation log!\n";
-    //Simulation Progress
+    std::ofstream output = output_log(_datfile_name, my_rank);
+    output << "\n\nIteration Log:\n";
+    std::cout << "Simulation is Running!\nPlease Refer to " << _dict_name << "_run_log_" << my_rank
+              << ".log for Simulation log!\n";
+    // Simulation Progress
     int progress, last_progress;
-    while (t < t_end)
-    {
-        err=100.0;
+    while (t < t_end) {
+        err = 100.0;
         iter_count = 0;
         dt = _field.calculate_dt(_grid);
-        for (size_t i=0; i < _boundaries.size(); i++)
-        {
+        for (size_t i = 0; i < _boundaries.size(); i++) {
             _boundaries[i]->apply(_field);
         }
 
         _field.calculate_fluxes(_grid);
         _field.calculate_rs(_grid);
-        while(err > _tolerance && iter_count < _max_iter)
-        {
+        while (err > _tolerance && iter_count < _max_iter) {
             err = _pressure_solver->solve(_field, _grid, _boundaries);
             iter_count += 1;
         }
         _field.calculate_velocities(_grid);
         t += dt;
-        timestep+=1;
-        output<<std::setprecision(4)<<std::fixed;
-        if(t-output_counter*_output_freq>=0)
-        {
+        timestep += 1;
+        output << std::setprecision(4) << std::fixed;
+        if (t - output_counter * _output_freq >= 0) {
             Case::output_vtk(timestep, my_rank);
-            output<<"Time: "<<t<<" Residual: "<<err<<" PPE Iterations: "<<iter_count<<std::endl;
-            if (iter_count == _max_iter || std::isnan(err))
-            {
-                output << "The PPE Solver didn't converge for Time = " << t << " Please check the log file and increase max iterations or other parameters for convergence"<< "\n";
+            output << "Time: " << t << " Residual: " << err << " PPE Iterations: " << iter_count << std::endl;
+            if (iter_count == _max_iter || std::isnan(err)) {
+                output << "The PPE Solver didn't converge for Time = " << t
+                       << " Please check the log file and increase max iterations or other parameters for convergence"
+                       << "\n";
             }
-            output_counter+=1;
+            output_counter += 1;
         }
-        //Printing Simulation Progress 
-        progress = t/t_end * 100;
-        if(progress % 10 == 0 && progress != last_progress){
-            std::cout<<"[";
-            for(int i=0;i<progress/10;i++){
-                std::cout<<"===";
+        // Printing Simulation Progress
+        progress = t / t_end * 100;
+        if (progress % 10 == 0 && progress != last_progress) {
+            std::cout << "[";
+            for (int i = 0; i < progress / 10; i++) {
+                std::cout << "===";
             }
-            if(progress==100)
-                std::cout<<"]";
-            else 
-                std::cout<<">";
-            std::cout<<" %"<<progress<<std::endl;
+            if (progress == 100)
+                std::cout << "]";
+            else
+                std::cout << ">";
+            std::cout << " %" << progress << std::endl;
             last_progress = progress;
         }
     }
-    if(t_end!=(output_counter-1)*_output_freq) // Recording at t_end if the output frequency is not a multiple of t_end
+    if (t_end !=
+        (output_counter - 1) * _output_freq) // Recording at t_end if the output frequency is not a multiple of t_end
     {
         Case::output_vtk(timestep, my_rank);
-        output<<"Time Step: "<<timestep<<" Residue: "<<err<<" PPE Iterations: "<<iter_count<<std::endl;
-        output_counter+=1;
+        output << "Time Step: " << timestep << " Residue: " << err << " PPE Iterations: " << iter_count << std::endl;
+        output_counter += 1;
     }
-    std::cout<<"Simulation has ended\n";
+    std::cout << "Simulation has ended\n";
     output.close();
 }
-
 
 void Case::output_vtk(int timestep, int my_rank) {
     // Create a new structured grid
@@ -345,10 +344,10 @@ void Case::build_domain(Domain &domain, int imax_domain, int jmax_domain) {
     domain.size_y = jmax_domain;
 }
 
-std::ofstream Case::output_log(std::string dat_file_name,int myrank){
+std::ofstream Case::output_log(std::string dat_file_name, int myrank) {
 
     const int MAX_LINE_LENGTH = 1024;
-    //Writing Simulation data to log file
+    // Writing Simulation data to log file
     double nu;      /* viscosity   */
     double UI;      /* velocity x-direction */
     double VI;      /* velocity y-direction */
@@ -366,7 +365,7 @@ std::ofstream Case::output_log(std::string dat_file_name,int myrank){
     int itermax;    /* max. number of iterations for pressure per time step */
     double eps;     /* accuracy bound for pressure*/
     std::ifstream file(dat_file_name);
-    
+
     if (file.is_open()) {
 
         std::string var;
@@ -397,30 +396,30 @@ std::ofstream Case::output_log(std::string dat_file_name,int myrank){
         }
     }
     file.close();
-    std::string str = _dict_name + "_run_log_" + std::to_string(myrank)+".log";
+    std::string str = _dict_name + "_run_log_" + std::to_string(myrank) + ".log";
     std::stringstream stream;
-    //stream<<std::fixed<<std::setprecision(2)<<_pressure_solver->return_omega();
-    //str += stream.str();
+    // stream<<std::fixed<<std::setprecision(2)<<_pressure_solver->return_omega();
+    // str += stream.str();
     std::ofstream output(str);
-    output<<"Log File for : "<<dat_file_name<<"\n";
-    output<<"Simulation Parameters:\n";
-    output << "xlength : "<<xlength<<"\n";
-    output << "ylength : "<<ylength<<"\n";
-    output << "nu : "<<nu<<"\n";
-    output << "t_end : "<<_t_end<<"\n";
-    output << "dt : "<<dt<<"\n";
-    output << "omg : "<<omg<<"\n";
-    output << "eps : "<<eps<<"\n";
-    output << "tau : "<<tau<<"\n";
-    output << "gamma : "<<gamma<<"\n";
-    output << "dt_value : "<<_output_freq<<"\n";
-    output << "UI : "<<UI<<"\n";
-    output << "VI : "<<VI<<"\n";
-    output << "GX : "<<GX<<"\n";
-    output << "GY : "<<GY<<"\n";
-    output << "PI : "<<PI<<"\n";
-    output << "itermax : "<<itermax<<"\n";
-    output << "imax : "<<imax<<"\n";
-    output << "jmax : "<<jmax<<"\n";
+    output << "Log File for : " << dat_file_name << "\n";
+    output << "Simulation Parameters:\n";
+    output << "xlength : " << xlength << "\n";
+    output << "ylength : " << ylength << "\n";
+    output << "nu : " << nu << "\n";
+    output << "t_end : " << _t_end << "\n";
+    output << "dt : " << dt << "\n";
+    output << "omg : " << omg << "\n";
+    output << "eps : " << eps << "\n";
+    output << "tau : " << tau << "\n";
+    output << "gamma : " << gamma << "\n";
+    output << "dt_value : " << _output_freq << "\n";
+    output << "UI : " << UI << "\n";
+    output << "VI : " << VI << "\n";
+    output << "GX : " << GX << "\n";
+    output << "GY : " << GY << "\n";
+    output << "PI : " << PI << "\n";
+    output << "itermax : " << itermax << "\n";
+    output << "imax : " << imax << "\n";
+    output << "jmax : " << jmax << "\n";
     return output;
 }
