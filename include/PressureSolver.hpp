@@ -232,7 +232,7 @@ class MultiGrid : public PressureSolver {
      * @param boundaries to be used
      * @return double the MSE residual value
      */
-    virtual double solve(Fields &field, Grid &grid, const std::vector<std::unique_ptr<Boundary>> &boundaries);
+    virtual double solve(Fields &field, Grid &grid, const std::vector<std::unique_ptr<Boundary>> &boundaries) = 0;
 
   protected:
     int _smoothing_pre_recur, _smoothing_post_recur, _max_multi_grid_level;
@@ -248,7 +248,7 @@ class MultiGrid : public PressureSolver {
      * @return Matrix<double> p matrix for the next level
      */
     virtual Matrix<double> recursiveMultiGridCycle(Fields &field, Matrix<double> p, Matrix<double> rs,
-                                                   int current_level, double dx, double dy);
+                                                   int current_level, double dx, double dy) = 0;
     /**
      * @brief Smoother function for the Multi grid scheme using Jacobi iterations (Ref Sci comp 2 for more details on
      * why Jacobi)
@@ -323,6 +323,6 @@ class MultiGridVCycle : public MultiGrid {
      * @param dy y-stepsize of the problem
      * @return Matrix<double> p matrix for the next level
      */
-    Matrix<double> recursiveMultiGridCycle(Fields &field, Matrix<double> p, Matrix<double> rs, int current_level,
-                                           double dx, double dy);
+    virtual Matrix<double> recursiveMultiGridCycle(Fields &field, Matrix<double> p, Matrix<double> rs,
+                                                   int current_level, double dx, double dy);
 };
