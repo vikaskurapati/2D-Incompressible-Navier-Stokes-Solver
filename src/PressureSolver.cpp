@@ -181,6 +181,8 @@ GradientMethods::GradientMethods(Fields &field){
     residual = Matrix<double>(imax, jmax, 0.0);
 }
 
+ConjugateGradient::ConjugateGradient(Fields &field): GradientMethods(field){}
+
 double ConjugateGradient::solve(Fields &field, Grid &grid, const std::vector<std::unique_ptr<Boundary>> &boundaries) {
 
     auto pressure = field.p_matrix();

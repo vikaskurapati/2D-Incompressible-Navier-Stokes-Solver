@@ -175,7 +175,7 @@ class GradientMethods : public PressureSolver {
      *
      * @param field to be used for calculations
      */
-    explicit GradientMethods(Fields &field);
+    GradientMethods(Fields &field);
 
     virtual ~GradientMethods() = default;
 
@@ -196,6 +196,7 @@ class ConjugateGradient : public GradientMethods {
      * @param field to be used for calculations
      */
     ConjugateGradient(Fields &field);
+    
     virtual ~ConjugateGradient() = default;
     /**
      * @brief Solver the pressure equation on given field using Conjugate Gradient iterations
