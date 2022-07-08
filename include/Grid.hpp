@@ -29,7 +29,7 @@ class Grid {
      * @param[in] cell size in y direction
      *
      */
-    Grid(std::string geom_name, Domain &domain);
+    Grid(std::string geom_name, Domain &domain, int process_rank = 0, int size = 1, int iproc = 1, int jproc = 1);
 
     /// index based cell access
     Cell cell(int i, int j) const;
@@ -72,23 +72,69 @@ class Grid {
      */
     const std::vector<Cell *> &fixed_wall_cells() const;
 
+    /**
+     * @brief Access inflow cells
+     *
+     * @param[out] vector of inflow cells
+     */
     const std::vector<Cell *> &inflow_cells() const;
 
+    /**
+     * @brief Access outflow cells
+     *
+     * @param[out] vector of outflow cells
+     */
     const std::vector<Cell *> &outflow_cells() const;
 
+    /**
+     * @brief Access hot fixed wall cells
+     *
+     * @param[out] vector of hot fixed wall cells
+     */
     const std::vector<Cell *> &hot_fixed_wall_cells() const;
 
+    /**
+     * @brief Access cold fixed wall cells
+     *
+     * @param[out] vector of cold fixed wall cells
+     */
     const std::vector<Cell *> &cold_fixed_wall_cells() const;
 
+    /**
+     * @brief Access adiabatc fixed wall cells
+     *
+     * @param[out] vector of adiabatic fixed wall cells
+     */
     const std::vector<Cell *> &adiabatic_fixed_wall_cells() const;
 
-    const int get_inflow_wall_id() const { return inflow_wall_id; };
+    /**
+     * @brief Get the inflow wall id object
+     *
+     * @return const int of inflow wall id
+     */
 
-    const int get_outflow_wall_id() const { return outflow_wall_id; };
+    int get_inflow_wall_id() const { return inflow_wall_id; };
 
-    const int get_hot_fixed_wall_id() const { return hot_fixed_wall_id; };
+    /**
+     * @brief Get the outflow wall id object
+     *
+     * @return const int of outflow wall id
+     */
+    int get_outflow_wall_id() const { return outflow_wall_id; };
 
-    const int get_cold_fixed_wall_id() const { return cold_fixed_wall_id; };
+    /**
+     * @brief Get the hot fixed wall id object
+     *
+     * @return const int of hot fixed wall id
+     */
+    int get_hot_fixed_wall_id() const { return hot_fixed_wall_id; };
+
+    /**
+     * @brief Get the cold fixed wall id object
+     *
+     * @return const int of cold fixed wall id
+     */
+    int get_cold_fixed_wall_id() const { return cold_fixed_wall_id; };
 
   private:
     /**@brief Default lid driven cavity case generator
@@ -122,6 +168,12 @@ class Grid {
     int cold_fixed_wall_id;
     int adiabatic_fixed_wall_id;
     int moving_wall_id;
+
+    // MPI Additions
+    int _process_rank;
+    int _size;
+    int _iproc;
+    int _jproc;
 
     Domain _domain;
 
