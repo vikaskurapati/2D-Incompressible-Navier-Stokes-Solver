@@ -173,7 +173,7 @@ double Richardson::solve(Fields &field, Grid &grid, const std::vector<std::uniqu
     return rloc;
 }
 
-GradientMethods::GradientMethods(Fields &field){
+GradientMethods::GradientMethods(Fields &field) {
     int imax = field.p_matrix().imax();
     int jmax = field.p_matrix().jmax();
 
@@ -181,7 +181,7 @@ GradientMethods::GradientMethods(Fields &field){
     residual = Matrix<double>(imax, jmax, 0.0);
 }
 
-ConjugateGradient::ConjugateGradient(Fields &field): GradientMethods(field){}
+ConjugateGradient::ConjugateGradient(Fields &field) : GradientMethods(field) {}
 
 double ConjugateGradient::solve(Fields &field, Grid &grid, const std::vector<std::unique_ptr<Boundary>> &boundaries) {
 
@@ -279,7 +279,9 @@ double ConjugateGradient::solve(Fields &field, Grid &grid, const std::vector<std
     return rloc;
 }
 
-MultiGridVCycle::MultiGridVCycle(int iter1, int iter2) : _smoothing_pre_recur(iter1), _smoothing_post_recur(iter2) {}
+MultiGrid::MultiGrid(int iter1, int iter2) : _smoothing_pre_recur(iter1), _smoothing_post_recur(iter2) {}
+
+MultiGridVCycle::MultiGridVCycle(int iter1, int iter2) : MultiGrid(iter1, iter2) {}
 
 double MultiGridVCycle::solve(Fields &field, Grid &grid, const std::vector<std::unique_ptr<Boundary>> &boundaries) {
 
@@ -294,7 +296,7 @@ double MultiGridVCycle::solve(Fields &field, Grid &grid, const std::vector<std::
     auto p = field.p_matrix();
     auto rs = field.rs_matrix();
 
-    field.p_matrix() = recursiveMultiGridVCycle(field, p, rs, _max_multi_grid_level, dx, dy);
+    field.p_matrix() = recursiveMultiGridCycle(field, p, rs, _max_multi_grid_level, dx, dy);
 
     double rloc = 0.0;
     for (auto currentCell : grid.fluid_cells()) {
@@ -309,16 +311,12 @@ double MultiGridVCycle::solve(Fields &field, Grid &grid, const std::vector<std::
     return rloc;
 };
 
-Matrix<double> MultiGridVCycle::recursiveMultiGridVCycle(Fields &field, Matrix<double> p, Matrix<double> rs,
-                                                         int current_level, double dx, double dy) {
+Matrix<double> MultiGridVCycle::recursiveMultiGridCycle(Fields &field, Matrix<double> p, Matrix<double> rs,
+                                                        int current_level, double dx, double dy) {
     if (current_level == 0) {
-        // std::cout << "Here At Last Level" << std::endl<< std::endl;
         p = smoother(p, rs, 5 * (_smoothing_pre_recur + _smoothing_post_recur), dx, dy);
         return p;
     } else {
-        // if(current_level == 3){
-        //     std::cout << "Here" << std::endl<< std::endl;
-        // }
         p = smoother(p, rs, _smoothing_pre_recur, dx, dy);
 
         Matrix<double> residual_ = residual(p, rs, dx, dy);
@@ -326,7 +324,7 @@ Matrix<double> MultiGridVCycle::recursiveMultiGridVCycle(Fields &field, Matrix<d
 
         auto error = Matrix<double>(coarse_residual.imax(), coarse_residual.jmax(), 0.0);
 
-        error = recursiveMultiGridVCycle(field, error, coarse_residual, current_level - 1, 2 * dx, 2 * dy);
+        error = recursiveMultiGridCycle(field, error, coarse_residual, current_level - 1, 2 * dx, 2 * dy);
 
         auto error_fine = prolongator(error);
 
@@ -341,7 +339,7 @@ Matrix<double> MultiGridVCycle::recursiveMultiGridVCycle(Fields &field, Matrix<d
     }
 }
 
-Matrix<double> MultiGridVCycle::residual(Matrix<double> p, Matrix<double> rs, double dx, double dy) {
+Matrix<double> MultiGrid::residual(Matrix<double> p, Matrix<double> rs, double dx, double dy) {
     int imax = p.imax() - 2;
     int jmax = p.jmax() - 2;
 
@@ -358,7 +356,7 @@ Matrix<double> MultiGridVCycle::residual(Matrix<double> p, Matrix<double> rs, do
     return residuals;
 }
 
-Matrix<double> MultiGridVCycle::smoother(Matrix<double> error, Matrix<double> rs, int iter, double dx, double dy) {
+Matrix<double> MultiGrid::smoother(Matrix<double> error, Matrix<double> rs, int iter, double dx, double dy) {
     int imax = error.imax() - 2;
     int jmax = error.jmax() - 2;
 
@@ -397,7 +395,7 @@ Matrix<double> MultiGridVCycle::smoother(Matrix<double> error, Matrix<double> rs
     return error_new;
 }
 
-Matrix<double> MultiGridVCycle::restrictor(Matrix<double> fine) {
+Matrix<double> MultiGrid::restrictor(Matrix<double> fine) {
     int imax = fine.imax() / 2 - 1;
     int jmax = fine.jmax() / 2 - 1;
 
@@ -429,7 +427,7 @@ Matrix<double> MultiGridVCycle::restrictor(Matrix<double> fine) {
     return coarse;
 }
 
-Matrix<double> MultiGridVCycle::prolongator(Matrix<double> coarse) {
+Matrix<double> MultiGrid::prolongator(Matrix<double> coarse) {
     int imax = coarse.imax() - 2;
     int jmax = coarse.jmax() - 2;
 
