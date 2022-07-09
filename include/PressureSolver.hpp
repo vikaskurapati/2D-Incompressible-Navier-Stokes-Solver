@@ -24,12 +24,20 @@ class PressureSolver {
     virtual double solve(Fields &field, Grid &grid, const std::vector<std::unique_ptr<Boundary>> &boundaries) = 0;
 };
 
+class StationarySolver : public PressureSolver {
+  public:
+    StationarySolver() = default;
+    virtual ~StationarySolver() = default;
+
+    virtual double solve(Fields &field, Grid &grid, const std::vector<std::unique_ptr<Boundary>> &boundaries) = 0;
+};
+
 /**
  * @brief Successive Over-Relaxation algorithm for solution of pressure Poisson
  * equation
  *
  */
-class SOR : public PressureSolver {
+class SOR : public StationarySolver {
   public:
     SOR() = default;
 
@@ -60,15 +68,9 @@ class SOR : public PressureSolver {
  *
  */
 
-class Jacobi : public PressureSolver {
+class Jacobi : public StationarySolver {
   public:
     Jacobi() = default;
-
-    /**
-     * @brief Constructor of Jacobi solver
-     *
-     * @param[in] relaxation factor
-     */
 
     virtual ~Jacobi() = default;
 
@@ -86,7 +88,7 @@ class Jacobi : public PressureSolver {
  * @brief Weighted Jacobi iterations to solve the Pressure Poisson Equation
  *
  */
-class WeightedJacobi : public PressureSolver {
+class WeightedJacobi : public StationarySolver {
   public:
     WeightedJacobi() = default;
 
@@ -117,7 +119,7 @@ class WeightedJacobi : public PressureSolver {
  * @brief Gauss Seidel iteration to solve the Pressure Poisson Equation
  *
  */
-class GaussSeidel : public PressureSolver {
+class GaussSeidel : public StationarySolver {
   public:
     GaussSeidel() = default;
 
@@ -135,7 +137,12 @@ class GaussSeidel : public PressureSolver {
     virtual double solve(Fields &field, Grid &grid, const std::vector<std::unique_ptr<Boundary>> &boundaries);
 };
 
-class Richardson : public PressureSolver {
+/**
+ * @brief This iterator isn't suggested as it is extremely unstable.
+ * USE AT YOUR OWN RISK
+ *
+ */
+class Richardson : public StationarySolver {
   public:
     Richardson() = default;
 
@@ -160,7 +167,27 @@ class Richardson : public PressureSolver {
     double _omega{1.0};
 };
 
-class ConjugateGradient : public PressureSolver {
+class GradientMethods : public PressureSolver {
+  public:
+    GradientMethods() = default;
+    /**
+     * @brief Construct a new Gradient Methods object
+     *
+     * @param field to be used for calculations
+     */
+    GradientMethods(Fields &field);
+
+    virtual ~GradientMethods() = default;
+
+    virtual double solve(Fields &field, Grid &grid, const std::vector<std::unique_ptr<Boundary>> &boundaries) = 0;
+
+  protected:
+    int iter = 0;
+    Matrix<double> residual;
+    Matrix<double> d;
+};
+
+class ConjugateGradient : public GradientMethods {
   public:
     ConjugateGradient() = default;
     /**
@@ -169,6 +196,7 @@ class ConjugateGradient : public PressureSolver {
      * @param field to be used for calculations
      */
     ConjugateGradient(Fields &field);
+
     virtual ~ConjugateGradient() = default;
     /**
      * @brief Solver the pressure equation on given field using Conjugate Gradient iterations
@@ -180,53 +208,47 @@ class ConjugateGradient : public PressureSolver {
      */
 
     virtual double solve(Fields &field, Grid &grid, const std::vector<std::unique_ptr<Boundary>> &boundaries);
-
-  private:
-    int iter = 0;
-    Matrix<double> d;
-    Matrix<double> residual;
 };
 
-class MultiGridVCycle : public PressureSolver {
+class MultiGrid : public PressureSolver {
   public:
-    MultiGridVCycle() = default;
+    MultiGrid() = default;
 
     /**
-     * @brief Construct a new Multi Grid V Cycle object
+     * @brief Construct a new Multi Grid object
      *
-     * @param smoothing_pre_recur number of smoothing iterations at the beginning of the solver
-     * @param smoothing_post_recur number of smoothing iteratoins after the multigrid step
+     * @param smoothing_pre_recur number of smoothing iterations before the multigrid step
+     * @param smoothing_post_recur number of smoothing iterations after the multigrid step
      */
 
-    MultiGridVCycle(int smoothing_pre_recur, int smoothing_post_recur);
+    MultiGrid(int smoothing_pre_recur, int smoothing_post_recur);
 
-    virtual ~MultiGridVCycle() = default;
+    virtual ~MultiGrid() = default;
     /**
-     * @brief Solver the pressure equation on given field using Multigrid V cycle
+     * @brief Solve the pressure equation on given field using the Multigrid scheme
      *
      * @param field to be used
      * @param grid to be used
-     * @param boundaries used
+     * @param boundaries to be used
      * @return double the MSE residual value
      */
-    virtual double solve(Fields &field, Grid &grid, const std::vector<std::unique_ptr<Boundary>> &boundaries);
+    virtual double solve(Fields &field, Grid &grid, const std::vector<std::unique_ptr<Boundary>> &boundaries) = 0;
 
-  private:
+  protected:
     int _smoothing_pre_recur, _smoothing_post_recur, _max_multi_grid_level;
-
     /**
-     * @brief Recursive call to solve the multigrid problem
+     * @brief Recursive call for the Multigrid scheme
      *
-     * @param field to be used
-     * @param p pressure matrix to be prolongated or restricted
-     * @param rs right hand side to be prolongated or restricted
-     * @param current_level which level the multigrid calculations are
-     * @param dx x-stepsize of the problem
-     * @param dy y-stepsize of the problem
+     * @param field at that particular multigrid level
+     * @param p pressure at that particular multigrid level
+     * @param rs rhs vector at that particular multigrid level
+     * @param current_level in the multigrid scheme
+     * @param dx x step-size of that multigrid level
+     * @param dy y step-size of that multigrid level
      * @return Matrix<double> p matrix for the next level
      */
-    Matrix<double> recursiveMultiGridVCycle(Fields &field, Matrix<double> p, Matrix<double> rs, int current_level,
-                                            double dx, double dy);
+    virtual Matrix<double> recursiveMultiGridCycle(Fields &field, Matrix<double> p, Matrix<double> rs,
+                                                   int current_level, double dx, double dy) = 0;
     /**
      * @brief Smoother function for the Multi grid scheme using Jacobi iterations (Ref Sci comp 2 for more details on
      * why Jacobi)
@@ -263,4 +285,44 @@ class MultiGridVCycle : public PressureSolver {
      * @return Matrix<double> Fine values of the error on the fine grid
      */
     Matrix<double> prolongator(Matrix<double> coarse);
+};
+
+class MultiGridVCycle : public MultiGrid {
+  public:
+    MultiGridVCycle() = default;
+
+    /**
+     * @brief Construct a new Multi Grid V Cycle object
+     *
+     * @param smoothing_pre_recur number of smoothing iterations before the multigrid step
+     * @param smoothing_post_recur number of smoothing iteratoins after the multigrid step
+     */
+
+    MultiGridVCycle(int smoothing_pre_recur, int smoothing_post_recur);
+
+    virtual ~MultiGridVCycle() = default;
+    /**
+     * @brief Solve the pressure equation on given field using Multigrid V cycle
+     *
+     * @param field to be used
+     * @param grid to be used
+     * @param boundaries used
+     * @return double the MSE residual value
+     */
+    virtual double solve(Fields &field, Grid &grid, const std::vector<std::unique_ptr<Boundary>> &boundaries);
+
+  private:
+    /**
+     * @brief Recursive call to solve the multigrid problem
+     *
+     * @param field to be used
+     * @param p pressure matrix to be prolongated or restricted
+     * @param rs right hand side to be prolongated or restricted
+     * @param current_level which level the multigrid calculations are
+     * @param dx x-stepsize of the problem
+     * @param dy y-stepsize of the problem
+     * @return Matrix<double> p matrix for the next level
+     */
+    virtual Matrix<double> recursiveMultiGridCycle(Fields &field, Matrix<double> p, Matrix<double> rs,
+                                                   int current_level, double dx, double dy);
 };
