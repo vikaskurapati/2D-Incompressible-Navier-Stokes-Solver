@@ -398,8 +398,6 @@ std::ofstream Case::output_log(std::string dat_file_name, int myrank) {
     file.close();
     std::string str = _dict_name + "_run_log_" + std::to_string(myrank) + ".log";
     std::stringstream stream;
-    // stream<<std::fixed<<std::setprecision(2)<<_pressure_solver->return_omega();
-    // str += stream.str();
     std::ofstream output(str);
     output << "Log File for : " << dat_file_name << "\n";
     output << "Simulation Parameters:\n";
