@@ -287,6 +287,44 @@ class MultiGrid : public PressureSolver {
     Matrix<double> prolongator(Matrix<double> coarse);
 };
 
+class MultiGridWCycle : public MultiGrid {
+  public:
+    MultiGridWCycle() = default;
+    /**
+     * @brief Construct a new Multi Grid W Cycle object
+     *
+     * @param smoothing_pre_recur number of smoothing iterations before the multigrid step
+     * @param smoothing_post_recur number of smoothing iterations after the multigrid step
+     */
+    MultiGridWCycle(int smoothing_pre_recur, int smoothing_post_recur);
+
+    virtual ~MultiGridWCycle() = default;
+    /**
+     * @brief Solve the pressure poisson equation on given field using Multigrid W cycle
+     *
+     * @param field to be used
+     * @param grid to be used
+     * @param boundaries used
+     * @return double the MSE residual value
+     */
+    virtual double solve(Fields &field, Grid &grid, const std::vector<std::unique_ptr<Boundary>> &boundaries);
+
+  private:
+    /**
+     * @brief Recursive call to solve the multigrid problem
+     *
+     * @param field to be used
+     * @param p matrix to be prolongated or restricted
+     * @param rs right hand side to prolongated or restricted
+     * @param current_level level multigrid calculations are being done
+     * @param dx x-step size of the level
+     * @param dy y-step size of the level
+     * @return Matrix<double> p matrix for the next level
+     */
+    virtual Matrix<double> recursiveMultiGridCycle(Fields &field, Matrix<double> p, Matrix<double> rs,
+                                                   int current_level, double dx, double dy);
+};
+
 class MultiGridVCycle : public MultiGrid {
   public:
     MultiGridVCycle() = default;

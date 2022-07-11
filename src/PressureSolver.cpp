@@ -283,6 +283,35 @@ MultiGrid::MultiGrid(int iter1, int iter2) : _smoothing_pre_recur(iter1), _smoot
 
 MultiGridVCycle::MultiGridVCycle(int iter1, int iter2) : MultiGrid(iter1, iter2) {}
 
+MultiGridWCycle::MultiGridWCycle(int iter1, int iter2) : MultiGrid(iter1, iter2) {}
+
+double MultiGridWCycle::solve(Fields &field, Grid &grid, const std::vector<std::unique_ptr<Boundary>> &boundaries) {
+
+    double dx = grid.dx();
+    double dy = grid.dy();
+
+    int imax = grid.imax();
+    int jmax = grid.jmax();
+
+    _max_multi_grid_level = std::log2((imax < jmax) ? imax : jmax) - 1;
+
+    auto p = field.p_matrix();
+    auto rs = field.rs_matrix();
+    field.p_matrix() = recursiveMultiGridCycle(field, p, rs, _max_multi_grid_level, dx, dy);
+
+    double rloc = 0.0;
+    for (auto currentCell : grid.fluid_cells()) {
+        int i = currentCell->i();
+        int j = currentCell->j();
+        if (i != 0 && j != 0 && i != grid.domain().size_x + 1 && j != grid.domain().size_y + 1) {
+            double val = Discretization::laplacian(field.p_matrix(), i, j) - field.rs(i, j);
+            rloc += (val * val);
+        }
+    }
+
+    return rloc;
+}
+
 double MultiGridVCycle::solve(Fields &field, Grid &grid, const std::vector<std::unique_ptr<Boundary>> &boundaries) {
 
     double dx = grid.dx();
@@ -311,6 +340,55 @@ double MultiGridVCycle::solve(Fields &field, Grid &grid, const std::vector<std::
     return rloc;
 };
 
+Matrix<double> MultiGridWCycle::recursiveMultiGridCycle(Fields &field, Matrix<double> p, Matrix<double> rs,
+                                                        int current_level, double dx, double dy) {
+
+    p = smoother(p, rs, _smoothing_pre_recur, dx, dy);
+    Matrix<double> residual_ = residual(p, rs, dx, dy);
+    auto coarse_residual = restrictor(residual_);
+
+    auto error = Matrix<double>(coarse_residual.imax(), coarse_residual.jmax(), 0.0);
+
+    // https://en.wikipedia.org/wiki/Multigrid_method -> Algorithm from here
+    if (current_level == 0) {
+        p = smoother(p, rs, 5 * (_smoothing_pre_recur + _smoothing_post_recur), dx, dy);
+        return p;
+    } else {
+        error = recursiveMultiGridCycle(field, error, coarse_residual, current_level - 1, 2 * dx, 2 * dy);
+    }
+    auto error_fine = prolongator(error);
+
+    for (int i = 0; i < error_fine.imax(); ++i) {
+        for (int j = 0; j < error_fine.jmax(); ++j) {
+            p(i, j) = p(i, j) + error_fine(i, j);
+        }
+    }
+
+    p = smoother(p, rs, _smoothing_post_recur, dx, dy);
+
+    residual_ = residual(p, rs, dx, dy);
+
+    coarse_residual = restrictor(residual_);
+
+    if (current_level == 0) {
+        p = smoother(p, rs, 5 * (_smoothing_post_recur + _smoothing_pre_recur), dx, dy);
+        return p;
+    } else {
+        error = recursiveMultiGridCycle(field, error, coarse_residual, current_level - 1, 2 * dx, 2 * dy);
+    }
+
+    error_fine = prolongator(error);
+
+    for (int i = 0; i < error_fine.imax(); ++i) {
+        for (int j = 0; j < error_fine.jmax(); ++j) {
+            p(i, j) = p(i, j) + error_fine(i, j);
+        }
+    }
+
+    p = smoother(p, rs, _smoothing_post_recur, dx, dy);
+
+    return p;
+}
 Matrix<double> MultiGridVCycle::recursiveMultiGridCycle(Fields &field, Matrix<double> p, Matrix<double> rs,
                                                         int current_level, double dx, double dy) {
     if (current_level == 0) {
