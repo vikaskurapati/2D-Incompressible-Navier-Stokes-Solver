@@ -33,6 +33,9 @@ class Grid {
 
     /// index based cell access
     Cell cell(int i, int j) const;
+    
+    // get and modify cell matrix
+    Matrix<Cell> &get_cells();
 
     /// access number of cells in x direction
     int imax() const;

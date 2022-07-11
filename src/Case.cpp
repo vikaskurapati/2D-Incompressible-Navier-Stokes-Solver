@@ -105,6 +105,7 @@ Case::Case(std::string file_name, int argn, char **args, int process_rank, int s
                 if (var == "jproc") file >> _jproc;
                 // Project Additions
                 if (var == "solver") file >> _solver_type;
+                if (var == "MultiGrid_levels") file >> _num_levels;
             }
         }
     }
@@ -166,6 +167,44 @@ Case::Case(std::string file_name, int argn, char **args, int process_rank, int s
 
     _discretization = Discretization(domain.dx, domain.dy, gamma);
 
+    // Construct boundaries
+    std::vector<std::unique_ptr<Boundary>> creating_boundaries;
+
+    if (not _grid.fixed_wall_cells().empty()) {
+        creating_boundaries.push_back(std::make_unique<FixedWallBoundary>(_grid.fixed_wall_cells()));
+    }
+
+    if (not _grid.moving_wall_cells().empty()) {
+        creating_boundaries.push_back(
+            std::make_unique<MovingWallBoundary>(_grid.moving_wall_cells(), LidDrivenCavity::wall_velocity));
+    }
+
+    if (not _grid.hot_fixed_wall_cells().empty()) {
+        creating_boundaries.push_back(std::make_unique<FixedWallBoundary>(_grid.hot_fixed_wall_cells(), Th));
+    }
+
+    if (not _grid.cold_fixed_wall_cells().empty()) {
+        creating_boundaries.push_back(std::make_unique<FixedWallBoundary>(_grid.cold_fixed_wall_cells(), Tc));
+    }
+
+    if (not _grid.adiabatic_fixed_wall_cells().empty()) {
+        creating_boundaries.push_back(std::make_unique<AdiabaticWallBoundary>(_grid.adiabatic_fixed_wall_cells()));
+    }
+
+    if (not _grid.inflow_cells().empty()) {
+        creating_boundaries.push_back(std::make_unique<InFlow>(_grid.inflow_cells(),
+                                                       std::map<int, double>{{PlaneShearFlow::inflow_wall_id, UI}}));
+    }
+
+    if (not _grid.outflow_cells().empty()) {
+        creating_boundaries.push_back(std::make_unique<OutFlow>(_grid.outflow_cells(), 0.0));
+    }
+
+    std::vector<Matrix<Cell>> grids;
+    
+    grids.push_back(_grid.get_cells());
+    _boundaries.push_back(std::move(creating_boundaries));
+
     if (_solver_type == "Jacobi") {
         _pressure_solver = std::make_unique<Jacobi>();
     }
@@ -187,6 +226,71 @@ Case::Case(std::string file_name, int argn, char **args, int process_rank, int s
     }
 
     else if (_solver_type == "MultiGridV") {
+        if (_num_levels > (std::log2((imax < jmax) ? imax : jmax) - 1)) {
+            _num_levels = std::log2((imax < jmax) ? imax : jmax) - 1;
+        }
+
+        for (int k = 0; k < _num_levels - 1; k++) {
+            int imax = grids[k].imax() / 2 - 1;
+            int jmax = grids[k].jmax() / 2 - 1;
+
+            Matrix<Cell> next_grid = Matrix<Cell>(imax + 2, jmax + 2);
+
+            for (int i = 1; i <= imax; ++i) {
+                for (int j = 1; j <= jmax; ++j) {
+                    std::vector<Cell> cell_vector;
+                    cell_vector.push_back(grids[k](2 * i, 2 * j));
+                    cell_vector.push_back(grids[k](2 * i + 1, 2 * j));
+                    cell_vector.push_back(grids[k](2 * i, 2 * j + 1));
+                    cell_vector.push_back(grids[k](2 * i + 1, 2 * j + 1));
+                    Cell number = cell_vector[0];
+                    Cell mode = number;
+                    int count = 1;
+                    int countMode = 1;
+
+                    for (int i = 1; i < size; i++) {
+                        if (cell_vector[i].type() == number.type()) { // count occurrences of the current number
+                            ++count;
+                        } else { // now this is a different number
+                            if (count > countMode) {
+                                countMode = count; // mode is the biggest ocurrences
+                                mode = number;
+                            }
+                            count = 1; // reset count for the new number
+                            number = cell_vector[i];
+                        }
+                    }
+                    next_grid(i, j) = mode;
+                }
+            }
+
+            for (int i = 0; i <= imax; ++i) {
+                next_grid(i, 0) = grids[k](2 * i, 0);
+                next_grid(i, jmax + 1) = grids[k](2 * i, grids[k].jmax() - 1);
+            }
+
+            for (int j = 0; j <= jmax; ++j) {
+                next_grid(0, j) = grids[k](0, 2 * j);
+                next_grid(imax + 1, j) = grids[k](grids[k].imax() - 1, 2 * j);
+            }
+            next_grid(imax + 1, jmax + 1) = grids[k](grids[k].imax() - 1, grids[k].jmax() - 1);
+            grids.push_back(next_grid);
+
+            _boundaries.push_back(std::move(multigrid_boundary(next_grid)));
+        }
+
+        // int imax = grids[_num_levels - 2].imax() - 2;
+        // int jmax = grids[_num_levels - 2].jmax() - 2;
+
+        // std::cout << "Here Surya: " << std::endl;
+        // for (int j = jmax + 1; j >= 0; --j) {
+        //     for (int i = 0; i <= imax + 1; ++i) {
+        //         std::cout << grids[_num_levels - 2](i, j).wall_id() << " ";
+        //     }
+        //     std::cout << std::endl;
+        // }
+        // std::cout << "Here Surya: " << std::endl;
+
         _pressure_solver = std::make_unique<MultiGridVCycle>(5, 5);
     }
 
@@ -197,37 +301,6 @@ Case::Case(std::string file_name, int argn, char **args, int process_rank, int s
 
     _max_iter = itermax;
     _tolerance = eps;
-    // Construct boundaries
-    if (not _grid.fixed_wall_cells().empty()) {
-        _boundaries.push_back(std::make_unique<FixedWallBoundary>(_grid.fixed_wall_cells()));
-    }
-
-    if (not _grid.moving_wall_cells().empty()) {
-        _boundaries.push_back(
-            std::make_unique<MovingWallBoundary>(_grid.moving_wall_cells(), LidDrivenCavity::wall_velocity));
-    }
-
-    if (not _grid.hot_fixed_wall_cells().empty()) {
-        _boundaries.push_back(std::make_unique<FixedWallBoundary>(_grid.hot_fixed_wall_cells(), Th));
-    }
-
-    if (not _grid.cold_fixed_wall_cells().empty()) {
-        _boundaries.push_back(std::make_unique<FixedWallBoundary>(_grid.cold_fixed_wall_cells(), Tc));
-    }
-
-    if (not _grid.adiabatic_fixed_wall_cells().empty()) {
-        _boundaries.push_back(std::make_unique<AdiabaticWallBoundary>(_grid.adiabatic_fixed_wall_cells()));
-    }
-
-    if (not _grid.inflow_cells().empty()) {
-        _boundaries.push_back(std::make_unique<InFlow>(_grid.inflow_cells(),
-                                                       std::map<int, double>{{PlaneShearFlow::inflow_wall_id, UI}}));
-    }
-
-    if (not _grid.outflow_cells().empty()) {
-        _boundaries.push_back(std::make_unique<OutFlow>(_grid.outflow_cells(), 0.0));
-    }
-
     if (_process_rank == 0) {
         output_log(_datfile_name, nu, UI, VI, PI, GX, GY, xlength, ylength, dt, imax, jmax, gamma, omg, tau, itermax,
                    eps, TI, alpha, beta, num_walls, Tc, Th, my_rank);
@@ -329,8 +402,8 @@ void Case::simulate(int my_rank) {
         iter_count = 0;
         dt = _field.calculate_dt(_grid);
         dt = Communication::reduce_min(dt);
-        for (size_t i = 0; i < _boundaries.size(); i++) {
-            _boundaries[i]->apply(_field);
+        for (size_t i = 0; i < _boundaries[0].size(); i++) {
+            _boundaries[0][i]->apply(_field);
         }
         if (Case::_energy_eq == "on") {
             _field.calculate_temperatures(_grid);
@@ -344,8 +417,8 @@ void Case::simulate(int my_rank) {
         Communication::communicate(_field.g_matrix(), domain, _process_rank, _iproc);
         _field.calculate_rs(_grid);
         while (err > _tolerance && iter_count < _max_iter) {
-            err = _pressure_solver->solve(_field, _grid, _boundaries);
-            for (const auto &boundary : _boundaries) {
+            err = _pressure_solver->solve(_field, _grid, _boundaries[0]);
+            for (const auto &boundary : _boundaries[0]) {
                 boundary->apply_pressures(_field);
             }
             // weighted addition of residuals
@@ -652,4 +725,10 @@ void Case::output_log(std::string dat_file_name, double nu, double UI, double VI
     }
 
     output.close();
+}
+
+std::vector<std::unique_ptr<Boundary>> Case::multigrid_boundary(Matrix<Cell> grid){
+    std::vector<std::unique_ptr<Boundary>> answer;
+    
+    return answer;
 }

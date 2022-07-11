@@ -69,13 +69,14 @@ class Case {
     int _size{1};
 
     std::string _solver_type;
+    int _num_levels{2};
 
     Fields _field;
     Grid _grid;
     Domain domain;
     Discretization _discretization;
     std::unique_ptr<PressureSolver> _pressure_solver;
-    std::vector<std::unique_ptr<Boundary>> _boundaries;
+    std::vector<std::vector<std::unique_ptr<Boundary>>> _boundaries;
 
     /// Solver convergence tolerance
     double _tolerance;
@@ -109,4 +110,13 @@ class Case {
                     double Tc, double Th, int my_rank);
     std::ofstream simulation_log_file(int my_rank = 0);
     void build_domain(Domain &domain, int imax_domain, int jmax_domain);
+
+    // Project Addition
+    /**
+     * @brief Function to give boundary for every level of multi grid
+     * 
+     * @param grid A matrix of cells to create the boundaries
+     * @return std::vector<std::unique_ptr<Boundary>> 
+     */
+    std::vector<std::unique_ptr<Boundary>> multigrid_boundary(Matrix<Cell> grid);
 };

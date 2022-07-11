@@ -51,6 +51,10 @@ void Grid::build_lid_driven_cavity(std::string geom_name) {
     assign_cell_types(geometry_data, geom_name);
 }
 
+Matrix<Cell> &Grid::get_cells(){
+    return _cells;
+}
+
 void Grid::assign_cell_types(std::vector<std::vector<int>> &geometry_data, std::string geom_name) {
 
     int i = 0;

@@ -51,7 +51,8 @@ itermax      500
 eps          0.001
 omg          0.66
 gamma        0.5
-solver       SOR    
+solver       MultiGridV
+MultiGrid_levels   3  
 
 #--------------------------------------------
 #     kinematic viscosity
