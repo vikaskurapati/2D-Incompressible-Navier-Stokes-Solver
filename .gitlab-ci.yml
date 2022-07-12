@@ -5,7 +5,7 @@ default:
     - export DEBIAN_FRONTEND=noninteractive 
     - apt-get update
     - apt-get upgrade -y
-    - apt-get install -y build-essential cmake libvtk7-dev libfmt-dev clang-format unifdef
+    - apt-get install -y build-essential cmake libvtk7-dev libfmt-dev clang-format-11 unifdef
 
 check-format-job:
   stage: build
