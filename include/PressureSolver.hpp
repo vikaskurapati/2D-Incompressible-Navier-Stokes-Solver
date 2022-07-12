@@ -221,7 +221,8 @@ class MultiGrid : public PressureSolver {
      * @param smoothing_post_recur number of smoothing iterations after the multigrid step
      */
 
-    MultiGrid(int smoothing_pre_recur, int smoothing_post_recur);
+    MultiGrid(int max_multi_grid_level, int smoothing_pre_recur, int smoothing_post_recur, std::vector<Grid> multigrid_grid, 
+              std::vector<Fields> multigrid_field, std::vector<std::vector<std::unique_ptr<Boundary>>> multigrid_boundaries);
 
     virtual ~MultiGrid() = default;
     /**
@@ -236,6 +237,10 @@ class MultiGrid : public PressureSolver {
 
   protected:
     int _smoothing_pre_recur, _smoothing_post_recur, _max_multi_grid_level;
+    std::vector<Grid> _multigrid_grid; 
+    std::vector<Fields> _multigrid_field; 
+    std::vector<std::vector<std::unique_ptr<Boundary>>> _multigrid_boundaries;
+
     /**
      * @brief Recursive call for the Multigrid scheme
      *
@@ -260,7 +265,7 @@ class MultiGrid : public PressureSolver {
      * @param dy y-stepsize of the problem
      * @return Matrix<double> smoothed error matrix
      */
-    Matrix<double> smoother(Matrix<double> error, Matrix<double> residual, int iter, double dx, double dy);
+    Matrix<double> smoother(Matrix<double> error, Matrix<double> residual, int level, int iter, double dx, double dy, std::vector<std::unique_ptr<Boundary>> multigrid_boundary);
     /**
      * @brief Method to calculate the residual based on the laplacian operator
      *
@@ -298,7 +303,8 @@ class MultiGridVCycle : public MultiGrid {
      * @param smoothing_post_recur number of smoothing iteratoins after the multigrid step
      */
 
-    MultiGridVCycle(int smoothing_pre_recur, int smoothing_post_recur);
+    MultiGridVCycle(int max_multi_grid_level, int smoothing_pre_recur, int smoothing_post_recur, std::vector<Grid> multigrid_grid, 
+                    std::vector<Fields> multigrid_field, std::vector<std::vector<std::unique_ptr<Boundary>>> multigrid_boundaries);
 
     virtual ~MultiGridVCycle() = default;
     /**

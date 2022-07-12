@@ -76,7 +76,13 @@ class Case {
     Domain domain;
     Discretization _discretization;
     std::unique_ptr<PressureSolver> _pressure_solver;
-    std::vector<std::vector<std::unique_ptr<Boundary>>> _boundaries;
+    std::vector<std::unique_ptr<Boundary>> _boundaries;
+
+    // Project Additions (Creating new domains, grids, fields, boundsries for MultiGrid)
+    std::vector<Domain> multigrid_domain;
+    std::vector<Grid> multigrid_grid;
+    std::vector<Fields> multigrid_field;
+    std::vector<std::vector<std::unique_ptr<Boundary>>> multigrid_boundaries;
 
     /// Solver convergence tolerance
     double _tolerance;
@@ -118,5 +124,7 @@ class Case {
      * @param grid A matrix of cells to create the boundaries
      * @return std::vector<std::unique_ptr<Boundary>> 
      */
-    std::vector<std::unique_ptr<Boundary>> multigrid_boundary(Matrix<Cell> grid);
+    void create_multigrid_variables();
+
+    void get_coarser_grid(Grid &grid, int level);
 };
