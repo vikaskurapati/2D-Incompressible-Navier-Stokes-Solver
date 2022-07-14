@@ -3,7 +3,9 @@
 #include <cmath>
 #include <iostream>
 
+
 double Jacobi::solve(Fields &field, Grid &grid, const std::vector<std::unique_ptr<Boundary>> &boundaries) {
+    
     double dx = grid.dx();
     double dy = grid.dy();
 
@@ -184,7 +186,7 @@ GradientMethods::GradientMethods(Fields &field) {
 ConjugateGradient::ConjugateGradient(Fields &field) : GradientMethods(field) {}
 
 double ConjugateGradient::solve(Fields &field, Grid &grid, const std::vector<std::unique_ptr<Boundary>> &boundaries) {
-
+   
     auto pressure = field.p_matrix();
     auto rhs = field.rs_matrix();
 

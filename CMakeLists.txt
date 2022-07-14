@@ -50,6 +50,7 @@ endif()
 
 # Add include directory
 target_include_directories(fluidchen PUBLIC include)
+target_include_directories(fluidchen PUBLIC /home/kartik/Desktop/hypre/src/hypre/include)
 
 if(NOT DEFINED CMAKE_INSTALL_PREFIX)
   set(CMAKE_INSTALL_PREFIX /usr/local)
@@ -58,6 +59,7 @@ endif()
 # if you use external libraries you have to link them like
 target_link_libraries(fluidchen PRIVATE MPI::MPI_CXX)
 target_link_libraries(fluidchen PRIVATE ${VTK_LIBRARIES})
+target_link_libraries(fluidchen PRIVATE -L/home/kartik/Desktop/hypre/src/hypre/lib -lHYPRE)
 
 install(TARGETS fluidchen DESTINATION ${CMAKE_INSTALL_PREFIX}/bin)
 # If you write tests, you can include your subdirectory (in this case tests) as done here

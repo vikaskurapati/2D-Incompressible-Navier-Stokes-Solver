@@ -31,6 +31,172 @@ namespace filesystem = std::experimental::filesystem;
 #include <vtkStructuredGridWriter.h>
 #include <vtkTuple.h>
 
+#include "HYPRE_krylov.h"
+#include "HYPRE.h"
+#include "HYPRE_parcsr_ls.h"
+
+
+double AGM_Solve(Fields &field, Grid &grid, const std::vector<std::unique_ptr<Boundary>> &boundaries){
+    
+    double dx = grid.dx();
+    double dy = grid.dy();
+
+    int myid, num_procs;
+
+    //int *argc; char **argv;
+    //MPI_Init(argc, &argv);
+    //MPI_Comm_rank(MPI_COMM_WORLD, &myid);
+    //MPI_Comm_size(MPI_COMM_WORLD, &num_procs);
+    
+    HYPRE_Init();
+
+    HYPRE_IJMatrix A;
+    HYPRE_ParCSRMatrix parcsr_A;
+    HYPRE_IJVector b;
+    HYPRE_ParVector par_b;
+    HYPRE_IJVector x;
+    HYPRE_ParVector par_x;
+
+    HYPRE_Solver solver, precond;
+
+    //HYPRE_StructGridCreate(MPI_COMM_WORLD, 2, &Grid);
+    //HYPRE_StructGridAssemble(Grid);
+    //HYPRE_StructGridSetExtents(Grid, ilower, iupper);
+    
+    
+    int nnz;
+    int N_rows = grid.fluid_cells().size();
+    int X_lim = grid.domain().size_x;
+    int Y_lim = grid.domain().size_y;
+    
+    double *values = (double *) malloc(5 * sizeof(double));
+    int *cols = (int *) malloc(5 * sizeof(int));
+    int *tmp = (int *) malloc(2 * sizeof(int));
+
+    int ilower = 0;
+    int iupper = N_rows;
+    HYPRE_IJMatrixCreate(MPI_COMM_WORLD, ilower, iupper, ilower, iupper, &A);
+
+    /* Choose a parallel csr format storage (see the User's Manual) */
+    HYPRE_IJMatrixSetObjectType(A, HYPRE_PARCSR);
+
+    /* Initialize before setting coefficients */
+    HYPRE_IJMatrixInitialize(A);
+
+    std::cout<<"N_rows: "<<N_rows<<"\n";
+    for(int i=0; i<N_rows; i++){
+        nnz = 0;
+        if(i-X_lim >=0){
+            cols[nnz] = i-X_lim;
+            values[nnz] = 1.0/(dy*dy);
+            nnz++;
+        }
+        if(i+X_lim < N_rows){
+            cols[nnz] = i + X_lim;
+            values[nnz] = 1.0/(dy*dy);
+            nnz++;
+        }
+        if(i+1<N_rows){
+            cols[nnz] = i+1;
+            values[nnz] = 1.0/(dx*dx);
+            nnz++;
+        }
+        if(i-1>=0){
+            cols[nnz] = i-1;
+            values[nnz] = 1.0/(dx*dx);
+            nnz++;
+        }
+        cols[nnz] = i;
+        values[nnz] = - 2.0/(dx*dx) - 2.0/(dy*dy);
+
+        //Set the values of row i in A
+        tmp[0] = nnz;
+        tmp[1] = i;
+        HYPRE_IJMatrixSetValues(A, 1, &tmp[0], &tmp[1], cols, values);
+    }
+    free(values);
+    free(cols);
+    free(tmp);
+
+    /* Assemble after setting the coefficients */
+    HYPRE_IJMatrixAssemble(A);
+
+    /* Get the parcsr matrix object to use */
+    HYPRE_IJMatrixGetObject(A, (void**) &parcsr_A);
+
+    /* Create the rhs and solution */
+    HYPRE_IJVectorCreate(MPI_COMM_WORLD, ilower, iupper, &b);
+    HYPRE_IJVectorSetObjectType(b, HYPRE_PARCSR);
+    HYPRE_IJVectorInitialize(b);
+
+    HYPRE_IJVectorCreate(MPI_COMM_WORLD, ilower, iupper, &x);
+    HYPRE_IJVectorSetObjectType(x, HYPRE_PARCSR);
+    HYPRE_IJVectorInitialize(x);
+    double *b_values, *x_values;
+    int *rows;
+    
+    b_values = (double *)calloc(N_rows , sizeof(double));
+    x_values = (double *)calloc(N_rows , sizeof(double));
+    rows = (int *)calloc(N_rows , sizeof(int));
+    int cell_num=0;
+    for(auto cell : grid.fluid_cells()){
+        int i = cell->i();
+        int j = cell->j();
+        b_values[cell_num] = field.rs(i,j);
+        x_values[cell_num] = field.p(i,j);
+        rows[cell_num] = cell_num;
+        cell_num++;
+    }    
+    HYPRE_IJVectorSetValues(b, N_rows, rows, b_values);
+    HYPRE_IJVectorSetValues(x, N_rows, rows, x_values);
+   
+    free(x_values);
+    free(b_values);
+    free(rows);
+
+    HYPRE_IJVectorAssemble(b);
+    /*  As with the matrix, for testing purposes, one may wish to read in a rhs:
+        HYPRE_IJVectorRead( <filename>, MPI_COMM_WORLD,
+                                    HYPRE_PARCSR, &b );
+        as an alternative to the
+        following sequence of HYPRE_IJVectors calls:
+        Create, SetObjectType, Initialize, SetValues, and Assemble
+    */
+    HYPRE_IJVectorGetObject(b, (void **) &par_b);
+
+    HYPRE_IJVectorAssemble(x);
+    HYPRE_IJVectorGetObject(x, (void **) &par_x);
+    
+    
+    HYPRE_BoomerAMGCreate(&solver);
+
+    HYPRE_BoomerAMGSetOldDefault(solver); /* Falgout coarsening with modified classical interpolaiton */
+    HYPRE_BoomerAMGSetRelaxType(solver, 3);   /* G-S/Jacobi hybrid relaxation */
+    HYPRE_BoomerAMGSetRelaxOrder(solver, 1);   /* uses C/F relaxation */
+    HYPRE_BoomerAMGSetNumSweeps(solver, 1);   /* Sweeeps on each level */
+    HYPRE_BoomerAMGSetMaxLevels(solver, 20);  /* maximum number of levels */
+    HYPRE_BoomerAMGSetTol(solver, 1e-7);      /* conv. tolerance */
+
+        
+    
+    /* Now setup and solve! */
+    HYPRE_BoomerAMGSetup(solver, parcsr_A, par_b, par_x);
+    HYPRE_BoomerAMGSolve(solver, parcsr_A, par_b, par_x);
+
+    std::cout<<"Fine uptill before AMG Create!"<<std::endl;
+    double final_res_norm=0;
+    int num_iterations;
+    /* Run info - needed logging turned on */
+    HYPRE_BoomerAMGGetNumIterations(solver, &num_iterations);
+    HYPRE_BoomerAMGGetFinalRelativeResidualNorm(solver, &final_res_norm);
+
+    // /* Destroy solver */
+    HYPRE_BoomerAMGDestroy(solver);
+
+    HYPRE_Finalize();
+    return final_res_norm;
+}
+
 Case::~Case() { Communication::finalize(); }
 
 Case::Case(std::string file_name, int argn, char **args, int process_rank, int size, int my_rank) {
@@ -344,7 +510,10 @@ void Case::simulate(int my_rank) {
         Communication::communicate(_field.g_matrix(), domain, _process_rank, _iproc);
         _field.calculate_rs(_grid);
         while (err > _tolerance && iter_count < _max_iter) {
-            err = _pressure_solver->solve(_field, _grid, _boundaries);
+            //err = _pressure_solver->solve(_field, _grid, _boundaries);
+            err = AGM_Solve(_field, _grid, _boundaries);
+            std::cout<<err<<"\n";
+            exit;
             for (const auto &boundary : _boundaries) {
                 boundary->apply_pressures(_field);
             }

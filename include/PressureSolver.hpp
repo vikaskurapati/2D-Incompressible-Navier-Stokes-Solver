@@ -5,6 +5,8 @@
 #include "Fields.hpp"
 #include "Grid.hpp"
 #include <utility>
+
+
 /**
  * @brief Abstract class for pressure Poisson equation solver
  *
@@ -326,3 +328,5 @@ class MultiGridVCycle : public MultiGrid {
     virtual Matrix<double> recursiveMultiGridCycle(Fields &field, Matrix<double> p, Matrix<double> rs,
                                                    int current_level, double dx, double dy);
 };
+
+//double AGM_Solve(Fields &field, Grid &grid, const std::vector<std::unique_ptr<Boundary>> &boundaries);
