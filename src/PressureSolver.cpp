@@ -321,7 +321,7 @@ void MultiGrid::create_boundaries() {
 
         if (not _multigrid_grid[k].inflow_cells().empty()) {
             creating_boundaries.push_back(std::make_unique<InFlow>(
-                _multigrid_grid[k].inflow_cells(), std::map<int, double>{{PlaneShearFlow::inflow_wall_id, 0.0}}));
+                _multigrid_grid[k].inflow_cells(), std::map<int, double>{{PlaneShearFlow::inflow_wall_id, 1.0}}));
         }
 
         if (not _multigrid_grid[k].outflow_cells().empty()) {
@@ -361,26 +361,14 @@ double MultiGridVCycle::solve(Fields &field, Grid &grid, const std::vector<std::
 Matrix<double> MultiGridVCycle::recursiveMultiGridCycle(Fields &field, Matrix<double> p, Matrix<double> rs,
                                                         int current_level, double dx, double dy) {
     if (current_level == _max_multi_grid_level - 1) {
-        // std::cout << "Here At last Level" << std::endl;
-        // std::cout << _max_multi_grid_level << std::endl;
-        // std::cout << "Here at last Level "<< current_level<< std::endl;
-
-        // _multigrid_field[current_level].p_matrix() =
-        //     smoother(_multigrid_field[current_level].p_matrix(), rs, current_level,
-        //              5 * (_smoothing_pre_recur + _smoothing_post_recur), dx, dy, _multigrid_boundaries[current_level]);
 
         p = smoother(p, rs, current_level, 5*(_smoothing_pre_recur + _smoothing_post_recur), dx, dy, _multigrid_boundaries[current_level]);
         
         return p;
 
     } else {
-        // std::cout << "Here at "<< current_level<< std::endl;
 
         p = smoother(p, rs, current_level, _smoothing_pre_recur, dx, dy, _multigrid_boundaries[current_level]);
-
-        // _multigrid_field[current_level].p_matrix() =
-        //     smoother(_multigrid_field[current_level].p_matrix(), rs, current_level, _smoothing_pre_recur, dx, dy,
-        //              _multigrid_boundaries[current_level]);
 
         Matrix<double> residual_ = residual(p, rs, dx, dy);
 
@@ -392,19 +380,22 @@ Matrix<double> MultiGridVCycle::recursiveMultiGridCycle(Fields &field, Matrix<do
 
         auto error_fine = prolongator(error);
 
-        // auto p = _multigrid_field[current_level].p_matrix();
-
         for (int i = 0; i < error_fine.imax(); ++i) {
             for (int j = 0; j < error_fine.jmax(); ++j) {
                 p(i, j) = p(i, j) + error_fine(i, j);
+                //                 if(std::isnan(p(i,j)))
+                // {
+                //     // std::cout << coeff << std::endl;
+                //     // std::cout << sor_helper << std::endl;
+                //     // std::cout << rs(i,j) << std::endl;
+                //     std::cout << "Here" << std::endl;
+                //     // std::cout << it << std::endl;
+                //     exit(0);
+                // }
             }
         }
 
         p = smoother(p, rs, current_level, _smoothing_post_recur, dx, dy, _multigrid_boundaries[current_level]);
-
-        // _multigrid_field[current_level].p_matrix() =
-        //     smoother(_multigrid_field[current_level].p_matrix(), rs, current_level, _smoothing_post_recur, dx, dy,
-        //              _multigrid_boundaries[current_level]);
 
         return p;
     }
@@ -441,36 +432,34 @@ Matrix<double> MultiGrid::smoother(Matrix<double> error, Matrix<double> rs, int 
                 auto sor_helper =
                     (error(i + 1, j) + error(i - 1, j)) / (dx * dx) + (error(i, j + 1) + error(i, j - 1)) / (dy * dy);
                 error_new(i, j) = coeff * (sor_helper - rs(i, j));
+                
             }
         }
 
         // Applying boundary conditions
-        // _multigrid_field[level].p_matrix() = error_new;
-        // for (const auto &boundary : _multigrid_boundaries[level]) {
-        //     boundary->apply_pressures(_multigrid_field[level]);
-        // }
+        _multigrid_field[level].p_matrix() = error_new;
+        for (const auto &boundary : _multigrid_boundaries[level]) {
+            boundary->apply_pressures(_multigrid_field[level]);
+        }
+
         // error_new = _multigrid_field[level].p_matrix();
+        // std::cout << error_new(imax+1, jmax/2) << " ";
 
 
-        for (int i = 1; i <= imax; i++) {
-            error_new(i, 0) = error_new(i, 1);
-            error_new(i, jmax + 1) = error_new(i, jmax);
-        }
+        // for (int i = 1; i <= imax; i++) {
+        //     error_new(i, 0) = error_new(i, 1);
+        //     error_new(i, jmax + 1) = error_new(i, jmax);
+        // }
 
-        for (int j = 1; j <= jmax; j++) {
-            error_new(0, j) = error_new(1, j);
-            error_new(imax + 1, j) = -error_new(imax, j);
-        }
+        // for (int j = 1; j <= jmax; j++) {
+        //     error_new(0, j) = error_new(1, j);
+        //     error_new(imax + 1, j) = -error_new(imax, j);
+        // }
 
         error = error_new;
     }
 
-    // how to apply the boundary conditions here
-    //  option 1: run for only Lid Driven Cavity. We know boundary conditions as per the limits
-    //  option 2: don't apply boundary conditions after every smoothing. Only once per every multi grid iteration. The
-    //  solution may be very wrong option 3: create new fields, new grid matrices, new boundaries etc. for every
-    //  multigrid level. May be memory intensive and not sure if there is enough time to explore this and make it work.
-    //  Discuss with Makis and make changes.
+    // Karthik do some work 
 
     return error_new;
 }
