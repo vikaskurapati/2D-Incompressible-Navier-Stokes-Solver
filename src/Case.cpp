@@ -265,7 +265,8 @@ Case::Case(std::string file_name, int argn, char **args, int process_rank, int s
 
         create_multigrid_variables();
 
-        _pressure_solver = std::make_unique<MultiGridVCycle>(_num_levels, 5, 5, multigrid_grid, multigrid_field, multigrid_boundaries);
+
+        _pressure_solver = std::make_unique<MultiGridVCycle>(_num_levels, 5, 5, multigrid_grid, multigrid_field);
     }
 
     else {

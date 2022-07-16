@@ -144,6 +144,9 @@ class Fields {
     /// getting energy equation status on or off
     bool get_energy_eq() { return _energy_eq == "on"; };
 
+    int imax(){return _P.imax();};
+    int jmax(){return _P.jmax();};
+
   private:
     /// x-velocity matrix
     Matrix<double> _U;

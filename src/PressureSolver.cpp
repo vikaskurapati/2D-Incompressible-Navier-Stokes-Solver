@@ -280,15 +280,57 @@ double ConjugateGradient::solve(Fields &field, Grid &grid, const std::vector<std
 }
 
 MultiGrid::MultiGrid(int user_levels, int iter1, int iter2, std::vector<Grid> multigrid_grid,
-                     std::vector<Fields> multigrid_field,
-                     std::vector<std::vector<std::unique_ptr<Boundary>>> multigrid_boundaries)
+                     std::vector<Fields> multigrid_field)
     : _max_multi_grid_level(user_levels), _smoothing_pre_recur(iter1), _smoothing_post_recur(iter2),
-      _multigrid_grid(multigrid_grid), _multigrid_field(multigrid_field), _multigrid_boundaries(multigrid_boundaries) {}
+      _multigrid_grid(multigrid_grid), _multigrid_field(multigrid_field) {
+    create_boundaries();
+}
 
 MultiGridVCycle::MultiGridVCycle(int user_levels, int iter1, int iter2, std::vector<Grid> multigrid_grid,
-                                 std::vector<Fields> multigrid_field,
-                                 std::vector<std::vector<std::unique_ptr<Boundary>>> multigrid_boundaries)
-    : MultiGrid(user_levels, iter1, iter2, multigrid_grid, multigrid_field, multigrid_boundaries) {}
+                                 std::vector<Fields> multigrid_field)
+    : MultiGrid(user_levels, iter1, iter2, multigrid_grid, multigrid_field) {}
+
+void MultiGrid::create_boundaries() {
+    for (int k = 0; k < _max_multi_grid_level; k++) {
+        // Construct boundaries
+        std::vector<std::unique_ptr<Boundary>> creating_boundaries;
+
+        if (not _multigrid_grid[k].fixed_wall_cells().empty()) {
+            creating_boundaries.push_back(std::make_unique<FixedWallBoundary>(_multigrid_grid[k].fixed_wall_cells()));
+        }
+
+        if (not _multigrid_grid[k].moving_wall_cells().empty()) {
+            creating_boundaries.push_back(std::make_unique<MovingWallBoundary>(_multigrid_grid[k].moving_wall_cells(),
+                                                                               LidDrivenCavity::wall_velocity));
+        }
+
+        if (not _multigrid_grid[k].hot_fixed_wall_cells().empty()) {
+            creating_boundaries.push_back(
+                std::make_unique<FixedWallBoundary>(_multigrid_grid[k].hot_fixed_wall_cells(), 0.0));
+        }
+
+        if (not _multigrid_grid[k].cold_fixed_wall_cells().empty()) {
+            creating_boundaries.push_back(
+                std::make_unique<FixedWallBoundary>(_multigrid_grid[k].cold_fixed_wall_cells(), 0.0));
+        }
+
+        if (not _multigrid_grid[k].adiabatic_fixed_wall_cells().empty()) {
+            creating_boundaries.push_back(
+                std::make_unique<AdiabaticWallBoundary>(_multigrid_grid[k].adiabatic_fixed_wall_cells()));
+        }
+
+        if (not _multigrid_grid[k].inflow_cells().empty()) {
+            creating_boundaries.push_back(std::make_unique<InFlow>(
+                _multigrid_grid[k].inflow_cells(), std::map<int, double>{{PlaneShearFlow::inflow_wall_id, 0.0}}));
+        }
+
+        if (not _multigrid_grid[k].outflow_cells().empty()) {
+            creating_boundaries.push_back(std::make_unique<OutFlow>(_multigrid_grid[k].outflow_cells(), 0.0));
+        }
+        // std::cout << creating_boundaries.size() << std::endl;
+        _multigrid_boundaries.push_back(std::move(creating_boundaries));
+    }
+}
 
 double MultiGridVCycle::solve(Fields &field, Grid &grid, const std::vector<std::unique_ptr<Boundary>> &boundaries) {
 
@@ -298,12 +340,10 @@ double MultiGridVCycle::solve(Fields &field, Grid &grid, const std::vector<std::
     int imax = grid.imax(); // accessing only fluid cells
     int jmax = grid.jmax(); // accessing only fluid cells
 
-    _max_multi_grid_level = std::log2((imax < jmax) ? imax : jmax) - 1; // maximum number of levels
-
     auto p = field.p_matrix();
     auto rs = field.rs_matrix();
 
-    field.p_matrix() = recursiveMultiGridCycle(field, p, rs, _max_multi_grid_level, dx, dy);
+    field.p_matrix() = recursiveMultiGridCycle(field, p, rs, 0, dx, dy);
 
     double rloc = 0.0;
     for (auto currentCell : grid.fluid_cells()) {
@@ -320,41 +360,53 @@ double MultiGridVCycle::solve(Fields &field, Grid &grid, const std::vector<std::
 
 Matrix<double> MultiGridVCycle::recursiveMultiGridCycle(Fields &field, Matrix<double> p, Matrix<double> rs,
                                                         int current_level, double dx, double dy) {
-    if (current_level == 0) {
-        _multigrid_field[_max_multi_grid_level - 1 - current_level].p_matrix() =
-            smoother(_multigrid_field[_max_multi_grid_level - 1 - current_level].p_matrix(), rs,
-                     _max_multi_grid_level - 1 - current_level, 5 * (_smoothing_pre_recur + _smoothing_post_recur), dx,
-                     dy, _multigrid_boundaries[_max_multi_grid_level - 1 - current_level]);
-        return p;
-    } else {
-        _multigrid_field[_max_multi_grid_level - 1 - current_level].p_matrix() =
-            smoother(_multigrid_field[_max_multi_grid_level - 1 - current_level].p_matrix(), rs,
-                     _max_multi_grid_level - 1 - current_level, _smoothing_pre_recur, dx, dy,
-                     _multigrid_boundaries[_max_multi_grid_level - 1 - current_level]);
+    if (current_level == _max_multi_grid_level - 1) {
+        // std::cout << "Here At last Level" << std::endl;
+        // std::cout << _max_multi_grid_level << std::endl;
+        // std::cout << "Here at last Level "<< current_level<< std::endl;
 
-        Matrix<double> residual_ =
-            residual(_multigrid_field[_max_multi_grid_level - 1 - current_level].p_matrix(), rs, dx, dy);
+        // _multigrid_field[current_level].p_matrix() =
+        //     smoother(_multigrid_field[current_level].p_matrix(), rs, current_level,
+        //              5 * (_smoothing_pre_recur + _smoothing_post_recur), dx, dy, _multigrid_boundaries[current_level]);
+
+        p = smoother(p, rs, current_level, 5*(_smoothing_pre_recur + _smoothing_post_recur), dx, dy, _multigrid_boundaries[current_level]);
+        
+        return p;
+
+    } else {
+        // std::cout << "Here at "<< current_level<< std::endl;
+
+        p = smoother(p, rs, current_level, _smoothing_pre_recur, dx, dy, _multigrid_boundaries[current_level]);
+
+        // _multigrid_field[current_level].p_matrix() =
+        //     smoother(_multigrid_field[current_level].p_matrix(), rs, current_level, _smoothing_pre_recur, dx, dy,
+        //              _multigrid_boundaries[current_level]);
+
+        Matrix<double> residual_ = residual(p, rs, dx, dy);
+
         auto coarse_residual = restrictor(residual_);
 
         auto error = Matrix<double>(coarse_residual.imax(), coarse_residual.jmax(), 0.0);
 
-        error = recursiveMultiGridCycle(field, error, coarse_residual, current_level - 1, 2 * dx, 2 * dy);
+        error = recursiveMultiGridCycle(_multigrid_field[current_level+1], error, coarse_residual, current_level + 1, 2 * dx, 2 * dy);
 
         auto error_fine = prolongator(error);
 
-        auto p = _multigrid_field[_max_multi_grid_level - 1 - current_level].p_matrix();
+        // auto p = _multigrid_field[current_level].p_matrix();
+
         for (int i = 0; i < error_fine.imax(); ++i) {
             for (int j = 0; j < error_fine.jmax(); ++j) {
                 p(i, j) = p(i, j) + error_fine(i, j);
             }
         }
-        _multigrid_field[_max_multi_grid_level - 1 - current_level].p_matrix() = p;
 
-        _multigrid_field[_max_multi_grid_level - 1 - current_level].p_matrix() =
-            smoother(_multigrid_field[_max_multi_grid_level - 1 - current_level].p_matrix(), rs,
-                     _max_multi_grid_level - 1 - current_level, _smoothing_post_recur, dx, dy,
-                     _multigrid_boundaries[_max_multi_grid_level - 1 - current_level]);
-        return _multigrid_field[_max_multi_grid_level - 1 - current_level].p_matrix();
+        p = smoother(p, rs, current_level, _smoothing_post_recur, dx, dy, _multigrid_boundaries[current_level]);
+
+        // _multigrid_field[current_level].p_matrix() =
+        //     smoother(_multigrid_field[current_level].p_matrix(), rs, current_level, _smoothing_post_recur, dx, dy,
+        //              _multigrid_boundaries[current_level]);
+
+        return p;
     }
 }
 
@@ -376,7 +428,7 @@ Matrix<double> MultiGrid::residual(Matrix<double> p, Matrix<double> rs, double d
 }
 
 Matrix<double> MultiGrid::smoother(Matrix<double> error, Matrix<double> rs, int level, int iter, double dx, double dy,
-                                   std::vector<std::unique_ptr<Boundary>> multigrid_boundary) {
+                                   const std::vector<std::unique_ptr<Boundary>> &multigrid_boundary) {
     int imax = error.imax() - 2;
     int jmax = error.jmax() - 2;
 
@@ -393,22 +445,22 @@ Matrix<double> MultiGrid::smoother(Matrix<double> error, Matrix<double> rs, int 
         }
 
         // Applying boundary conditions
-        _multigrid_field[level].p_matrix() = error_new;
-        for (const auto &boundary : _multigrid_boundaries[level]) {
-                boundary->apply_pressures(_multigrid_field[level]);
+        // _multigrid_field[level].p_matrix() = error_new;
+        // for (const auto &boundary : _multigrid_boundaries[level]) {
+        //     boundary->apply_pressures(_multigrid_field[level]);
+        // }
+        // error_new = _multigrid_field[level].p_matrix();
+
+
+        for (int i = 1; i <= imax; i++) {
+            error_new(i, 0) = error_new(i, 1);
+            error_new(i, jmax + 1) = error_new(i, jmax);
         }
-        error_new = _multigrid_field[level].p_matrix();
-        
 
-        // for (int i = 1; i <= imax; i++) {
-        //     error_new(i, 0) = error_new(i, 1);
-        //     error_new(i, jmax + 1) = error_new(i, jmax);
-        // }
-
-        // for (int j = 1; j <= jmax; j++) {
-        //     error_new(0, j) = error_new(1, j);
-        //     error_new(imax + 1, j) = error_new(imax, j);
-        // }
+        for (int j = 1; j <= jmax; j++) {
+            error_new(0, j) = error_new(1, j);
+            error_new(imax + 1, j) = -error_new(imax, j);
+        }
 
         error = error_new;
     }

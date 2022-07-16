@@ -221,8 +221,8 @@ class MultiGrid : public PressureSolver {
      * @param smoothing_post_recur number of smoothing iterations after the multigrid step
      */
 
-    MultiGrid(int max_multi_grid_level, int smoothing_pre_recur, int smoothing_post_recur, std::vector<Grid> multigrid_grid, 
-              std::vector<Fields> multigrid_field, std::vector<std::vector<std::unique_ptr<Boundary>>> multigrid_boundaries);
+    MultiGrid(int max_multi_grid_level, int smoothing_pre_recur, int smoothing_post_recur,
+              std::vector<Grid> multigrid_grid, std::vector<Fields> multigrid_field);
 
     virtual ~MultiGrid() = default;
     /**
@@ -237,9 +237,11 @@ class MultiGrid : public PressureSolver {
 
   protected:
     int _smoothing_pre_recur, _smoothing_post_recur, _max_multi_grid_level;
-    std::vector<Grid> _multigrid_grid; 
-    std::vector<Fields> _multigrid_field; 
+    std::vector<Grid> _multigrid_grid;
+    std::vector<Fields> _multigrid_field;
     std::vector<std::vector<std::unique_ptr<Boundary>>> _multigrid_boundaries;
+
+    void create_boundaries();
 
     /**
      * @brief Recursive call for the Multigrid scheme
@@ -254,6 +256,7 @@ class MultiGrid : public PressureSolver {
      */
     virtual Matrix<double> recursiveMultiGridCycle(Fields &field, Matrix<double> p, Matrix<double> rs,
                                                    int current_level, double dx, double dy) = 0;
+
     /**
      * @brief Smoother function for the Multi grid scheme using Jacobi iterations (Ref Sci comp 2 for more details on
      * why Jacobi)
@@ -265,7 +268,8 @@ class MultiGrid : public PressureSolver {
      * @param dy y-stepsize of the problem
      * @return Matrix<double> smoothed error matrix
      */
-    Matrix<double> smoother(Matrix<double> error, Matrix<double> residual, int level, int iter, double dx, double dy, std::vector<std::unique_ptr<Boundary>> multigrid_boundary);
+    Matrix<double> smoother(Matrix<double> error, Matrix<double> residual, int level, int iter, double dx, double dy,
+                            const std::vector<std::unique_ptr<Boundary>> &multigrid_boundary);
     /**
      * @brief Method to calculate the residual based on the laplacian operator
      *
@@ -303,8 +307,8 @@ class MultiGridVCycle : public MultiGrid {
      * @param smoothing_post_recur number of smoothing iteratoins after the multigrid step
      */
 
-    MultiGridVCycle(int max_multi_grid_level, int smoothing_pre_recur, int smoothing_post_recur, std::vector<Grid> multigrid_grid, 
-                    std::vector<Fields> multigrid_field, std::vector<std::vector<std::unique_ptr<Boundary>>> multigrid_boundaries);
+    MultiGridVCycle(int max_multi_grid_level, int smoothing_pre_recur, int smoothing_post_recur,
+                    std::vector<Grid> multigrid_grid, std::vector<Fields> multigrid_field);
 
     virtual ~MultiGridVCycle() = default;
     /**

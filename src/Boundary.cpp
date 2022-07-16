@@ -120,7 +120,7 @@ void FixedWallBoundary::apply(Fields &field) {
 }
 
 void FixedWallBoundary::apply_pressures(Fields &field) {
-    int i, j;
+    int i, j;    
     for (const auto &cell : _cells) {
         i = cell->i();
         j = cell->j();
