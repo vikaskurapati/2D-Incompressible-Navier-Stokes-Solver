@@ -63,12 +63,15 @@ class Case {
     /// Solution file outputting frequency
     double _output_freq;
 
+    // Worksheet 3 Additions
     int _iproc{1};
     int _jproc{1};
     int _process_rank{0};
     int _size{1};
 
+    // Project Additions
     std::string _solver_type;
+    int _num_levels{2};
 
     Fields _field;
     Grid _grid;

@@ -105,6 +105,7 @@ Case::Case(std::string file_name, int argn, char **args, int process_rank, int s
                 if (var == "jproc") file >> _jproc;
                 // Project Additions
                 if (var == "solver") file >> _solver_type;
+                if (var == "MultiGrid_levels") file >> _num_levels;
             }
         }
     }
@@ -187,7 +188,11 @@ Case::Case(std::string file_name, int argn, char **args, int process_rank, int s
     }
 
     else if (_solver_type == "MultiGridV") {
-        _pressure_solver = std::make_unique<MultiGridVCycle>(5, 5);
+        if (_num_levels > (std::log2((imax < jmax) ? imax : jmax) - 1)) {
+            _num_levels = std::log2((imax < jmax) ? imax : jmax) - 1;
+        }
+
+        _pressure_solver = std::make_unique<MultiGridVCycle>(_num_levels, 5, 5);
     }
 
     else {
@@ -364,7 +369,7 @@ void Case::simulate(int my_rank) {
         t += dt;
         timestep += 1;
         if (_process_rank == 0) {
-            output << std::setprecision(4) << std::fixed;
+            output << std::setprecision(6) << std::fixed;
         }
         if (t - output_counter * _output_freq >= 0) {
             Case::output_vtk(timestep, my_rank);
