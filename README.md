@@ -100,6 +100,14 @@ The user should maintain consistency between the .pgm file with obstacles clearl
 
 It is upto the user to ensure there are no forbidden cells in the .pgm file. i.e., no obstacle cells should have more than 2 neighboring fluid cells. The script checks for that and exits throwing an error in case there are more than 2 neighboring fluid cells for an obstacle cell or if there is a fluid cell in the ghost layer as we're not dealing with periodic conditions as of now.
 
+### Extra Parameters for solver implementations
+1. solver input to use a different solver. Default solver is "SOR".
+2. MultiGrid_levels to define number of levels of coarsening in Multigrid methods. Default is "2"
+
+#### Limitations when using MultiGrid solvers
+
+MultiGrid methods for now, run only with the Lid-Driven Cavity. Please use another solver in case you want to run another problem.
+
 ## Special systems
 
 ### macOS
