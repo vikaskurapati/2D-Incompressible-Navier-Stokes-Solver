@@ -279,7 +279,8 @@ double ConjugateGradient::solve(Fields &field, Grid &grid, const std::vector<std
     return rloc;
 }
 
-MultiGrid::MultiGrid(int user_levels, int iter1, int iter2) : _max_multi_grid_level(user_levels), _smoothing_pre_recur(iter1), _smoothing_post_recur(iter2) {}
+MultiGrid::MultiGrid(int user_levels, int iter1, int iter2)
+    : _max_multi_grid_level(user_levels), _smoothing_pre_recur(iter1), _smoothing_post_recur(iter2) {}
 
 MultiGridVCycle::MultiGridVCycle(int user_levels, int iter1, int iter2) : MultiGrid(user_levels, iter1, iter2) {}
 

@@ -335,7 +335,7 @@ class MultiGridVCycle : public MultiGrid {
     /**
      * @brief Construct a new Multi Grid V Cycle object
      *
-     * 
+     *
      * @param max_multi_grid_level maximum level for multigrid method
      * @param smoothing_pre_recur number of smoothing iterations before the multigrid step
      * @param smoothing_post_recur number of smoothing iteratoins after the multigrid step
