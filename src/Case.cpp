@@ -103,6 +103,9 @@ Case::Case(std::string file_name, int argn, char **args, int process_rank, int s
                 // Worksheet 3 Additions
                 if (var == "iproc") file >> _iproc;
                 if (var == "jproc") file >> _jproc;
+                // Project Additions
+                if (var == "solver") file >> _solver_type;
+                if (var == "MultiGrid_levels") file >> _num_levels;
             }
         }
     }
@@ -165,7 +168,40 @@ Case::Case(std::string file_name, int argn, char **args, int process_rank, int s
                     PI, TI, GX, GY, _process_rank, _size);
 
     _discretization = Discretization(domain.dx, domain.dy, gamma);
-    _pressure_solver = std::make_unique<SOR>(omg);
+
+    if (_solver_type == "Jacobi") {
+        _pressure_solver = std::make_unique<Jacobi>();
+    }
+
+    else if (_solver_type == "WeightedJacobi") {
+        _pressure_solver = std::make_unique<WeightedJacobi>(omg);
+    }
+
+    else if (_solver_type == "GaussSeidel") {
+        _pressure_solver = std::make_unique<GaussSeidel>();
+    }
+
+    else if (_solver_type == "Richardson") {
+        _pressure_solver = std::make_unique<Richardson>(omg);
+    }
+
+    else if (_solver_type == "ConjugateGradient") {
+        _pressure_solver = std::make_unique<ConjugateGradient>(_field);
+    }
+
+    else if (_solver_type == "MultiGridV") {
+        if (_num_levels > (std::log2((imax < jmax) ? imax : jmax) - 1)) {
+            _num_levels = std::log2((imax < jmax) ? imax : jmax) - 1;
+        }
+
+        _pressure_solver = std::make_unique<MultiGridVCycle>(_num_levels, 5, 5);
+    }
+
+    else {
+        _solver_type = "SOR";
+        _pressure_solver = std::make_unique<SOR>(omg);
+    }
+
     _max_iter = itermax;
     _tolerance = eps;
     // Construct boundaries
@@ -315,10 +351,10 @@ void Case::simulate(int my_rank) {
         Communication::communicate(_field.g_matrix(), domain);
         _field.calculate_rs(_grid);
         while (err > _tolerance && iter_count < _max_iter) {
+            err = _pressure_solver->solve(_field, _grid, _boundaries);
             for (const auto &boundary : _boundaries) {
                 boundary->apply_pressures(_field);
             }
-            err = _pressure_solver->solve(_field, _grid, _boundaries);
             // weighted addition of residuals
             err = Communication::reduce_sum(err);
             fluid_cells = _grid.fluid_cells().size();
@@ -335,7 +371,7 @@ void Case::simulate(int my_rank) {
         t += dt;
         timestep += 1;
         if (_process_rank == 0) {
-            output << std::setprecision(4) << std::fixed;
+            output << std::setprecision(6) << std::fixed;
         }
         if (t - output_counter * _output_freq >= 0) {
             Case::output_vtk(timestep, my_rank);
@@ -593,6 +629,7 @@ void Case::output_log(std::string dat_file_name, double nu, double UI, double VI
     output << "nu : " << nu << "\n";
     output << "t_end : " << _t_end << "\n";
     output << "dt : " << dt << "\n";
+    output << "Solver : " << _solver_type << "\n";
     output << "omg : " << omg << "\n";
     output << "eps : " << eps << "\n";
     output << "tau : " << tau << "\n";
